@@ -413,7 +413,7 @@ const EXT={tix:LINKS.tickets,shop:LINKS.shop,mem:LINKS.memberAuth};
    EMB: האם האתר מאפשר הצגה בתוך מסגרת (אתר הכרטיסים Roboticket חוסם זאת).
    כשאי אפשר להציג את האתר במסגרת (האתר חוסם, או שהתצוגה שבה האפליקציה רצה חוסמת אתרים חיצוניים, כמו הצגת הארטיפקט ב-claude.ai)
    מוצג מסך באפליקציה עם כפתור שפותח את האתר בלשונית נפרדת */
-const EMB={tix:0,shop:1,mem:1};
+const EMB={tix:1,shop:1,mem:1};
 const EXI={tix:['כרטיסים','לרכישת כרטיסים באתר הרשמי'],shop:['חנות המועדון','לחנות הרשמית'],mem:['מנוי ואזור אישי','למנוי ולאזור האישי']};
 let FRBLK=typeof location!=='undefined'&&/claudeusercontent\.com$/.test(location.hostname||'');
 function ExtPage({k,box}){
@@ -425,7 +425,7 @@ function ExtPage({k,box}){
  </div></div>`;
 }
 function Embed({k}){
- const u=EXT[k],[bt,setBt]=useState(54),[blk,setBlk]=useState(FRBLK);
+ const u=EXT[k],[bt,setBt]=useState(54),[blk,setBlk]=useState(k==='tix'?false:FRBLK);
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const f=()=>setBt(n.offsetHeight);f();window.addEventListener('resize',f);let ro;try{ro=new ResizeObserver(f);ro.observe(n)}catch(e){}return()=>{window.removeEventListener('resize',f);ro&&ro.disconnect()}},[]);
  React.useLayoutEffect(()=>{if(!EMB[k])return;const h=e=>{if(/^(frame|child)-src/.test(e.effectiveDirective||e.violatedDirective||'')){FRBLK=true;setBlk(true)}};document.addEventListener('securitypolicyviolation',h);return()=>document.removeEventListener('securitypolicyviolation',h)},[k]);
  const box={top:'env(safe-area-inset-top,0px)',bottom:bt+'px'};
@@ -472,7 +472,7 @@ function App(){
    s.plays=s.plays.slice(0,12);setLv({...s})},API_CONFIG.POLL_MS);
   return()=>clearInterval(id);
  },[live]);
- const go=p=>{if(p==='tix'){location.assign(LINKS.tickets);return}if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  const A={...S,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
