@@ -25,6 +25,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(TicketsPlugin.class);
         super.onCreate(savedInstanceState);
         navScript = readAsset("public/native-nav.js");
         if (bridge == null) return;

@@ -16,6 +16,7 @@
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
 <script src="vendor/htm.umd.js"></script>
+<script src="vendor/capacitor.js"></script>
 <script src="version.js"></script>
 <style>
 :root{--bg:#f4f4f5;--sf:#fff;--tx:#18181b;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -449,14 +450,16 @@ function Drawer(){
 
 /* ---------- App ---------- */
 const NAV=[['home','בית','home'],['sched','משחקים','cal'],['stand','טבלאות','list'],['roster','סגל','users'],['tix','כרטיסים','tix'],['shop','חנות','bag'],['mem','מנוי','phone']];
-const PG={home:Home,sched:Sched,stand:Stand,roster:Roster,tix:()=>html`<${Embed} k="tix"/>`,shop:()=>html`<${Embed} k="shop"/>`,mem:()=>html`<${Embed} k="mem"/>`};
+const PG={home:Home,sched:Sched,stand:Stand,roster:Roster,tix:()=>NATIVE?html`<div class="p-8 text-center mu">טוען את אתר הכרטיסים…</div>`:html`<${Embed} k="tix"/>`,shop:()=>html`<${Embed} k="shop"/>`,mem:()=>html`<${Embed} k="mem"/>`};
 /* ---------- שמירה מקומית, זמן יחסי והתראות מכשיר ---------- */
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const ago=ts=>{const m=Math.floor(Math.max(0,Date.now()-ts)/6e4);if(m<1)return'עכשיו';if(m<60)return m===1?'לפני דקה':'לפני '+m+' דקות';const h=Math.floor(m/60);if(h<24)return h===1?'לפני שעה':h===2?'לפני שעתיים':'לפני '+h+' שעות';const d=Math.floor(h/24);return d===1?'אתמול':d===2?'לפני יומיים':'לפני '+d+' ימים'};
 /* התראה במגש ההתראות של המכשיר. באנדרואיד חובה דרך ה-service worker (new Notification לא נתמך שם) */
 /* באפליקציית האנדרואיד (Capacitor) ההתראות עוברות דרך מערכת ההתראות של הטלפון */
-const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
-const LN=()=>NATIVE&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
+const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
+/* רכיבים נייטיב של אפליקציית האנדרואיד (נרשמים פעם אחת) */
+const PLG={},plug=n=>NATIVE&&CAP.registerPlugin?(PLG[n]||(PLG[n]=CAP.registerPlugin(n))):null;
+const LN=()=>plug('LocalNotifications'),TK=()=>plug('Tickets');
 const lnPerm=r=>r&&r.display==='granted'?'granted':r&&r.display==='denied'?'denied':'default';
 function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),title:ME,body:t,smallIcon:'ic_stat_hpj',largeIcon:'hpj_notify_large',iconColor:'#C8102E'}]}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
  /* icon: הסמל הצבעוני בתוך ההתראה; badge: הסמל בשורת הסטטוס (אנדרואיד מציג אותו תמיד בצבע אחד) */
@@ -467,6 +470,7 @@ function askNotify(after){try{const L=LN();if(L)return L.requestPermissions().th
 function App(){
  const S=useSportsData(),[pg,setPg]=useState(()=>{/* פתיחה ישירה ללשונית מתוך סרגל הניווט שמוצג מעל אתר הכרטיסים (#sched וכו׳) */const h=(location.hash||'').slice(1);try{if(h)history.replaceState(null,'',location.pathname+location.search)}catch(e){}return h&&h!=='tix'&&PG[h]?h:'home'}),[pl,setPl]=useState(null),[gm,setGm]=useState(null),[live,setLive]=useState(false),[dr,setDr]=useState(false),[rem,setRem]=useState(()=>LS.get('hpj-rem',{})),[toasts,setToasts]=useState([]),[lv,setLv]=useState(null);
  useEffect(()=>{const f=()=>{const h=(location.hash||'').slice(1);if(h&&h!=='tix'&&PG[h]){setPg(h);setPl(null);setGm(null);window.scrollTo(0,0);try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}};window.addEventListener('hashchange',f);return()=>window.removeEventListener('hashchange',f)},[]);
+ useEffect(()=>{const T=TK();if(!T)return;T.preload({url:LINKS.tickets}).catch(()=>{});let h;try{h=T.addListener('closed',()=>setPg(x=>x==='tix'?'home':x))}catch(e){}return()=>{try{h&&h.then?h.then(r=>r.remove()):h&&h.remove&&h.remove()}catch(e){}}},[]);
  const [notes,setNotes]=useState(()=>LS.get('hpj-notes',[]));
  const [pf,setPf]=useState(()=>LS.get('hpj-pf',{hour:1,quarter:1,sales:1,comps:{league:1,euro:1,wcup:1,cup:1,super:1,prep:1}}));
  useEffect(()=>LS.set('hpj-notes',notes.slice(0,30)),[notes]);useEffect(()=>LS.set('hpj-pf',pf),[pf]);useEffect(()=>LS.set('hpj-rem',rem),[rem]);
@@ -492,7 +496,7 @@ function App(){
    s.plays=s.plays.slice(0,12);setLv({...s})},API_CONFIG.POLL_MS);
   return()=>clearInterval(id);
  },[live]);
- const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */if(p==='tix'){location.assign(LINKS.tickets);return}if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  const A={...S,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
