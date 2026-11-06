@@ -3,6 +3,15 @@
   "appName": "הפועל ירושלים",
   "webDir": "www",
   "backgroundColor": "#121212",
-  "android": { "allowMixedContent": false },
-  "ios": { "contentInset": "always" }
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "always"
+  },
+  "server": {
+    "allowNavigation": [
+      "tickets.hapoel.co.il"
+    ]
+  }
 }

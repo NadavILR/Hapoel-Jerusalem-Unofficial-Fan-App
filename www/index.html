@@ -451,7 +451,7 @@ const NAV=[['home','בית','home'],['sched','משחקים','cal'],['stand','ט�
 const PG={home:Home,sched:Sched,stand:Stand,roster:Roster,tix:()=>html`<${Embed} k="tix"/>`,shop:()=>html`<${Embed} k="shop"/>`,mem:()=>html`<${Embed} k="mem"/>`};
 function App(){
  const S=useSportsData(),[pg,setPg]=useState('home'),[pl,setPl]=useState(null),[gm,setGm]=useState(null),[live,setLive]=useState(false),[dr,setDr]=useState(false),[rem,setRem]=useState({}),[toasts,setToasts]=useState([]),[lv,setLv]=useState(null);
- const [notes,setNotes]=useState(!HAS?[]:[{id:1,t:'המשחק מול מכבי ת״א יחל בעוד שעה',w:'לפני 2 שעות',r:0},{id:2,t:'נפתחה מכירת הכרטיסים למשחק היורוקאפ',w:'אתמול',r:0},{id:3,t:'תוצאת סיום: ניצחון 88–78 על הפועל אילת',w:'לפני 3 ימים',r:1}]);
+ const [notes,setNotes]=useState([]);
  const [pf,setPf]=useState({hour:1,quarter:1,sales:1,comps:{league:1,euro:1,wcup:1,cup:1,super:1,prep:1}});
  const [perm,setPerm]=useState(typeof Notification!=='undefined'?Notification.permission:'denied');
  const toast=t=>{const id=Math.random();setToasts(x=>[...x,{id,t}]);setTimeout(()=>setToasts(x=>x.filter(y=>y.id!==id)),3500)};
@@ -472,7 +472,7 @@ function App(){
    s.plays=s.plays.slice(0,12);setLv({...s})},API_CONFIG.POLL_MS);
   return()=>clearInterval(id);
  },[live]);
- const go=p=>{if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{if(p==='tix'){location.assign(LINKS.tickets);return}if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  const A={...S,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
