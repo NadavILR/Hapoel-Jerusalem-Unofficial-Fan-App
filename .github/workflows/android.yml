@@ -4,7 +4,7 @@ name: Build Android app (APK)
 on:
   push:
     branches: [main]
-    paths: ['www/**', 'android/**', 'capacitor.config.json', 'package.json', '.github/workflows/android.yml']
+    paths: ['www/**', 'android/**', 'VERSION', 'capacitor.config.json', 'package.json', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -27,23 +27,33 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Copy the web app into the Android project
         run: npx cap sync android
+      - name: Read the app version
+        id: ver
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
       - name: Build APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/hapoel-jerusalem.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: hapoel-jerusalem-apk
-          path: hapoel-jerusalem.apk
-      - name: Publish as the android-latest release
+          name: hapoel-jerusalem-v${{ steps.ver.outputs.version }}
+          path: hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk
+      - name: Publish the release for this version
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-latest
-          name: אפליקציית אנדרואיד – הגרסה האחרונה
+          tag_name: v${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: גרסה ${{ steps.ver.outputs.version }}
           body: |
-            להתקנה: מורידים את hapoel-jerusalem.apk מהטלפון ופותחים אותו (צריך לאשר "התקנה ממקורות לא ידועים").
+            אפליקציית האנדרואיד של הפועל ירושלים – גרסה ${{ steps.ver.outputs.version }}.
+            להתקנה: מורידים מהטלפון את hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk ופותחים אותו (מתקינים מעל הגרסה הקיימת).
             נבנה מ-${{ github.sha }}.
-          files: hapoel-jerusalem.apk
+          files: hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk
           make_latest: true
+      - name: Remove the old unversioned release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete android-latest --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true

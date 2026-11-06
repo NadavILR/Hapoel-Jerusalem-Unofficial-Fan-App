@@ -30,9 +30,9 @@
 
 ## 2. אפליקציית אנדרואיד (APK)
 
-בכל דחיפה ל-`main`, ה-workflow שב-`.github/workflows/android.yml` בונה את האפליקציה ומפרסם אותה בגרסה
-**android-latest**: <https://github.com/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases/tag/android-latest>
-מורידים מהטלפון את `hapoel-jerusalem.apk`, פותחים ומאשרים התקנה.
+בכל דחיפה ל-`main`, ה-workflow שב-`.github/workflows/android.yml` בונה את האפליקציה ומפרסם אותה כ-release לפי מספר הגרסה.
+הגרסה האחרונה תמיד כאן: <https://github.com/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases/latest>
+מורידים מהטלפון את `hapoel-jerusalem-vX.X.X.apk`, פותחים ומתקינים מעל הגרסה הקיימת.
 
 באפליקציית האנדרואיד:
 - אתר הכרטיסים נפתח בתוך האפליקציה, וסרגל הניווט התחתון של האפליקציה מוצג מעליו
@@ -41,7 +41,12 @@
 
 בנייה מקומית: `npm install`, `npx cap sync android`, ואז `cd android && ./gradlew assembleDebug` (צריך Android SDK ו-JDK 17).
 
+## מספר גרסה
+
+מספר הגרסה נמצא בקובץ `VERSION` ומוצג בתחתית האפליקציה, בשם קובץ ה-APK ובמידע על האפליקציה באנדרואיד.
+בכל תיקון מעלים גרסה: `node scripts/bump-version.js` (1.0.0 ← 1.0.1 … 1.0.9 ← 1.1.0 … 1.9.9 ← 2.0.0).
+הסקריפט מעדכן גם את `www/version.js` ואת שם המטמון ב-`www/sw.js`, כך שהטלפונים מקבלים את הגרסה החדשה.
+
 ## עדכון נתונים ושינוי עיצוב
 - נתונים: מחליפים את `www/data.json` לפי `UPDATE.md`.
 - אם מוסיפים ל-`index.html` מחלקות Tailwind חדשות: `npm install` ואז `npm run build:css`.
-- בכל שינוי בקבצים, מעלים את `CACHE` ב-`www/sw.js` (למשל `hpj-v2`) כדי שהטלפונים יקבלו את הגרסה החדשה.
