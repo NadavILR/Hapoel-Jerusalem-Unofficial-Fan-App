@@ -457,8 +457,9 @@ const ago=ts=>{const m=Math.floor(Math.max(0,Date.now()-ts)/6e4);if(m<1)return'�
 const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
 const LN=()=>NATIVE&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
 const lnPerm=r=>r&&r.display==='granted'?'granted':r&&r.display==='denied'?'denied':'default';
-function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),title:ME,body:t}]}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
- const o={body:t,icon:'icons/icon-192.png',badge:'icons/icon-192.png',lang:'he',dir:'rtl',tag:'hpj-'+Date.now(),data:{url:location.href}};
+function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),title:ME,body:t,smallIcon:'ic_stat_hpj',largeIcon:'hpj_notify_large',iconColor:'#C8102E'}]}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+ /* icon: הסמל הצבעוני בתוך ההתראה; badge: הסמל בשורת הסטטוס (אנדרואיד מציג אותו תמיד בצבע אחד) */
+ const o={body:t,icon:'icons/notify-icon.png',badge:'icons/notify-badge.png',lang:'he',dir:'rtl',tag:'hpj-'+Date.now(),data:{url:location.href}};
  const plain=()=>{try{new Notification(ME,o)}catch(e){}};
  if('serviceWorker' in navigator)navigator.serviceWorker.getRegistration().then(r=>r||Promise.race([navigator.serviceWorker.ready,new Promise(z=>setTimeout(z,4000))])).then(r=>r?r.showNotification(ME,o):plain()).catch(plain);else plain()}catch(e){}}
 function askNotify(after){try{const L=LN();if(L)return L.requestPermissions().then(lnPerm).catch(()=>'denied');if(typeof Notification==='undefined')return Promise.resolve('denied');return Promise.resolve(Notification.requestPermission(after)).then(p=>p||Notification.permission)}catch(e){return Promise.resolve('denied')}}
@@ -475,7 +476,7 @@ function App(){
  nf.current=(t,c,k)=>{if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);devNotify(t)};
  /* תזכורות למשחקים: שעה לפני שריקת הפתיחה (נבדק כל 30 שניות כשהאפליקציה פתוחה) */
  useEffect(()=>{if(LN())return;const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;nf.current('תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד '+Math.max(1,Math.round((f.t-now)/6e4))+' דקות',f.c,'hour')}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
- const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true}}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
+ const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',largeIcon:'hpj_notify_large',iconColor:'#C8102E'}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
  const nx=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
  const R=useRef(null);
  useEffect(()=>{

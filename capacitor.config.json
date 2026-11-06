@@ -16,6 +16,7 @@
   },
   "plugins": {
     "LocalNotifications": {
+      "smallIcon": "ic_stat_hpj",
       "iconColor": "#C8102E"
     }
   }
