@@ -1,29 +1,40 @@
 package il.nadavilr.hapoeljerusalem;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
-import androidx.core.view.WindowInsetsControllerCompat;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.CookieManager;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
-import androidx.webkit.WebViewCompat;
-import androidx.webkit.WebViewFeature;
+import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.Collections;
 
 /**
- * - Web pages outside the app (the tickets site and the other club sites) open inside the app's own
- *   WebView and load directly, at full speed (not through Capacitor's allowNavigation proxy).
- * - The app's bottom navigation bar (www/native-nav.js) is drawn on top of those pages. It is added
- *   at document start where the WebView supports it, and again when the page becomes visible /
- *   finishes loading (the script runs only once per page and skips the app itself).
+ * - Links from the app to outside websites open in a window over the app, with a top bar whose
+ *   "חזור" button (top right) closes it and returns to the exact screen the link was tapped on.
+ *   The device Back button goes back inside that website first, then closes it.
+ * - The tickets tab is a separate screen (TicketsPlugin) that keeps the app's bottom navigation.
  */
 public class MainActivity extends BridgeActivity {
 
-    private String navScript;
+    private LinearLayout extLayer;
+    private WebView extWeb;
+    private OnBackPressedCallback extBack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,43 +43,19 @@ public class MainActivity extends BridgeActivity {
         // Status bar: club red (#D21919) with white icons
         getWindow().setStatusBarColor(Color.parseColor("#D21919"));
         new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(false);
-        navScript = readAsset("public/native-nav.js");
         if (bridge == null) return;
-        WebView webView = bridge.getWebView();
-
-        if (navScript != null && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            try {
-                WebViewCompat.addDocumentStartJavaScript(webView, navScript, Collections.singleton("*"));
-            } catch (Exception ignored) {
-            }
-        }
 
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
-                if (isExternalWebPage(url)) return false; // load it here, in the app
+                if (isExternalWebPage(url)) {
+                    openExternal(url.toString());
+                    return true; // the app itself stays where it is, underneath
+                }
                 return super.shouldOverrideUrlLoading(view, request);
             }
-
-            @Override
-            public void onPageCommitVisible(WebView view, String url) {
-                super.onPageCommitVisible(view, url);
-                inject(view, url);
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                inject(view, url);
-            }
         });
-    }
-
-    private void inject(WebView view, String url) {
-        if (navScript != null && url != null && isExternalWebPage(Uri.parse(url))) {
-            view.evaluateJavascript(navScript, null);
-        }
     }
 
     private static boolean isExternalWebPage(Uri url) {
@@ -77,14 +64,113 @@ public class MainActivity extends BridgeActivity {
         return ("https".equals(scheme) || "http".equals(scheme)) && host != null && !host.equals("localhost");
     }
 
-    private String readAsset(String path) {
-        try (InputStream in = getAssets().open(path); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        } catch (Exception e) {
-            return null;
+    @SuppressLint("SetJavaScriptEnabled")
+    private void openExternal(String url) {
+        if (extLayer != null) {
+            extWeb.loadUrl(url);
+            return;
+        }
+        float d = getResources().getDisplayMetrics().density;
+        boolean dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+
+        LinearLayout layer = new LinearLayout(this);
+        layer.setOrientation(LinearLayout.VERTICAL);
+        layer.setBackgroundColor(dark ? Color.BLACK : Color.WHITE);
+        layer.setClickable(true); // touches never reach the app underneath
+
+        // Top bar (right-to-left): "→ חזור" on the right, the page title next to it
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setBackgroundColor(Color.parseColor(dark ? "#000000" : "#282828"));
+
+        TextView back = new TextView(this);
+        back.setText("→  חזור");
+        back.setTextColor(Color.WHITE);
+        back.setTextSize(17);
+        back.setTypeface(Typeface.DEFAULT_BOLD);
+        back.setGravity(Gravity.CENTER_VERTICAL);
+        back.setPadding((int) (16 * d), 0, (int) (16 * d), 0);
+        back.setContentDescription("חזור");
+        back.setOnClickListener(v -> closeExternal());
+        bar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        TextView title = new TextView(this);
+        title.setTextColor(0xB3FFFFFF);
+        title.setTextSize(13);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        title.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+        title.setPadding(0, 0, (int) (16 * d), 0);
+        title.setText(Uri.parse(url).getHost());
+        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+
+        layer.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (52 * d)));
+
+        WebView web = new WebView(this);
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setLoadWithOverviewMode(true);
+        s.setUseWideViewPort(true);
+        s.setSupportZoom(true);
+        s.setBuiltInZoomControls(true);
+        s.setDisplayZoomControls(false);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onReceivedTitle(WebView view, String t) {
+                if (t != null && !t.isEmpty() && !t.startsWith("http")) title.setText(t);
+            }
+        });
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri u = request.getUrl();
+                String scheme = u.getScheme();
+                if ("http".equals(scheme) || "https".equals(scheme)) return false; // stay in this window
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, u)); // tel:, mailto:, whatsapp:...
+                } catch (Exception ignored) {
+                }
+                return true;
+            }
+        });
+        layer.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        ViewGroup parent = (ViewGroup) bridge.getWebView().getParent();
+        parent.addView(layer, new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        layer.bringToFront();
+        extLayer = layer;
+        extWeb = web;
+        web.loadUrl(url);
+
+        // Device Back: back inside the website, then close it (added last, so it runs before other handlers)
+        extBack = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (extWeb != null && extWeb.canGoBack()) extWeb.goBack();
+                else closeExternal();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, extBack);
+    }
+
+    private void closeExternal() {
+        if (extLayer == null) return;
+        ViewGroup parent = (ViewGroup) extLayer.getParent();
+        if (parent != null) parent.removeView(extLayer);
+        if (extWeb != null) {
+            extWeb.stopLoading();
+            extWeb.destroy();
+        }
+        extLayer = null;
+        extWeb = null;
+        if (extBack != null) {
+            extBack.remove();
+            extBack = null;
         }
     }
 }
