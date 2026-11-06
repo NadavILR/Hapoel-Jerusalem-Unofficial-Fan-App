@@ -1,0 +1,8 @@
+{
+  "appId": "il.nadavilr.hapoeljerusalem",
+  "appName": "הפועל ירושלים",
+  "webDir": "www",
+  "backgroundColor": "#121212",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "always" }
+}
