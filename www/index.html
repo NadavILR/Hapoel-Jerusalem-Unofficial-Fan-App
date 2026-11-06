@@ -432,7 +432,7 @@ function Embed({k}){
  React.useLayoutEffect(()=>{if(!EMB[k])return;const h=e=>{if(/^(frame|child)-src/.test(e.effectiveDirective||e.violatedDirective||'')){FRBLK=true;setBlk(true)}};document.addEventListener('securitypolicyviolation',h);return()=>document.removeEventListener('securitypolicyviolation',h)},[k]);
  const box={top:'env(safe-area-inset-top,0px)',bottom:bt+'px'};
  if(!EMB[k]||blk)return html`<${ExtPage} k=${k} box=${box}/>`;
- return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe><a href=${u} target=${k==='tix'?'_self':'_blank'} rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[rgb(var(--blk-rgb)/0.70)] text-white px-2 py-1 rounded-full">${k==='tix'?'לא נטען? פתיחה במסך מלא':'פתיחה בדפדפן'}</a></div>`;
+ return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe>${k==='tix'?html`<a href=${u} target="_self" rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[rgb(var(--blk-rgb)/0.70)] text-white px-2 py-1 rounded-full">לא נטען? פתיחה במסך מלא</a>`:null}</div>`;
 }
 
 /* ---------- Notifications ---------- */
