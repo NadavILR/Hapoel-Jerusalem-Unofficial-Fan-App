@@ -19,9 +19,9 @@
 <script src="vendor/capacitor.js"></script>
 <script src="version.js"></script>
 <style>
-:root{--bg:#f4f4f5;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#282828;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#282828;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
+:root{--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
+:root[data-theme="dark"]{color-scheme:dark;--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:#D21919}
@@ -197,7 +197,7 @@ function Home(){
  if(!nx)return html`<${SeasonEmpty} msg=${HAS?'אין משחקים קרובים בלוח כרגע.':'משחקי עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${LINKS.club} cta="לאתר הרשמי של הקבוצה"/>`;
  const df=Math.max(0,nx.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  return html`<div class=${'space-y-4 '+(A.ld?'animate-pulse opacity-70':'')}>
- <div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,#282828)'}}>
+ <div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}>
  ${A.live&&lv?html`
   <div class="flex items-center justify-between text-sm"><span class="flex items-center gap-1.5 font-bold"><span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>${lv.done?'FINAL':'LIVE'}</span><span dir="ltr">Q${lv.q} · ${mm(lv.sec)}</span></div>
   <div class="flex items-center justify-around my-4 text-center"><div><div class="text-sm opacity-80">${ME}</div><div class="text-5xl font-black">${lv.us}</div></div><div class="opacity-60">–</div><div><div class="text-sm opacity-80">${nx.o}</div><div class="text-5xl font-black">${lv.them}</div></div></div>
@@ -206,7 +206,7 @@ function Home(){
  :html`
   <div class="text-sm opacity-80 mb-2">המשחק הבא · ${cmp(nx)}</div>
   <div class="flex items-center gap-3 mb-3"><${Cr} n=${ME} s=${52}/><${Cr} n=${nx.o} s=${52}/><div><div class="text-2xl font-black">${nx.h?ME+' – '+nx.o:nx.o+' – '+ME}</div><div class="text-sm opacity-80 flex items-center gap-1"><${I} n="pin" s=${14}/>${nx.v||(nx.h?'משחק בית':'משחק חוץ')} · ${fdf(nx)}</div></div></div>
-  <div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class="bg-[#282828]/40 rounded-xl py-2"><div class="text-2xl font-black tabular-nums">${String(v).padStart(2,'0')}</div><div class="text-[11px] opacity-70">${l}</div></div>`)}</div>
+  <div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class="bg-[rgb(var(--blk-rgb)/0.40)] rounded-xl py-2"><div class="text-2xl font-black tabular-nums">${String(v).padStart(2,'0')}</div><div class="text-[11px] opacity-70">${l}</div></div>`)}</div>
   <button onClick=${()=>A.togRem(nx)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[nx.id]?'bg-white text-[#D21919]':'bg-white/15')}><${I} n="bell" s=${16}/>${A.rem[nx.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
  </div>
  <div class="flex items-center justify-between text-xs mu"><span>נתוני 365scores · נכון ל-${ASOF}${A.mode==='Live'?' · מתעדכן אוטומטית':''}</span><button onClick=${A.refresh} class="flex items-center gap-1 text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
@@ -332,7 +332,7 @@ function GmP({g,gs,pf}){
 function Game({g}){
  const A=useContext(Ctx),[tb,setTb]=useState('g'),gs=GS[g.id],pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
  return html`<div><button onClick=${()=>A.setGm(null)} class="flex items-center gap-1 text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
- <div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,#282828)'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
+ <div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
  <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class="text-sm mt-1">${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl font-black" dir="rtl"><span>${sc[0]}</span><span class="opacity-60">–</span><span>${sc[1]}</span></div>`:html`<div class="text-2xl font-black opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class="text-sm mt-1">${aw}</div></div></div>
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>
  ${gs?html`<div><div class="grid grid-cols-[1fr_1fr_1.4fr] gap-1 p-1 rounded-xl sf mt-3">${[['g','משחק'],['s','סטטיסטיקות'],['p','סטטיסטיקה אישית']].map(([k,l])=>html`<button key=${k} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-[13px] font-bold whitespace-nowrap '+(tb===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
@@ -378,7 +378,7 @@ function Player({p}){
  tt=ks.reduce((t,k)=>t.map((x,i)=>x+by[k][i]),new Array(17).fill(0)),fm=md==='a'?avgRow:totRow,ag=ageOf(p[5]),
  HD=['מש׳','דק׳','נק׳','ריב׳','אס׳','חט׳','חס׳',md==='a'?'FG%':'FG',md==='a'?'3P%':'3P',md==='a'?'FT%':'FT','ר״ה','ר״ג','איב׳','עב׳'];
  return html`<div><button onClick=${()=>A.setPl(null)} class="flex items-center gap-1 text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה לסגל</button>
- <div class="rounded-2xl text-white overflow-hidden flex items-stretch" style=${{background:'linear-gradient(135deg,#D21919,#282828)'}}>
+ <div class="rounded-2xl text-white overflow-hidden flex items-stretch" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}>
   <div class="w-[132px] shrink-0 relative" style=${{aspectRatio:'4/5'}}><${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls="absolute inset-0 w-full h-full object-cover object-top"/></div>
   <div class="p-4 flex-1 flex flex-col justify-center min-w-0"><div class="text-5xl font-black opacity-90 leading-none">${p[0]}</div><div class="text-xl font-black leading-tight mt-1">${p[1]}</div><div class="text-sm opacity-80 mt-1">${p[2]}</div></div></div>
  <div class="grid grid-cols-2 gap-2 mt-3">${[['גובה',p[3]+' מ׳'],['אזרחות',p[4]],['תאריך לידה',p[5]+(ag!==''?' · גיל '+ag:'')],['עמדה',p[2]]].map(([l,v])=>html`<div key=${l} class="sf rounded-xl p-3"><div class="text-xs mu">${l}</div><div class="font-bold text-sm mt-0.5">${v}</div></div>`)}</div>
@@ -404,7 +404,7 @@ function Roster(){
  <${TeamPh}/>
  <${Chips} o=${[['pl','שחקנים'],['st','צוות האימון'],['of','בעלי תפקידים']]} v=${v} set=${setV}/>
  ${v==='pl'?html`<div><${Chips} o=${[['all','הכל'],['G','גארדים'],['F','פורוורדים'],['C','סנטרים']]} v=${ps} set=${setPs}/>
- <div class="grid grid-cols-2 gap-2">${PL.filter(p=>ps==='all'||grp(p).includes(ps)).map(p=>html`<button key=${p[0]+p[1]} onClick=${()=>A.setPl(p)} class="sf rounded-2xl overflow-hidden text-right"><div class="relative" style=${{aspectRatio:'4/4.6',background:'linear-gradient(160deg,#D21919,#282828)'}}><${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls="absolute inset-0 w-full h-full object-cover object-top"/><span class="absolute top-2 right-2 min-w-[28px] h-7 px-1.5 rounded-full bg-[#282828]/60 text-white text-sm font-black flex items-center justify-center">${p[0]}</span></div><div class="p-2.5"><div class="font-bold leading-tight">${p[1]}</div><div class="text-xs mu mt-0.5">${p[2]} · ${p[3]} מ׳</div></div></button>`)}</div></div>`
+ <div class="grid grid-cols-2 gap-2">${PL.filter(p=>ps==='all'||grp(p).includes(ps)).map(p=>html`<button key=${p[0]+p[1]} onClick=${()=>A.setPl(p)} class="sf rounded-2xl overflow-hidden text-right"><div class="relative" style=${{aspectRatio:'4/4.6',background:'linear-gradient(160deg,#D21919,var(--blk))'}}><${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls="absolute inset-0 w-full h-full object-cover object-top"/><span class="absolute top-2 right-2 min-w-[28px] h-7 px-1.5 rounded-full bg-[rgb(var(--blk-rgb)/0.60)] text-white text-sm font-black flex items-center justify-center">${p[0]}</span></div><div class="p-2.5"><div class="font-bold leading-tight">${p[1]}</div><div class="text-xs mu mt-0.5">${p[2]} · ${p[3]} מ׳</div></div></button>`)}</div></div>`
  :v==='st'?lst(ST):lst(OF)}
  <div class="text-xs mu mt-3">מקור: האתר הרשמי של המועדון · הסטטיסטיקה האישית מ-365scores · נכון ל-${ASOF}</div></div>`;
 }
@@ -421,7 +421,7 @@ let FRBLK=typeof location!=='undefined'&&/claudeusercontent\.com$/.test(location
 function ExtPage({k,box}){
  const A=useContext(Ctx),u=EXT[k],nx=k==='tix'?A.F.filter(f=>!f.r&&f.h).sort((a,b)=>a.t-b.t).slice(0,6):[];
  return html`<div class="fixed inset-x-0 z-20 overflow-y-auto" style=${{...box,background:'var(--bg)'}}><div class="max-w-3xl mx-auto p-3 space-y-3">
- <div class="rounded-2xl text-white p-5 text-center" style=${{background:'linear-gradient(135deg,#D21919,#282828)'}}><div class="text-2xl font-black">${EXI[k][0]}</div><div class="text-sm opacity-80 mt-1 mb-4">${ME}</div><${Cta} href=${u}>${EXI[k][1]}<//></div>
+ <div class="rounded-2xl text-white p-5 text-center" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-2xl font-black">${EXI[k][0]}</div><div class="text-sm opacity-80 mt-1 mb-4">${ME}</div><${Cta} href=${u}>${EXI[k][1]}<//></div>
  <div class="text-xs mu">${EMB[k]?'התצוגה שבה האפליקציה פועלת חוסמת הצגה של אתרים חיצוניים בתוך האפליקציה, ולכן האתר נפתח בלשונית נפרדת. בגרסה העצמאית של האפליקציה הוא מוצג כאן ישירות.':'האתר הרשמי לא מאפשר הצגה בתוך אפליקציות אחרות, ולכן הוא נפתח בלשונית נפרדת בדפדפן. אחרי הפעולה אפשר לחזור לכאן.'}</div>
  ${nx.length?html`<div class="font-bold">משחקי הבית הקרובים</div><div class="space-y-2">${nx.map(f=>html`<a key=${f.id} href=${u} target="_blank" rel="noopener noreferrer" class="sf rounded-xl p-3 flex items-center gap-3"><${Cr} n=${f.o}/><div class="flex-1 min-w-0"><div class="font-bold truncate">${ME+' – '+f.o}</div><div class="text-xs mu">${fdf(f)}</div><div class="text-xs mu">${cmp(f)} · ${f.v||'משחק בית'}</div></div><span class="text-xs font-bold text-[#D21919] whitespace-nowrap">לכרטיסים</span></a>`)}</div>`:null}
  </div></div>`;
@@ -432,13 +432,13 @@ function Embed({k}){
  React.useLayoutEffect(()=>{if(!EMB[k])return;const h=e=>{if(/^(frame|child)-src/.test(e.effectiveDirective||e.violatedDirective||'')){FRBLK=true;setBlk(true)}};document.addEventListener('securitypolicyviolation',h);return()=>document.removeEventListener('securitypolicyviolation',h)},[k]);
  const box={top:'env(safe-area-inset-top,0px)',bottom:bt+'px'};
  if(!EMB[k]||blk)return html`<${ExtPage} k=${k} box=${box}/>`;
- return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe><a href=${u} target=${k==='tix'?'_self':'_blank'} rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[#282828]/70 text-white px-2 py-1 rounded-full">${k==='tix'?'לא נטען? פתיחה במסך מלא':'פתיחה בדפדפן'}</a></div>`;
+ return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe><a href=${u} target=${k==='tix'?'_self':'_blank'} rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[rgb(var(--blk-rgb)/0.70)] text-white px-2 py-1 rounded-full">${k==='tix'?'לא נטען? פתיחה במסך מלא':'פתיחה בדפדפן'}</a></div>`;
 }
 
 /* ---------- Notifications ---------- */
 function Drawer(){
  const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v});
- return html`<div class="fixed inset-0 z-[55] bg-[#282828]/60 flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.60)] flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-black">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="flex gap-2 mb-3"><button onClick=${()=>A.setNotes(n=>n.map(x=>({...x,r:1})))} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button><button onClick=${()=>{const go=()=>A.nf.current('התראת בדיקה: ברוכים הבאים להפועל ירושלים!');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()}} class="flex-1 py-2 rounded-lg bg-[#D21919] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
  <div class="space-y-2 mb-4">${A.notes.slice(0,8).map(n=>html`<div key=${n.id} class=${'sf rounded-xl p-3 text-sm flex gap-2 '+(n.r?'opacity-60':'')}>${!n.r&&html`<span class="w-2 h-2 mt-1.5 rounded-full bg-[#D21919] shrink-0"></span>`}<div class="flex-1">${n.t}<div class="text-xs mu">${n.ts?ago(n.ts):n.w}</div></div></div>`)}</div>
@@ -461,9 +461,9 @@ const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlat
 const PLG={},plug=n=>NATIVE&&CAP.registerPlugin?(PLG[n]||(PLG[n]=CAP.registerPlugin(n))):null;
 const LN=()=>plug('LocalNotifications'),TK=()=>plug('Tickets');
 const lnPerm=r=>r&&r.display==='granted'?'granted':r&&r.display==='denied'?'denied':'default';
-function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),title:ME,body:t,smallIcon:'ic_stat_hpj',largeIcon:'hpj_notify_large',iconColor:'#D21919'}]}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
- /* icon: הסמל הצבעוני בתוך ההתראה; badge: הסמל בשורת הסטטוס (אנדרואיד מציג אותו תמיד בצבע אחד) */
- const o={body:t,icon:'icons/notify-icon.png',badge:'icons/notify-badge.png',lang:'he',dir:'rtl',tag:'hpj-'+Date.now(),data:{url:location.href}};
+function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),title:ME,body:t,smallIcon:'ic_stat_hpj',iconColor:'#D21919'}]}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+ /* בלי תמונת סמל בתוך ההתראה; badge הוא האייקון הקטן בשורת הסטטוס (אנדרואיד מציג אותו בצבע אחד) */
+ const o={body:t,badge:'icons/notify-badge.png',lang:'he',dir:'rtl',tag:'hpj-'+Date.now(),data:{url:location.href}};
  const plain=()=>{try{new Notification(ME,o)}catch(e){}};
  if('serviceWorker' in navigator)navigator.serviceWorker.getRegistration().then(r=>r||Promise.race([navigator.serviceWorker.ready,new Promise(z=>setTimeout(z,4000))])).then(r=>r?r.showNotification(ME,o):plain()).catch(plain);else plain()}catch(e){}}
 function askNotify(after){try{const L=LN();if(L)return L.requestPermissions().then(lnPerm).catch(()=>'denied');if(typeof Notification==='undefined')return Promise.resolve('denied');return Promise.resolve(Notification.requestPermission(after)).then(p=>p||Notification.permission)}catch(e){return Promise.resolve('denied')}}
@@ -481,7 +481,7 @@ function App(){
  nf.current=(t,c,k)=>{if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);devNotify(t)};
  /* תזכורות למשחקים: שעה לפני שריקת הפתיחה (נבדק כל 30 שניות כשהאפליקציה פתוחה) */
  useEffect(()=>{if(LN())return;const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;nf.current('תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד '+Math.max(1,Math.round((f.t-now)/6e4))+' דקות',f.c,'hour')}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
- const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',largeIcon:'hpj_notify_large',iconColor:'#D21919'}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
+ const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919'}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
  const nx=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
  const R=useRef(null);
  useEffect(()=>{
@@ -500,12 +500,12 @@ function App(){
  const A={...S,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
- ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 text-white border-b-2 border-[#D21919]" style=${{top:'env(safe-area-inset-top,0px)',background:'#282828'}}><div class="max-w-3xl mx-auto flex items-center gap-2 px-3 py-2">
+ ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 text-white border-b-2 border-[#D21919]" style=${{top:'env(safe-area-inset-top,0px)',background:'var(--blk)'}}><div class="max-w-3xl mx-auto flex items-center gap-2 px-3 py-2">
   <img src=${LOGO} alt="הפועל ירושלים" class="w-12 h-12 object-contain"/><div class="flex-1 font-black text-xl leading-tight">${ME}</div>
   <button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-[11px] font-bold flex items-center justify-center">${unread}</span>`}</button></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(env(safe-area-inset-top,0px) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">🏀 ${t.t}</div>`)}</div>
  <main class="max-w-3xl mx-auto p-3 pb-28">${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}<div class="text-center text-[11px] mu mt-6">נתוני משחקים, טבלאות וסגל: 365scores · עונת ${SEASON} · נכון ל-${ASOF} · גרסה ${window.APP_VERSION||''} · מוצרי החנות וכרטיס ה-QR להמחשה · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline">האתר הרשמי של הקבוצה</a></div></main>
- <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t border-white/10 text-white" style=${{background:'#282828',paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="max-w-3xl mx-auto flex">${NAV.map(([k,l,ic])=>{const cl='flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] '+(pg===k?'text-[#D21919] font-bold border-t-2 border-[#D21919]':'opacity-70 border-t-2 border-transparent');return !INAPP&&EXT[k]?html`<a key=${k} href=${EXT[k]} target="_blank" rel="noopener noreferrer" class=${cl}><${I} n=${ic} s=${21}/>${l}</a>`:html`<button key=${k} onClick=${()=>go(k)} class=${cl}><${I} n=${ic} s=${21}/>${l}</button>`})}</div></nav>
+ <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t border-white/10 text-white" style=${{background:'var(--blk)',paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="max-w-3xl mx-auto flex">${NAV.map(([k,l,ic])=>{const cl='flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] '+(pg===k?'text-[#D21919] font-bold border-t-2 border-[#D21919]':'opacity-70 border-t-2 border-transparent');return !INAPP&&EXT[k]?html`<a key=${k} href=${EXT[k]} target="_blank" rel="noopener noreferrer" class=${cl}><${I} n=${ic} s=${21}/>${l}</a>`:html`<button key=${k} onClick=${()=>go(k)} class=${cl}><${I} n=${ic} s=${21}/>${l}</button>`})}</div></nav>
  ${dr&&html`<${Drawer}/>`}<//>`;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
