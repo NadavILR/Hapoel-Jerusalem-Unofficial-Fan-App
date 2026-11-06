@@ -155,6 +155,10 @@ const applyLive=j=>{
  Object.assign(CR,O(j.CR,{}));HAS=true;return true};
 const ILT={timeZone:'Asia/Jerusalem'};
 const fdate=t=>new Date(t).toLocaleDateString('he-IL',{...ILT,weekday:'long',day:'numeric',month:'numeric'});
+/* "יום ראשון - 08.11.2026 - 20:15" (שעון ישראל) – לכרטיס המשחק הבא במסך הבית */
+const fdLong=f=>{const d=new Date(f.t),o={...ILT},p=new Intl.DateTimeFormat('en-GB',{...o,day:'2-digit',month:'2-digit',year:'numeric'}).formatToParts(d),g=k=>(p.find(x=>x.type===k)||{}).value||'';
+ const day=d.toLocaleDateString('he-IL',{...o,weekday:'long'}),date=g('day')+'.'+g('month')+'.'+g('year'),time=f.tbd?'שעה טרם נקבעה':d.toLocaleTimeString('he-IL',{...o,hour:'2-digit',minute:'2-digit',hour12:false});
+ return day+' - '+date+' - '+time};
 const fd=t=>fdate(t)+' · '+new Date(t).toLocaleTimeString('he-IL',{...ILT,hour:'2-digit',minute:'2-digit',hour12:false});
 const fdf=f=>f.tbd?fdate(f.t)+' · תאריך ושעה לא סופיים':fd(f.t);
 const mm=s=>`${Math.max(s,0)/60|0}:${String(Math.max(s,0)%60).padStart(2,'0')}`;
@@ -212,7 +216,7 @@ function Home(){
   return html`<div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
   <div class="flex-1 min-w-0 text-center">${nm(hm)}<div class="text-sm opacity-80 my-0.5" dir="ltr">VS</div>${nm(aw)}</div>
   <div class="shrink-0"><${Cr} n=${aw} s=${60}/></div></div>
-  <div class="text-center text-sm opacity-90">${fdf(nx).replace(', ',' – ').replace(' · ',' – ')}</div>
+  <div class="text-center text-sm opacity-90">${fdLong(nx)}</div>
   <div class="text-center text-sm opacity-80 mb-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${nx.v||(nx.h?'משחק בית':'משחק חוץ')}</div>`})()}
   <div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class="bg-[rgb(var(--blk-rgb)/0.40)] rounded-xl py-2"><div class="text-2xl font-black tabular-nums">${String(v).padStart(2,'0')}</div><div class="text-[11px] opacity-70">${l}</div></div>`)}</div>
   <button onClick=${()=>A.togRem(nx)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[nx.id]?'bg-white text-[#D21919]':'bg-white/15')}><${I} n="bell" s=${16}/>${A.rem[nx.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>

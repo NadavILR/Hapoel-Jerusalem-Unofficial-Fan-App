@@ -45,6 +45,11 @@ public class MainActivity extends BridgeActivity {
         // Status bar: club red (#D21919) with white icons
         getWindow().setStatusBarColor(Color.parseColor("#D21919"));
         new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(false);
+        // Check for app updates in the background too, so a notification arrives even when the app is closed
+        try {
+            UpdateCheckWorker.schedule(this);
+        } catch (Exception ignored) {
+        }
         if (bridge == null) return;
 
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
