@@ -139,6 +139,19 @@ async function liveIsrael(){
  if(rows.length>=8)LG=rows;
  return n}
 
+/* ---------- משחק בלייב מ-365scores ---------- */
+const S365='https://webws.365scores.com/web/',Q365='appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6';
+const id365=f=>f&&(/#id=(\d+)/.exec(M365[f.id]||'')||[])[1];
+const url365=f=>f&&M365[f.id]?'https://www.365scores.com/he/basketball/match/'+M365[f.id]:LINKS.team365;
+const openExt=u=>{if(NATIVE)location.href=u;else window.open(u,'_blank','noopener')};
+/* מצב המשחק לפי 365scores: pre / live / end */
+const mkLive=(d,f)=>{const jh=d.homeCompetitor&&d.homeCompetitor.id===634,num=x=>x>=0?Math.round(x):0,hs=num(d.homeCompetitor.score),as=num(d.awayCompetitor.score),
+ pt=d.preciseGameTime,clock=d.gameTimeDisplay||(pt&&pt.minutes>=0&&d.statusGroup===3?String(pt.minutes).padStart(2,'0')+':'+String(pt.seconds||0).padStart(2,'0'):'');
+ return{app:f.id,id:d.id,jh,hs,as,r:jh?[hs,as]:[as,hs],status:d.statusGroup===3?'live':d.statusGroup===4?'end':'pre',st:d.statusText||d.shortStatusText||'',clock,
+  q:(d.stages||[]).filter(x=>x.homeCompetitorScore>=0&&x.awayCompetitorScore>=0&&/רבע|הארכה|ר'|OT|Q/.test(x.name||x.shortName||'')).map(x=>({n:x.shortName||x.name,h:num(x.homeCompetitorScore),a:num(x.awayCompetitorScore)})),
+  top:((d.topPerformers&&d.topPerformers.categories)||[]).map(c=>({n:c.name,h:c.homePlayer&&{p:c.homePlayer.name,v:((c.homePlayer.stats||[])[0]||{}).value},a:c.awayPlayer&&{p:c.awayPlayer.name,v:((c.awayPlayer.stats||[])[0]||{}).value}})),
+  url:url365(f),at:Date.now()}};
+
 function useSportsData(){
  const [s,setS]=useState({ld:1,up:null,mode:'Snapshot',F:F0});
  const refresh=useCallback(async()=>{
@@ -151,7 +164,9 @@ function useSportsData(){
   setS({ld:0,up:new Date(),mode,F:F0,at});
  },[]);
  useEffect(()=>{refresh()},[refresh]);
- return {...s,refresh};
+ /* תוצאת סיום מהלייב: המשחק נחשב שוחק, והספירה לאחור עוברת למשחק הבא */
+ const markResult=useCallback((id,r)=>{F0=F0.map(f=>f.id===id&&!f.r?{...f,r}:f);setS(x=>({...x,F:F0}))},[]);
+ return {...s,refresh,markResult};
 }
 
 /* ---------- נתוני 365scores (תקציר מ-6.11.2026) ---------- */
@@ -241,19 +256,16 @@ function News(){
   ${more>0?html`<button onClick=${()=>setAll(!all)} class="w-full pt-2.5 border-t bd text-sm font-bold text-[#D21919]">${all?'הצג פחות':'עוד כותרות ('+more+')'}</button>`:null}</div>`;
 }
 function Home(){
- const A=useContext(Ctx),now=useNow(),lv=A.lv;
+ const A=useContext(Ctx),now=useNow();
  const nx=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0],ls=A.F.filter(f=>f.r).sort((a,b)=>b.t-a.t)[0];
+ /* מרגע שריקת הפתיחה (לפי 365scores) הכרטיס מציג את המשחק בלייב במקום הספירה לאחור */
+ const L=A.lg&&nx&&A.lg.app===nx.id&&(A.lg.status!=='pre'||now>=nx.t)?A.lg:null;
  const rk=LG.findIndex(r=>r.n===ME),me=LG[rk],eg=EC.find(([,t])=>t.some(r=>r[0]===ME)),er=eg?eg[1].findIndex(r=>r[0]===ME):-1,em=er>=0?eg[1][er]:null;
  if(!nx)return html`<${SeasonEmpty} msg=${HAS?'אין משחקים קרובים בלוח כרגע.':'משחקי עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${LINKS.club} cta="לאתר הרשמי של הקבוצה"/>`;
  const df=Math.max(0,nx.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  return html`<div class=${'space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'animate-pulse opacity-70':'')}>
  <div class="rounded-2xl p-4 text-white md:col-span-2" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}>
- ${A.live&&lv?html`
-  <div class="flex items-center justify-between text-sm"><span class="flex items-center gap-1.5 font-bold"><span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>${lv.done?'FINAL':'LIVE'}</span><span dir="ltr">Q${lv.q} · ${mm(lv.sec)}</span></div>
-  <div class="flex items-center justify-around my-4 text-center"><div><div class="text-sm opacity-80">${ME}</div><div class="text-5xl font-black">${lv.us}</div></div><div class="opacity-60">–</div><div><div class="text-sm opacity-80">${nx.o}</div><div class="text-5xl font-black">${lv.them}</div></div></div>
-  <div class="text-xs opacity-70 mb-1">Play-by-Play</div>
-  ${lv.plays.slice(0,5).map(p=>html`<div key=${p.n} class=${'text-sm py-1 border-t border-white/10 flex gap-2 '+(p.u?'':'opacity-70')}><span class="opacity-60" dir="ltr">Q${p.q} ${mm(p.sec)}</span>${p.t}</div>`)}`
- :html`
+ ${L?html`<${LiveCard} L=${L} g=${nx}/>` :html`
   <div class="text-sm opacity-80 mb-3 text-center">המשחק הבא · ${cmp(nx)}</div>
   ${(()=>{const hm=nx.h?ME:nx.o,aw=nx.h?nx.o:ME,nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-black':'font-normal')}>${n}</div>`;
   /* מארחת מימין, אורחת משמאל; רק השם של הפועל ירושלים מודגש */
@@ -386,13 +398,39 @@ function GmP({g,gs,pf}){
  <tr class="border-t-2 bd font-bold"><td class="sticky right-0 text-right px-1.5 py-1.5" style=${bgs}>סה״כ</td>${tot.map((v,j)=>html`<td key=${j} class="px-1.5 py-1.5">${v}</td>`)}</tr></tbody></table></div>
  <div class="text-xs mu mt-2"><span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>חמישייה פותחת · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · הנתונים מ-365scores.</div></div>`;
 }
+/* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
+function LiveScore({L,g,big}){
+ const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 '+(n===ME?'font-black':'font-normal')}>${n}</div>`;
+ return html`<div class="flex items-center justify-between text-sm mb-2"><span class="flex items-center gap-1.5 font-bold">${L.status==='live'?html`<span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>LIVE`:L.status==='end'?'סיום':'ממתינים לשריקת הפתיחה'}</span><span class="font-bold">${L.st}${L.clock&&L.status==='live'?' · ':''}${L.status==='live'?html`<span dir="ltr">${L.clock}</span>`:null}</span></div>
+ <div class="flex items-center justify-between gap-2"><div class="w-24 shrink-0 text-center"><div class="flex justify-center"><${Cr} n=${hm} s=${big?64:56}/></div>${nm(hm)}</div>
+ <div class="flex-1 flex justify-center items-center gap-3 font-black tabular-nums text-5xl" dir="ltr"><span>${L.as}</span><span class="opacity-60 text-3xl">–</span><span>${L.hs}</span></div>
+ <div class="w-24 shrink-0 text-center"><div class="flex justify-center"><${Cr} n=${aw} s=${big?64:56}/></div>${nm(aw)}</div></div>
+ ${L.q.length?html`<div class="mt-3 rounded-xl bg-[rgb(var(--blk-rgb)/0.35)] p-2 text-xs"><div class="grid gap-1 text-center" style=${{gridTemplateColumns:'4.5rem repeat('+L.q.length+',1fr)'}}>
+  <span></span>${L.q.map(x=>html`<span key=${x.n} class="opacity-70">${x.n}</span>`)}
+  <span class="text-right truncate">${hm}</span>${L.q.map(x=>html`<b key=${x.n}>${x.h}</b>`)}
+  <span class="text-right truncate">${aw}</span>${L.q.map(x=>html`<b key=${x.n}>${x.a}</b>`)}</div></div>`:null}`;
+}
+function LiveCard({L,g}){
+ const A=useContext(Ctx);
+ return html`<${LiveScore} L=${L} g=${g}/>
+ <button onClick=${()=>{A.setGm(g);window.scrollTo(0,0)}} class="mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>
+ <div class="text-[11px] opacity-70 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div>`;
+}
+function LiveGame({L,g}){
+ return html`<div class="sf rounded-xl p-3 mt-3"><div class="flex items-center justify-between mb-2"><div class="font-bold">${L.status==='live'?'המשחק בלייב':'סיכום המשחק'}</div><span class="text-[11px] mu">365scores</span></div>
+ ${L.top.length?html`<div class="text-sm">${L.top.map(c=>html`<div key=${c.n} class="py-2 border-t bd first:border-0"><div class="text-xs mu mb-1 text-center">${c.n}</div><div class="flex justify-between gap-2">
+  <span class="flex-1">${c.h?html`<b>${c.h.v}</b> ${c.h.p}`:'—'}</span><span class="flex-1 text-left">${c.a?html`${c.a.p} <b>${c.a.v}</b>`:'—'}</span></div></div>`)}</div>`:html`<div class="text-sm mu">הנתונים יופיעו עם תחילת המשחק.</div>`}
+ <button onClick=${()=>openExt(L.url)} class="mt-3 w-full py-2.5 rounded-xl bg-[#D21919] text-white text-sm font-bold">Live Match Tracker ב-365scores</button>
+ <div class="text-[11px] mu mt-2">מתעדכן כל 20 שניות. ה-Live Match Tracker מוצג בעמוד המשחק של 365scores${NATIVE?', בתוך האפליקציה':''}.</div></div>`;
+}
+
 function Game({g}){
- const A=useContext(Ctx),[tb,setTb]=useState('g'),gs=GS[g.id],pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
+ const A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),gs=GS[g.id],pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
  return html`<div><button onClick=${()=>A.setGm(null)} class="flex items-center gap-1 text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
- <div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
+ ${LG?html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><${LiveGame} L=${LG} g=${g}/>`:html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
  <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class="text-sm mt-1">${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl font-black" dir="rtl"><span>${sc[0]}</span><span class="opacity-60">–</span><span>${sc[1]}</span></div>`:html`<div class="text-2xl font-black opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class="text-sm mt-1">${aw}</div></div></div>
- <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>
- ${gs?html`<div><div class="grid grid-cols-[1fr_1fr_1.4fr] gap-1 p-1 rounded-xl sf mt-3">${[['g','משחק'],['s','סטטיסטיקות'],['p','סטטיסטיקה אישית']].map(([k,l])=>html`<button key=${k} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-[13px] font-bold whitespace-nowrap '+(tb===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
+ <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
+ ${LG&&!gs?null:gs?html`<div><div class="grid grid-cols-[1fr_1fr_1.4fr] gap-1 p-1 rounded-xl sf mt-3">${[['g','משחק'],['s','סטטיסטיקות'],['p','סטטיסטיקה אישית']].map(([k,l])=>html`<button key=${k} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-[13px] font-bold whitespace-nowrap '+(tb===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
  ${tb==='g'?html`<${GmQ} g=${g} gs=${gs}/>`:tb==='s'?html`<${GmT} g=${g} gs=${gs}/>`:html`<${GmP} g=${g} gs=${gs} pf=${pf}/>`}</div>`
  :html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">${g.r?'שחקנים בולטים':'סטטיסטיקת משחק'}</div>
  ${pf?pf.map(([n,v])=>html`<div key=${n} class="flex justify-between py-1.5 border-t bd text-sm first:border-0"><span>${n}</span><b>${v}</b></div>`):html`<div class="text-sm mu">${g.r?'הסטטיסטיקה המפורטת של המשחק לא נטענה לאפליקציה.':'המשחק טרם נערך. הסטטיסטיקה תופיע לאחר שריקת הסיום.'}</div>`}</div>`}
@@ -568,7 +606,7 @@ function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math
  if('serviceWorker' in navigator)navigator.serviceWorker.getRegistration().then(r=>r||Promise.race([navigator.serviceWorker.ready,new Promise(z=>setTimeout(z,4000))])).then(r=>r?r.showNotification(ME,o):plain()).catch(plain);else plain()}catch(e){}}
 function askNotify(after){try{const L=LN();if(L)return L.requestPermissions().then(lnPerm).catch(()=>'denied');if(typeof Notification==='undefined')return Promise.resolve('denied');return Promise.resolve(Notification.requestPermission(after)).then(p=>p||Notification.permission)}catch(e){return Promise.resolve('denied')}}
 function App(){
- const S=useSportsData(),[pg,setPg]=useState(()=>{/* פתיחה ישירה ללשונית מתוך סרגל הניווט שמוצג מעל אתר הכרטיסים (#sched וכו׳) */const h=(location.hash||'').slice(1);try{if(h)history.replaceState(null,'',location.pathname+location.search)}catch(e){}return h&&h!=='tix'&&PG[h]?h:'home'}),[pl,setPl]=useState(null),[gm,setGm]=useState(null),[live,setLive]=useState(false),[dr,setDr]=useState(false),[rem,setRem]=useState(()=>LS.get('hpj-rem',{})),[toasts,setToasts]=useState([]),[lv,setLv]=useState(null);
+ const S=useSportsData(),[pg,setPg]=useState(()=>{/* פתיחה ישירה ללשונית מתוך סרגל הניווט שמוצג מעל אתר הכרטיסים (#sched וכו׳) */const h=(location.hash||'').slice(1);try{if(h)history.replaceState(null,'',location.pathname+location.search)}catch(e){}return h&&h!=='tix'&&PG[h]?h:'home'}),[pl,setPl]=useState(null),[gm,setGm]=useState(null),[dr,setDr]=useState(false),[rem,setRem]=useState(()=>LS.get('hpj-rem',{})),[toasts,setToasts]=useState([]);
  useEffect(()=>{const f=()=>{const h=(location.hash||'').slice(1);if(h&&h!=='tix'&&PG[h]){setPg(h);setPl(null);setGm(null);window.scrollTo(0,0);try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}};window.addEventListener('hashchange',f);return()=>window.removeEventListener('hashchange',f)},[]);
  useEffect(()=>{const T=TK();if(!T)return;T.preload({url:LINKS.tickets}).catch(()=>{});let h;try{h=T.addListener('closed',()=>setPg(x=>x==='tix'?'home':x))}catch(e){}return()=>{try{h&&h.then?h.then(r=>r.remove()):h&&h.remove&&h.remove()}catch(e){}}},[]);
  const [notes,setNotes]=useState(()=>LS.get('hpj-notes',[]));
@@ -583,19 +621,22 @@ function App(){
  useEffect(()=>{if(LN())return;const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;nf.current('תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד '+Math.max(1,Math.round((f.t-now)/6e4))+' דקות',f.c,'hour')}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
  const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour&&pf.on!==0)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919'}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
  const nx=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
- const R=useRef(null);
- useEffect(()=>{
-  if(!live){return}
-  const opp=nx.o;R.current={q:1,sec:600,us:0,them:0,run:0,done:0,n:0,plays:[]};setLv({...R.current});nf.current('פתיחת רבע 1: '+ME+' נגד '+opp,'league','quarter');
-  const id=setInterval(()=>{const s=R.current;if(s.done)return;
-   s.sec-=40+Math.floor(Math.random()*30);const us=Math.random()<.55,pt=[1,2,2,2,3][Math.floor(Math.random()*5)];
-   if(us){s.us+=pt;s.run+=pt;s.plays.unshift({n:++s.n,q:s.q,sec:s.sec,u:1,t:US[Math.floor(Math.random()*US.length)]+` (+${pt})`});if(s.run>=8&&s.run-pt<8)nf.current(`ריצת ${s.run}-0 להפועל ירושלים!`,'league','quarter')}
-   else{s.them+=pt;s.run=0;s.plays.unshift({n:++s.n,q:s.q,sec:s.sec,u:0,t:`${pt===3?'שלשה':'סל'} של ${opp} (+${pt})`})}
-   if(s.sec<=0){s.sec=0;nf.current(`סיום רבע ${s.q}: ${s.us}–${s.them}`,'league','quarter');
-    if(s.q===4){s.done=1;nf.current(`סיום המשחק: ${s.us}–${s.them} ${s.us>s.them?'ניצחון להפועל!':'הפסד'}`,'league','quarter')}else{s.q++;s.sec=600;nf.current('פתיחת רבע '+s.q,'league','quarter')}}
-   s.plays=s.plays.slice(0,12);setLv({...s})},API_CONFIG.POLL_MS);
-  return()=>clearInterval(id);
- },[live]);
+ /* לייב: מ-10 דקות לפני שריקת הפתיחה ועד הסיום – בדיקה ב-365scores כל 20 שניות */
+ const [lg,setLg]=useState(null),lgRef=useRef(null);
+ useEffect(()=>{let stop=false,tm=null;
+  const tick=async()=>{let wait=60000;
+   try{const n=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
+    if(n&&Date.now()>=n.t-10*6e4&&Date.now()<n.t+5*H&&document.visibilityState!=='hidden'){wait=20000;
+     const cur=await getJSON(S365+'games/current/?'+Q365+'&competitors=634'),want=id365(n),gl=cur.games||[];
+     const g=gl.find(x=>String(x.id)===want)||gl.find(x=>Math.abs(Date.parse(x.startTime)-n.t)<3*H);
+     if(g&&!stop){const det=g.statusGroup>=3?((await getJSON(S365+'game/?'+Q365+'&gameId='+g.id)).game||g):g,L=mkLive(det,n),prev=lgRef.current;
+      lgRef.current=L;setLg(L);
+      if(L.status==='live'&&(!prev||prev.app!==n.id||prev.status!=='live'))nf.current('המשחק התחיל: '+(L.jh?ME+' – '+n.o:n.o+' – '+ME),n.c,'quarter');
+      if(L.status==='end'){const fired=LS.get('hpj-final',{});if(!fired[n.id]){fired[n.id]=1;LS.set('hpj-final',fired);nf.current('סיום המשחק: '+ME+' '+L.r[0]+' – '+L.r[1]+' '+n.o+(L.r[0]>L.r[1]?' · ניצחון!':''),n.c,'quarter')}S.markResult(n.id,L.r);return}}}
+   }catch(e){}
+   if(!stop)tm=setTimeout(tick,wait)};
+  tick();const v=()=>{if(document.visibilityState==='visible'){clearTimeout(tm);tick()}};document.addEventListener('visibilitychange',v);
+  return()=>{stop=true;clearTimeout(tm);document.removeEventListener('visibilitychange',v)}},[S.F]);
  const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}FR.n=0;FR.skip=0;setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
  const [st,setSt]=useState(false),[upd,setUpd]=useState(null);
@@ -608,7 +649,7 @@ function App(){
  const atRoot=!st&&!dr&&!gm&&!pl&&pg==='home',skipPop=useRef(false);
  useEffect(()=>{if(NATIVE)return;const f=()=>{if(skipPop.current){skipPop.current=false;return}backRef.current()};window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f)},[]);
  useEffect(()=>{if(NATIVE)return;const marked=!!(history.state&&history.state.hpj);try{if(!atRoot&&!marked)history.pushState({hpj:1},'');else if(atRoot&&marked){skipPop.current=true;history.back()}}catch(e){}},[atRoot,st,dr,!!gm,!!pl,pg]);
- const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
+ const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 text-white border-b-2 border-[#D21919]" style=${{top:'env(safe-area-inset-top,0px)',background:'var(--blk)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
