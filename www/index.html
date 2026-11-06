@@ -499,6 +499,13 @@ function App(){
   return()=>clearInterval(id);
  },[live]);
  const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
+ const backRef=useRef();backRef.current=()=>{if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(pg!=='home'){go('home');return true}return false};
+ useEffect(()=>{window.hpjBack=()=>backRef.current()},[]);
+ /* בגרסת הדפדפן (כולל האפליקציה המותקנת למסך הבית) כפתור החזור עובר דרך היסטוריית הדפדפן */
+ const atRoot=!dr&&!gm&&!pl&&pg==='home',skipPop=useRef(false);
+ useEffect(()=>{if(NATIVE)return;const f=()=>{if(skipPop.current){skipPop.current=false;return}backRef.current()};window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f)},[]);
+ useEffect(()=>{if(NATIVE)return;const marked=!!(history.state&&history.state.hpj);try{if(!atRoot&&!marked)history.pushState({hpj:1},'');else if(atRoot&&marked){skipPop.current=true;history.back()}}catch(e){}},[atRoot,dr,!!gm,!!pl,pg]);
  const A={...S,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>

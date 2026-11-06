@@ -29,6 +29,7 @@ import com.getcapacitor.BridgeWebViewClient;
  *   "חזור" button (top right) closes it and returns to the exact screen the link was tapped on.
  *   The device Back button goes back inside that website first, then closes it.
  * - The tickets tab is a separate screen (TicketsPlugin) that keeps the app's bottom navigation.
+ * - Device Back follows the app's own screens (see window.hpjBack in index.html) and closes the app at home.
  */
 public class MainActivity extends BridgeActivity {
 
@@ -56,6 +57,25 @@ public class MainActivity extends BridgeActivity {
                 return super.shouldOverrideUrlLoading(view, request);
             }
         });
+
+        // Device Back inside the app: the page decides (window.hpjBack - notifications panel, game/player
+        // page, a tab's main screen -> home). At the home screen it returns false and the app closes as usual.
+        // Registered first, so the tickets screen and external-site windows (added later) handle Back before it.
+        OnBackPressedCallback appBack = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                bridge.getWebView().evaluateJavascript(
+                    "(function(){try{return !!(window.hpjBack&&window.hpjBack())}catch(e){return false}})()",
+                    result -> {
+                        if (!"true".equals(result)) {
+                            setEnabled(false);
+                            getOnBackPressedDispatcher().onBackPressed();
+                            setEnabled(true);
+                        }
+                    });
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, appBack);
     }
 
     private static boolean isExternalWebPage(Uri url) {
