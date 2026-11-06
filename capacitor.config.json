@@ -9,11 +9,6 @@
   "ios": {
     "contentInset": "always"
   },
-  "server": {
-    "allowNavigation": [
-      "*"
-    ]
-  },
   "plugins": {
     "LocalNotifications": {
       "smallIcon": "ic_stat_hpj",
