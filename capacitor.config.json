@@ -11,7 +11,12 @@
   },
   "server": {
     "allowNavigation": [
-      "tickets.hapoel.co.il"
+      "*"
     ]
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#C8102E"
+    }
   }
 }
