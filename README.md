@@ -39,7 +39,11 @@
   (`www/native-nav.js`, מוזרק מ-`android/.../MainActivity.java` לאתרי `hapoel.co.il`).
 - ההתראות עוברות דרך מערכת ההתראות של הטלפון, ותזכורות למשחקים מגיעות גם כשהאפליקציה סגורה.
 
-בנייה מקומית: `npm install`, `npx cap sync android`, ואז `cd android && ./gradlew assembleDebug` (צריך Android SDK ו-JDK 17).
+בנייה מקומית: `npm install`, `npx cap sync android`, ואז `cd android && ./gradlew assembleRelease` (צריך Android SDK ו-JDK 17).
+
+### חתימה
+כל ה-APK-ים נחתמים באותו מפתח (`android/keystore/hpj-release.jks`), כדי שכל גרסה תותקן כעדכון מעל הקודמת.
+המפתח נמצא בריפו הציבורי לבקשת בעל הריפו, ולכן כל אחד יכול לחתום בו: מתקינים רק APK שהורדו מעמוד ה-Releases של הריפו הזה.
 
 ## מספר גרסה
 

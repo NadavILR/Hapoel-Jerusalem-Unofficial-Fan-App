@@ -21,8 +21,21 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // One fixed signing key for every build, so each new APK installs as an update over the previous one
+    signingConfigs {
+        hpj {
+            storeFile rootProject.file('keystore/hpj-release.jks')
+            storePassword 'hapoeljerusalem'
+            keyAlias 'hpj'
+            keyPassword 'hapoeljerusalem'
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.hpj
+        }
         release {
+            signingConfig signingConfigs.hpj
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
