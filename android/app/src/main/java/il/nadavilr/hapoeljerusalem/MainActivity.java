@@ -1,6 +1,8 @@
 package il.nadavilr.hapoeljerusalem;
 
+import android.graphics.Color;
 import android.net.Uri;
+import androidx.core.view.WindowInsetsControllerCompat;
 import android.os.Bundle;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -27,6 +29,9 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(TicketsPlugin.class);
         super.onCreate(savedInstanceState);
+        // Status bar: club red (#D21919) with white icons
+        getWindow().setStatusBarColor(Color.parseColor("#D21919"));
+        new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(false);
         navScript = readAsset("public/native-nav.js");
         if (bridge == null) return;
         WebView webView = bridge.getWebView();
