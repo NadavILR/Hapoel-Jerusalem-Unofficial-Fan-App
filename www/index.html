@@ -438,25 +438,37 @@ function Drawer(){
  const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v});
  return html`<div class="fixed inset-0 z-[55] bg-black/60 flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-black">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
- <div class="flex gap-2 mb-3"><button onClick=${()=>A.setNotes(n=>n.map(x=>({...x,r:1})))} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button><button onClick=${()=>A.nf.current('התראת בדיקה: ברוכים הבאים להפועל ירושלים!')} class="flex-1 py-2 rounded-lg bg-[#C8102E] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
- <div class="space-y-2 mb-4">${A.notes.slice(0,8).map(n=>html`<div key=${n.id} class=${'sf rounded-xl p-3 text-sm flex gap-2 '+(n.r?'opacity-60':'')}>${!n.r&&html`<span class="w-2 h-2 mt-1.5 rounded-full bg-[#C8102E] shrink-0"></span>`}<div class="flex-1">${n.t}<div class="text-xs mu">${n.w}</div></div></div>`)}</div>
+ <div class="flex gap-2 mb-3"><button onClick=${()=>A.setNotes(n=>n.map(x=>({...x,r:1})))} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button><button onClick=${()=>{const go=()=>A.nf.current('התראת בדיקה: ברוכים הבאים להפועל ירושלים!');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()}} class="flex-1 py-2 rounded-lg bg-[#C8102E] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
+ <div class="space-y-2 mb-4">${A.notes.slice(0,8).map(n=>html`<div key=${n.id} class=${'sf rounded-xl p-3 text-sm flex gap-2 '+(n.r?'opacity-60':'')}>${!n.r&&html`<span class="w-2 h-2 mt-1.5 rounded-full bg-[#C8102E] shrink-0"></span>`}<div class="flex-1">${n.t}<div class="text-xs mu">${n.ts?ago(n.ts):n.w}</div></div></div>`)}</div>
  <div class="sf rounded-xl p-3"><div class="font-bold mb-1">העדפות התראות</div>
  <${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/><${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
  <div class="font-bold mt-2 text-sm">לפי מפעל</div>${Object.entries(COMPS).map(([k,l])=>html`<${Tg} key=${k} on=${pf.comps[k]} f=${()=>sp('comps',{...pf.comps,[k]:+!pf.comps[k]})} l=${l}/>`)}</div>
- <button onClick=${()=>{try{Notification.requestPermission().then(A.setPerm)}catch(e){A.toast('הדפדפן לא תומך בהתראות')}}} class="mt-3 w-full py-2.5 rounded-xl sf text-sm font-bold">${A.perm==='granted'?'התראות דפדפן פעילות ✓':A.perm==='denied'?'התראות דפדפן חסומות בהגדרות':'אפשר התראות דפדפן'}</button></div></div>`;
+ <button onClick=${()=>{if(typeof Notification==='undefined'){A.toast('המכשיר או הדפדפן לא תומכים בהתראות');return}askNotify().then(p=>{A.setPerm(p);if(p==='granted')A.nf.current('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר');else A.toast('ההרשאה להתראות לא אושרה – אפשר להפעיל אותה בהגדרות המכשיר')})}} class="mt-3 w-full py-2.5 rounded-xl sf text-sm font-bold">${A.perm==='granted'?'התראות דפדפן פעילות ✓':A.perm==='denied'?'התראות דפדפן חסומות בהגדרות':'אפשר התראות דפדפן'}</button></div></div>`;
 }
 
 /* ---------- App ---------- */
 const NAV=[['home','בית','home'],['sched','משחקים','cal'],['stand','טבלאות','list'],['roster','סגל','users'],['tix','כרטיסים','tix'],['shop','חנות','bag'],['mem','מנוי','phone']];
 const PG={home:Home,sched:Sched,stand:Stand,roster:Roster,tix:()=>html`<${Embed} k="tix"/>`,shop:()=>html`<${Embed} k="shop"/>`,mem:()=>html`<${Embed} k="mem"/>`};
+/* ---------- שמירה מקומית, זמן יחסי והתראות מכשיר ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const ago=ts=>{const m=Math.floor(Math.max(0,Date.now()-ts)/6e4);if(m<1)return'עכשיו';if(m<60)return m===1?'לפני דקה':'לפני '+m+' דקות';const h=Math.floor(m/60);if(h<24)return h===1?'לפני שעה':h===2?'לפני שעתיים':'לפני '+h+' שעות';const d=Math.floor(h/24);return d===1?'אתמול':d===2?'לפני יומיים':'לפני '+d+' ימים'};
+/* התראה במגש ההתראות של המכשיר. באנדרואיד חובה דרך ה-service worker (new Notification לא נתמך שם) */
+function devNotify(t){try{if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+ const o={body:t,icon:'icons/icon-192.png',badge:'icons/icon-192.png',lang:'he',dir:'rtl',tag:'hpj-'+Date.now(),data:{url:location.href}};
+ const plain=()=>{try{new Notification(ME,o)}catch(e){}};
+ if('serviceWorker' in navigator)navigator.serviceWorker.getRegistration().then(r=>r||Promise.race([navigator.serviceWorker.ready,new Promise(z=>setTimeout(z,4000))])).then(r=>r?r.showNotification(ME,o):plain()).catch(plain);else plain()}catch(e){}}
+function askNotify(after){try{if(typeof Notification==='undefined')return Promise.resolve('denied');return Promise.resolve(Notification.requestPermission(after)).then(p=>p||Notification.permission)}catch(e){return Promise.resolve('denied')}}
 function App(){
- const S=useSportsData(),[pg,setPg]=useState('home'),[pl,setPl]=useState(null),[gm,setGm]=useState(null),[live,setLive]=useState(false),[dr,setDr]=useState(false),[rem,setRem]=useState({}),[toasts,setToasts]=useState([]),[lv,setLv]=useState(null);
- const [notes,setNotes]=useState([]);
- const [pf,setPf]=useState({hour:1,quarter:1,sales:1,comps:{league:1,euro:1,wcup:1,cup:1,super:1,prep:1}});
+ const S=useSportsData(),[pg,setPg]=useState('home'),[pl,setPl]=useState(null),[gm,setGm]=useState(null),[live,setLive]=useState(false),[dr,setDr]=useState(false),[rem,setRem]=useState(()=>LS.get('hpj-rem',{})),[toasts,setToasts]=useState([]),[lv,setLv]=useState(null);
+ const [notes,setNotes]=useState(()=>LS.get('hpj-notes',[]));
+ const [pf,setPf]=useState(()=>LS.get('hpj-pf',{hour:1,quarter:1,sales:1,comps:{league:1,euro:1,wcup:1,cup:1,super:1,prep:1}}));
+ useEffect(()=>LS.set('hpj-notes',notes.slice(0,30)),[notes]);useEffect(()=>LS.set('hpj-pf',pf),[pf]);useEffect(()=>LS.set('hpj-rem',rem),[rem]);
  const [perm,setPerm]=useState(typeof Notification!=='undefined'?Notification.permission:'denied');
  const toast=t=>{const id=Math.random();setToasts(x=>[...x,{id,t}]);setTimeout(()=>setToasts(x=>x.filter(y=>y.id!==id)),3500)};
  const nf=useRef();
- nf.current=(t,c,k)=>{if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Math.random(),t,w:'עכשיו',r:0},...n]);toast(t);try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification(ME,{body:t})}catch(e){}};
+ nf.current=(t,c,k)=>{if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);devNotify(t)};
+ /* תזכורות למשחקים: שעה לפני שריקת הפתיחה (נבדק כל 30 שניות כשהאפליקציה פתוחה) */
+ useEffect(()=>{const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;nf.current('תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד '+Math.max(1,Math.round((f.t-now)/6e4))+' דקות',f.c,'hour')}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
  const togRem=f=>{setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
  const nx=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
  const R=useRef(null);
@@ -487,7 +499,12 @@ function App(){
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 </script>
 <script>
-if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+ /* גרסה חדשה נטענת מיד: בודקים עדכון בכל פתיחה ובכל חזרה לאפליקציה, ומרעננים פעם אחת כשהגרסה החדשה נכנסת */
+ const had=!!navigator.serviceWorker.controller;let done=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!done){done=true;location.reload()}});
+ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')r.update().catch(()=>{})})}).catch(()=>{}));
+}
 </script>
 </body>
 </html>
