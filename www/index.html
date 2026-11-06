@@ -484,7 +484,7 @@ function App(){
    s.plays=s.plays.slice(0,12);setLv({...s})},API_CONFIG.POLL_MS);
   return()=>clearInterval(id);
  },[live]);
- const go=p=>{if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת (מסך לבן), ולכן הוא נפתח ישירות בחלון האפליקציה */if(p==='tix'){location.assign(LINKS.tickets);return}if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  const A={...S,go,pg,pl,setPl,gm,setGm,live,lv,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
