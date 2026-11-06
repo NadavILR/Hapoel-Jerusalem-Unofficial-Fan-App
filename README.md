@@ -16,8 +16,9 @@
 
 ## 1. אפליקציית ווב שמותקנת בטלפון (PWA)
 
-הדרך הקלה: אחרי מיזוג ל-`main`, ה-workflow שב-`.github/workflows/pages.yml` מפרסם את `www/` ב-GitHub Pages
-(צריך להפעיל פעם אחת: Settings → Pages → Source: **GitHub Actions**).
+האפליקציה מתפרסמת ב-GitHub Pages: <https://nadavilr.github.io/Hapoel-Jerusalem-Unofficial-Fan-App/>
+בכל דחיפה ל-`main` שמשנה את `www/`, ה-workflow שב-`.github/workflows/pages.yml` מעדכן את ענף `gh-pages`, ו-Pages מגיש אותו
+(Settings → Pages → Deploy from a branch: `gh-pages` / root).
 פותחים את הכתובת בטלפון:
 - **אנדרואיד (Chrome):** תפריט ⋮ ← "התקנת אפליקציה".
 - **אייפון (Safari):** כפתור השיתוף ← "הוספה למסך הבית".
