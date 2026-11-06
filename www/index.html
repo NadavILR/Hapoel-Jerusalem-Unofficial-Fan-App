@@ -206,10 +206,17 @@ function Home(){
   <div class="text-xs opacity-70 mb-1">Play-by-Play</div>
   ${lv.plays.slice(0,5).map(p=>html`<div key=${p.n} class=${'text-sm py-1 border-t border-white/10 flex gap-2 '+(p.u?'':'opacity-70')}><span class="opacity-60" dir="ltr">Q${p.q} ${mm(p.sec)}</span>${p.t}</div>`)}`
  :html`
-  <div class="text-sm opacity-80 mb-2">המשחק הבא · ${cmp(nx)}</div>
-  <div class="flex items-center gap-3 mb-3"><${Cr} n=${ME} s=${52}/><${Cr} n=${nx.o} s=${52}/><div><div class="text-2xl font-black">${nx.h?ME+' – '+nx.o:nx.o+' – '+ME}</div><div class="text-sm opacity-80 flex items-center gap-1"><${I} n="pin" s=${14}/>${nx.v||(nx.h?'משחק בית':'משחק חוץ')} · ${fdf(nx)}</div></div></div>
+  <div class="text-sm opacity-80 mb-3 text-center">המשחק הבא · ${cmp(nx)}</div>
+  ${(()=>{const hm=nx.h?ME:nx.o,aw=nx.h?nx.o:ME,nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-black':'font-normal')}>${n}</div>`;
+  /* מארחת מימין, אורחת משמאל; רק השם של הפועל ירושלים מודגש */
+  return html`<div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
+  <div class="flex-1 min-w-0 text-center">${nm(hm)}<div class="text-sm opacity-80 my-0.5" dir="ltr">VS</div>${nm(aw)}</div>
+  <div class="shrink-0"><${Cr} n=${aw} s=${60}/></div></div>
+  <div class="text-center text-sm opacity-90">${fdf(nx).replace(', ',' – ').replace(' · ',' – ')}</div>
+  <div class="text-center text-sm opacity-80 mb-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${nx.v||(nx.h?'משחק בית':'משחק חוץ')}</div>`})()}
   <div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class="bg-[rgb(var(--blk-rgb)/0.40)] rounded-xl py-2"><div class="text-2xl font-black tabular-nums">${String(v).padStart(2,'0')}</div><div class="text-[11px] opacity-70">${l}</div></div>`)}</div>
-  <button onClick=${()=>A.togRem(nx)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[nx.id]?'bg-white text-[#D21919]':'bg-white/15')}><${I} n="bell" s=${16}/>${A.rem[nx.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
+  <button onClick=${()=>A.togRem(nx)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[nx.id]?'bg-white text-[#D21919]':'bg-white/15')}><${I} n="bell" s=${16}/>${A.rem[nx.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>
+  <button onClick=${()=>{A.setGm(nx);window.scrollTo(0,0)}} class="mt-2 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>`}
  </div>
  <div class="flex items-center justify-between text-xs mu"><span>נתוני 365scores · נכון ל-${ASOF}${A.mode==='Live'?' · מתעדכן אוטומטית':''}</span><button onClick=${A.refresh} class="flex items-center gap-1 text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
  ${ls&&html`<div onClick=${()=>A.setGm(ls)} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer"><span class=${'w-9 h-9 rounded-full flex items-center justify-center font-bold text-white '+(ls.r[0]>ls.r[1]?'bg-green-600':'bg-[#D21919]')}>${ls.r[0]>ls.r[1]?'W':'L'}</span><${Cr} n=${ls.o} s=${36}/><div class="flex-1"><div class="text-xs mu">המשחק האחרון · ${cmp(ls)}</div><div class="font-bold">${ME} נגד ${ls.o}</div></div><div dir="ltr" class="text-2xl font-black">${ls.r[0]}–${ls.r[1]}</div></div>`}
