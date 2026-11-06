@@ -103,7 +103,8 @@
     94,
     73
    ],
-   "cl": "יורוקאפ - בית א', מחזור 1"
+   "cl": "יורוקאפ - בית א', מחזור 1",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-rostock-seawolves/U2026/2"
   },
   {
    "id": 20261004,
@@ -130,7 +131,8 @@
     75,
     64
    ],
-   "cl": "יורוקאפ - בית א', מחזור 2"
+   "cl": "יורוקאפ - בית א', מחזור 2",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/cedevita-olimpija-ljubljana-hapoel-midtown-jerusalem/U2026/20"
   },
   {
    "id": 20261011,
@@ -158,7 +160,8 @@
     85,
     84
    ],
-   "cl": "יורוקאפ - בית א', מחזור 3"
+   "cl": "יורוקאפ - בית א', מחזור 3",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/recoletas-salud-san-pablo-burgos-hapoel-midtown-jerusalem/U2026/33"
   },
   {
    "id": 20261017,
@@ -186,7 +189,8 @@
     100,
     64
    ],
-   "cl": "יורוקאפ - בית א', מחזור 4"
+   "cl": "יורוקאפ - בית א', מחזור 4",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-riga-zelli/U2026/52"
   },
   {
    "id": 20261025,
@@ -214,7 +218,8 @@
     90,
     83
    ],
-   "cl": "יורוקאפ - בית א', מחזור 5"
+   "cl": "יורוקאפ - בית א', מחזור 5",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/le-mans-sarthe-basket-hapoel-midtown-jerusalem/U2026/66"
   },
   {
    "id": 20,
@@ -243,7 +248,8 @@
     73
    ],
    "tp": "לופטון ג׳וניור 22 נק׳ ו-10 ריב׳",
-   "cl": "יורוקאפ - בית א', מחזור 6"
+   "cl": "יורוקאפ - בית א', מחזור 6",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-aris-thessaloniki/U2026/83"
   },
   {
    "id": 1,
@@ -263,7 +269,8 @@
    "o": "דרטונה טורטונה",
    "h": 0,
    "t": 1794421800000,
-   "cl": "יורוקאפ - בית א', מחזור 7"
+   "cl": "יורוקאפ - בית א', מחזור 7",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/baglietto-derthona-tortona-hapoel-midtown-jerusalem/U2026/99"
   },
   {
    "id": 3,
@@ -283,7 +290,8 @@
    "o": "רוסטוק סיוולבס",
    "h": 0,
    "t": 1794942000000,
-   "cl": "יורוקאפ - בית א', מחזור 8"
+   "cl": "יורוקאפ - בית א', מחזור 8",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/rostock-seawolves-hapoel-midtown-jerusalem/U2026/114"
   },
   {
    "id": 5,
@@ -314,7 +322,8 @@
    "o": "צדביטה אולימפיה",
    "h": 1,
    "t": 1796842800000,
-   "cl": "יורוקאפ - בית א', מחזור 9"
+   "cl": "יורוקאפ - בית א', מחזור 9",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-cedevita-olimpija-ljubljana/U2026/132"
   },
   {
    "id": 8,
@@ -333,7 +342,8 @@
    "o": "סן פבלו בורגוס",
    "h": 1,
    "t": 1797447600000,
-   "cl": "יורוקאפ - בית א', מחזור 10"
+   "cl": "יורוקאפ - בית א', מחזור 10",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-recoletas-salud-san-pablo-burgos/U2026/145"
   },
   {
    "id": 10,
@@ -352,7 +362,8 @@
    "o": "ריגאס זלי",
    "h": 0,
    "t": 1798045200000,
-   "cl": "יורוקאפ - בית א', מחזור 11"
+   "cl": "יורוקאפ - בית א', מחזור 11",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/riga-zelli-hapoel-midtown-jerusalem/U2026/164"
   },
   {
    "id": 12,
@@ -371,7 +382,8 @@
    "o": "לה מאן",
    "h": 1,
    "t": 1798657200000,
-   "cl": "יורוקאפ - בית א', מחזור 12"
+   "cl": "יורוקאפ - בית א', מחזור 12",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-le-mans-sarthe-basket/U2026/178"
   },
   {
    "id": 20270103,
@@ -390,7 +402,8 @@
    "o": "אריס",
    "h": 0,
    "t": 1799172000000,
-   "cl": "יורוקאפ - בית א', מחזור 13"
+   "cl": "יורוקאפ - בית א', מחזור 13",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/aris-thessaloniki-hapoel-midtown-jerusalem/U2026/195"
   },
   {
    "id": 20270110,
@@ -409,7 +422,8 @@
    "o": "דרטונה טורטונה",
    "h": 1,
    "t": 1799866800000,
-   "cl": "יורוקאפ - בית א', מחזור 14"
+   "cl": "יורוקאפ - בית א', מחזור 14",
+   "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-baglietto-derthona-tortona/U2026/211"
   },
   {
    "id": 20270117,
