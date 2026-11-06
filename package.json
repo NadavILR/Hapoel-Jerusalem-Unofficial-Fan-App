@@ -1,0 +1,22 @@
+{
+  "name": "hapoel-jerusalem-fan-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hapoel Jerusalem fan app (PWA + Capacitor)",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o www/vendor/app.css --minify",
+    "serve": "npx --yes http-server www -p 8080 -c-1",
+    "android": "npx cap add android && npx cap sync android && npx cap open android",
+    "ios": "npx cap add ios && npx cap sync ios && npx cap open ios",
+    "sync": "npx cap sync"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "tailwindcss": "3.4.17"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  }
+}
