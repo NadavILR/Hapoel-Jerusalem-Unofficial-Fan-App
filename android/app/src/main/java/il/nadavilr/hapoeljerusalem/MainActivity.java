@@ -40,6 +40,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(TicketsPlugin.class);
+        registerPlugin(UpdaterPlugin.class);
         super.onCreate(savedInstanceState);
         // Status bar: club red (#D21919) with white icons
         getWindow().setStatusBarColor(Color.parseColor("#D21919"));
