@@ -107,12 +107,17 @@ public class TicketsPlugin extends Plugin {
         parent.addView(web, new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         if (url != null) web.loadUrl(url);
 
-        // Back button: close the tickets screen and return to the app's home screen.
+        // Back button: like the app's other screens - back to the previous page inside the tickets site,
+        // and from its first page close the tickets screen and return to the app's home screen.
         back = new OnBackPressedCallback(false) {
             @Override
             public void handleOnBackPressed() {
-                hideView();
-                notifyListeners("closed", new JSObject());
+                if (web.canGoBack()) {
+                    web.goBack();
+                } else {
+                    hideView();
+                    notifyListeners("closed", new JSObject());
+                }
             }
         };
         ((AppCompatActivity) activity).getOnBackPressedDispatcher().addCallback(back);

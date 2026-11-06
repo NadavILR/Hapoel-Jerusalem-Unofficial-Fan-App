@@ -428,13 +428,15 @@ function ExtPage({k,box}){
  ${nx.length?html`<div class="font-bold">משחקי הבית הקרובים</div><div class="space-y-2">${nx.map(f=>html`<a key=${f.id} href=${u} target="_blank" rel="noopener noreferrer" class="sf rounded-xl p-3 flex items-center gap-3"><${Cr} n=${f.o}/><div class="flex-1 min-w-0"><div class="font-bold truncate">${ME+' – '+f.o}</div><div class="text-xs mu">${fdf(f)}</div><div class="text-xs mu">${cmp(f)} · ${f.v||'משחק בית'}</div></div><span class="text-xs font-bold text-[#D21919] whitespace-nowrap">לכרטיסים</span></a>`)}</div>`:null}
  </div></div>`;
 }
+/* מעקב אחרי ניווט בתוך החנות/המנוי, כדי שכפתור החזור יחזור קודם לדף הקודם באתר ורק אחר כך למסך הבית */
+const FR={n:0,skip:0};const frLoad=()=>{if(FR.skip>0)FR.skip--;else FR.n++};
 function Embed({k}){
  const u=EXT[k],[bt,setBt]=useState(54),[blk,setBlk]=useState(k==='tix'?false:FRBLK);
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const f=()=>setBt(n.offsetHeight);f();window.addEventListener('resize',f);let ro;try{ro=new ResizeObserver(f);ro.observe(n)}catch(e){}return()=>{window.removeEventListener('resize',f);ro&&ro.disconnect()}},[]);
  React.useLayoutEffect(()=>{if(!EMB[k])return;const h=e=>{if(/^(frame|child)-src/.test(e.effectiveDirective||e.violatedDirective||'')){FRBLK=true;setBlk(true)}};document.addEventListener('securitypolicyviolation',h);return()=>document.removeEventListener('securitypolicyviolation',h)},[k]);
  const box={top:'env(safe-area-inset-top,0px)',bottom:bt+'px'};
  if(!EMB[k]||blk)return html`<${ExtPage} k=${k} box=${box}/>`;
- return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe>${k==='tix'?html`<a href=${u} target="_self" rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[rgb(var(--blk-rgb)/0.70)] text-white px-2 py-1 rounded-full">לא נטען? פתיחה במסך מלא</a>`:null}</div>`;
+ return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} onLoad=${frLoad} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe>${k==='tix'?html`<a href=${u} target="_self" rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[rgb(var(--blk-rgb)/0.70)] text-white px-2 py-1 rounded-full">לא נטען? פתיחה במסך מלא</a>`:null}</div>`;
 }
 
 /* ---------- Notifications ---------- */
@@ -498,9 +500,9 @@ function App(){
    s.plays=s.plays.slice(0,12);setLv({...s})},API_CONFIG.POLL_MS);
   return()=>clearInterval(id);
  },[live]);
- const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}FR.n=0;FR.skip=0;setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
- const backRef=useRef();backRef.current=()=>{if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(pg!=='home'){go('home');return true}return false};
+ const backRef=useRef();backRef.current=()=>{if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(NATIVE&&(pg==='shop'||pg==='mem')&&FR.n>1){FR.n--;FR.skip++;history.back();return true}if(pg!=='home'){go('home');return true}return false};
  useEffect(()=>{window.hpjBack=()=>backRef.current()},[]);
  /* בגרסת הדפדפן (כולל האפליקציה המותקנת למסך הבית) כפתור החזור עובר דרך היסטוריית הדפדפן */
  const atRoot=!dr&&!gm&&!pl&&pg==='home',skipPop=useRef(false);
