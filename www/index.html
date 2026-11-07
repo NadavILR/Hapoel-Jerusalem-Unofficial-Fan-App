@@ -36,6 +36,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .red-glass{border:1px solid rgb(255 255 255/.28);background:rgb(210 25 25/.72);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255/.18)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg{background:rgb(0 0 0/.45)}}:root[data-theme="dark"] .seg{background:rgb(0 0 0/.45)}
+.red-card,[style*="linear-gradient(135deg"]{border:1px solid rgb(255 255 255/.22);box-shadow:inset 0 1px 0 rgb(255 255 255/.18)}
 .solid-card{background:var(--sf)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
 .glass{background:var(--glass);border:1px solid var(--gl-bd);box-shadow:var(--gl-hi);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
@@ -58,7 +59,7 @@ button,a{-webkit-tap-highlight-color:transparent;transition:transform .18s var(-
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .text-green-700{color:#4ade80}:root:not([data-theme="light"]) .me-row{background:rgb(210 25 25/.18);color:#ff5c5c}:root:not([data-theme="light"]) .nav-pill.on{background:rgb(210 25 25/.25)}}
 :root[data-theme="dark"] .text-green-700{color:#4ade80}:root[data-theme="dark"] .me-row{background:rgb(210 25 25/.18);color:#ff5c5c}:root[data-theme="dark"] .nav-pill.on{background:rgb(210 25 25/.25)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-.car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}
+.car{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;padding:2px 28px;scroll-padding:0 28px}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}.car .sf{box-shadow:var(--gl-hi)}
 </style>
 </head>
 <body>
@@ -349,7 +350,7 @@ function GameCard({kind,g,now,L}){
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
- return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ return html`<div class=${'rounded-2xl p-4 '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
  ${L?html`<${LiveCard} L=${L} g=${g}/>`:html`
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
@@ -368,10 +369,11 @@ function GameCard({kind,g,now,L}){
 /* קרוסלה עם החלקה ונקודות; נפתחת על הכרטיס start */
 function Carousel({items,start}){
  const r=useRef(null),[i,setI]=useState(start);
- const to=(k,sm)=>{const el=r.current,c=el&&el.children[k];if(!c)return;el.scrollBy({left:c.getBoundingClientRect().left-el.getBoundingClientRect().left,behavior:sm?'smooth':'auto'})};
+ const mid=e=>{const b=e.getBoundingClientRect();return b.left+b.width/2};
+ const to=(k,sm)=>{const el=r.current,c=el&&el.children[k];if(!c)return;el.scrollBy({left:mid(c)-mid(el),behavior:sm?'smooth':'auto'})};
  React.useLayoutEffect(()=>{to(start)},[]);
- const onScroll=()=>{const el=r.current;if(!el)return;const x=el.getBoundingClientRect().left;let b=0,bd=1e9;[...el.children].forEach((c,k)=>{const d=Math.abs(c.getBoundingClientRect().left-x);if(d<bd){bd=d;b=k}});if(b!==i)setI(b)};
- return html`<div class="md:col-span-2"><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
+ const onScroll=()=>{const el=r.current;if(!el)return;const x=mid(el);let b=0,bd=1e9;[...el.children].forEach((c,k)=>{const d=Math.abs(mid(c)-x);if(d<bd){bd=d;b=k}});if(b!==i)setI(b)};
+ return html`<div class="md:col-span-2 -mx-3"><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
  ${items.length>1?html`<div class="flex justify-center gap-2 mt-2">${items.map((_,k)=>html`<button key=${k} aria-label=${'כרטיס '+(k+1)} onClick=${()=>to(k,1)} style=${k===i?null:{background:'var(--mu)'}} class=${'h-2 rounded-full transition-colors '+(k===i?'w-5 bg-[#D21919]':'w-2 opacity-40')}></button>`)}</div>`:null}</div>`;
 }
 /* בראש כל המסכים: תמונת הקבוצה מטושטשת, שנבלעת ברקע הפסים כשיורדים במסך */
@@ -434,7 +436,7 @@ function Tb({nm,heads,rows,endHead,mk,lg}){
 /* ערכים לעמודות הטבלאות */
 const PM=html`<span dir="ltr" class="inline-block">+/-</span>`;
 const sgn=v=>v==null||isNaN(v)?'—':html`<span dir="ltr" class="inline-block">${(v>0?'+':v<0?'−':'')+Math.abs(v)}</span>`;
-const streak=v=>!v?'—':html`<span class=${v>0?'text-green-700':'text-[#D21919]'}>${Math.abs(v)} ${v>0?'נצ׳':'הפ׳'}</span>`;
+const streak=v=>!v?'—':html`<span dir="ltr" class=${'inline-block '+(v>0?'text-green-700':'text-[#D21919]')}>${(v>0?'W':'L')+Math.abs(v)}</span>`;
 const pct=(w,l)=>w+l?html`<span dir="ltr" class="inline-block">${Math.round(w/(w+l)*100)}%</span>`:'—';
 const grpRows=t=>t.map(r=>({n:r[0],tag:r[4]||'',cells:[r[1]==null?'—':r[1]+r[2],r[1]??'—',r[2]??'—',sgn(r[3])],end:r[1]==null?'—':pct(r[1],r[2]),raw:r}));
 
@@ -745,7 +747,10 @@ function Drawer(){
 }
 
 /* ---------- Settings ---------- */
+/* נועל את הגלילה של הדף שמאחורי מסך מלא (הגדרות, עדכון) */
+const useScrollLock=()=>useEffect(()=>{const h=document.documentElement,b=document.body,ph=h.style.overflow,pb=b.style.overflow;h.style.overflow='hidden';b.style.overflow='hidden';return()=>{h.style.overflow=ph;b.style.overflow=pb}},[]);
 function Settings(){
+ useScrollLock();
  const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v}),on=pf.on!==0&&A.perm==='granted',[chk,setChk]=useState('');
  const toggle=()=>{
   if(on){A.setPf({...pf,on:0});const L=LN();if(L)L.getPending().then(r=>{const n=(r&&r.notifications||[]).map(x=>({id:x.id}));if(n.length)return L.cancel({notifications:n})}).catch(()=>{});A.toast('ההתראות בוטלו');return}
@@ -765,6 +770,7 @@ function Settings(){
 
 /* מסך עדכון חובה: מופיע כשיש גרסה חדשה, ומוריד ומתקין אותה מתוך האפליקציה */
 function UpdGate({u}){
+ useScrollLock();
  const [st,setSt]=useState(''),[p,setP]=useState(-1);
  const run=async()=>{const U=UP();if(!U){location.href=u.url;return}
   try{const c=await U.canInstall();if(!c||!c.allowed){setSt('perm');await U.openInstallSettings();return}}catch(e){}
