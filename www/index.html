@@ -369,7 +369,7 @@ function Carousel({items,start}){
  return html`<div class="md:col-span-2"><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
  ${items.length>1?html`<div class="flex justify-center gap-2 mt-2">${items.map((_,k)=>html`<button key=${k} aria-label=${'כרטיס '+(k+1)} onClick=${()=>to(k,1)} style=${k===i?null:{background:'var(--mu)'}} class=${'h-2 rounded-full transition-colors '+(k===i?'w-5 bg-[#D21919]':'w-2 opacity-40')}></button>`)}</div>`:null}</div>`;
 }
-/* רקע מסך הבית: תמונת הקבוצה מטושטשת, והכרטיסים מעליה מזכוכית חלבית */
+/* בראש כל המסכים: תמונת הקבוצה מטושטשת, שנבלעת ברקע הפסים כשיורדים במסך */
 function HomeBg(){
  const [src,err]=usePh(TP,'team');
  return src?ReactDOM.createPortal(html`<div class="home-bg fade-in" aria-hidden="true"><img src=${src} alt="" referrerPolicy="no-referrer" onError=${err}/></div>`,document.body):null;
@@ -384,7 +384,7 @@ function Home(){
  const nx2=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[1];
  /* קרוסלה (מימין לשמאל): המשחק הקודם ← המשחק הבא (אדום, נפתח במרכז) ← המשחק שאחריו */
  const cards=[ls&&['prev',ls],['next',nx],nx2&&['after',nx2]].filter(Boolean);
- return html`<div class=${'stg on-photo space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'opacity-70':'')}><${HomeBg}/>
+ return html`<div class=${'stg on-photo space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'opacity-70':'')}>
  <${Carousel} key=${nx.id} start=${ls?1:0} items=${cards.map(([k,g])=>html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k==='next'?L:null}/>`)}/>
  <div class="flex items-center justify-between text-xs mu md:col-span-2"><span>${A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'נכון ל-'+ASOF}</span><button onClick=${A.refresh} class="flex items-center gap-1 text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
  ${(me||em)&&html`<div class=${'grid gap-2 '+(me&&em?'grid-cols-2':'grid-cols-1')}>${me&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום בליגת ווינר סל</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${rk+1}</div><div class="text-xs mu mt-1">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></div>`}${em&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום ביורוקאפ</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${er+1}</div><div class="text-xs mu mt-1">${eg[0]} · ${em[1]} נצ׳ · ${em[2]} הפ׳</div></div>`}</div>`}
@@ -857,7 +857,7 @@ function App(){
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
- <${PullRefresh} onRefresh=${S.refresh} off=${!!(EXT[pg]||dr||st||mo||upd)}/>
+ <${PullRefresh} onRefresh=${S.refresh} off=${!!(EXT[pg]||dr||st||mo||upd)}/>${EXT[pg]?null:html`<${HomeBg}/>`}
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 glass-bar" style=${{top:0,paddingTop:'var(--sat)',borderBottom:'1px solid var(--bar-bd)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
   <img src=${LOGO} alt="הפועל ירושלים" class="w-10 h-10 object-contain shrink-0"/>${gm||!PGT[pg]?html`<div class="flex-1 font-extrabold text-xl leading-tight">${gm?'עמוד משחק':ME}</div>`
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
