@@ -344,7 +344,7 @@ function GameCard({kind,g,now,L}){
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
- return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf solid-card')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
  ${L?html`<${LiveCard} L=${L} g=${g}/>`:html`
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
