@@ -110,11 +110,13 @@ public class MainActivity extends BridgeActivity {
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setBackgroundColor(Color.parseColor(dark ? "#000000" : "#282828"));
+        // Top bar like the app's header: white in light mode, black in dark mode, with a thin red line under it
+        bar.setBackgroundColor(dark ? Color.BLACK : Color.WHITE);
+        int barText = dark ? Color.WHITE : Color.parseColor("#282828");
 
         TextView back = new TextView(this);
         back.setText("→  חזור");
-        back.setTextColor(Color.WHITE);
+        back.setTextColor(barText);
         back.setTextSize(17);
         back.setTypeface(Typeface.DEFAULT_BOLD);
         back.setGravity(Gravity.CENTER_VERTICAL);
@@ -124,7 +126,7 @@ public class MainActivity extends BridgeActivity {
         bar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         TextView title = new TextView(this);
-        title.setTextColor(0xB3FFFFFF);
+        title.setTextColor(dark ? 0xB3FFFFFF : 0xB3282828);
         title.setTextSize(13);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
@@ -134,6 +136,9 @@ public class MainActivity extends BridgeActivity {
         bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
         layer.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (52 * d)));
+        View line = new View(this);
+        line.setBackgroundColor(Color.parseColor("#D21919"));
+        layer.addView(line, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, (int) (2 * d))));
 
         WebView web = new WebView(this);
         WebSettings s = web.getSettings();
