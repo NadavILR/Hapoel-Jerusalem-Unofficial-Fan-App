@@ -40,7 +40,7 @@ body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-
 :root{--ease:cubic-bezier(.2,.7,.3,1)}
 @keyframes hpjUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes hpjFade{from{opacity:0}to{opacity:1}}@keyframes hpjSheet{from{transform:translateY(100%)}to{transform:none}}@keyframes hpjPop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
 .pg-in{animation:hpjUp .32s var(--ease) both}.stg>*{animation:hpjUp .32s var(--ease) both}.stg>*:nth-child(2){animation-delay:.04s}.stg>*:nth-child(n+3){animation-delay:.08s}
-.fade-in{animation:hpjFade .2s var(--ease) both}.sheet-in{animation:hpjSheet .32s var(--ease) both}.pop-in{animation:hpjPop .2s var(--ease) both}.row-in{animation:hpjFade .32s var(--ease) both}
+.fade-in{animation:hpjFade .2s var(--ease) both}.dim-in{animation:hpjDim .2s var(--ease) both}@keyframes hpjDim{from{background-color:transparent}}.sheet-in{animation:hpjSheet .32s var(--ease) both}.pop-in{animation:hpjPop .2s var(--ease) both}.row-in{animation:hpjFade .32s var(--ease) both}
 .ph-in,.nm-in,.num-in{animation:none}
 button,a{transition:transform .2s var(--ease),background-color .2s var(--ease),color .2s var(--ease),opacity .2s var(--ease)}button:active,a:active{transform:scale(.97)}
 .sb{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -698,7 +698,7 @@ function Drawer(){
  /* "סמן הכל כנקרא": ההתראות יוצאות אחת אחרי השנייה, נמחקות, ומופיעה הודעה קצרה. בפתיחה הבאה המסך ריק */
  const list=A.notes.slice(0,8);
  const clearAll=()=>{if(!A.notes.length||clr)return;setClr('out');setTimeout(()=>{A.setNotes([]);setClr('done')},Math.min(list.length,8)*60+360)};
- return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] fade-in flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="flex gap-2 mb-3">${A.notes.length&&clr!=='done'?html`<button onClick=${clearAll} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button>`:null}<button onClick=${()=>{const go=()=>A.nf.current('התראת בדיקה: ההתראות של הפועל ירושלים פועלות');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()}} class="flex-1 py-2 rounded-lg bg-[#D21919] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
  ${list.length&&!clr?html`<div class="text-[11px] mu mb-2">החליקו התראה הצידה כדי למחוק אותה</div>`:null}
@@ -715,7 +715,7 @@ function Settings(){
   if(typeof Notification==='undefined'&&!LN()){A.toast('המכשיר או הדפדפן לא תומכים בהתראות');return}
   askNotify().then(p=>{A.setPerm(p);if(p==='granted'){A.setPf({...pf,on:1});if(pf.hour)A.F.forEach(f=>{if(A.rem[f.id]&&!f.r)schedRem(f)});setTimeout(()=>A.nf.current('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר'),80)}else A.toast('ההרשאה להתראות לא אושרה – אפשר לאשר אותה בהגדרות המכשיר')})};
  const check=()=>{setChk('בודק אם יש גרסה חדשה…');A.checkUpd().then(r=>setChk(r==='new'?'':r==='none'?'האפליקציה מעודכנת לגרסה האחרונה':'לא ניתן לבדוק כרגע. נסו שוב בעוד כמה דקות'))};
- return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] fade-in flex items-end justify-center" onClick=${()=>A.setSt(false)}><div class="w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-end justify-center" onClick=${()=>A.setSt(false)}><div class="w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">הגדרות</div><button onClick=${()=>A.setSt(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="sf rounded-xl p-3 mb-3"><${Tg} on=${on} f=${toggle} l=${html`<span class="font-medium">התראות</span>`}/>
  <div class="text-xs mu">${on?'ההתראות פעילות ויופיעו גם במגש ההתראות של המכשיר.':A.perm==='denied'?'ההתראות חסומות בהגדרות המכשיר. כדי להפעיל אותן יש לאשר התראות לאפליקציה בהגדרות המכשיר.':'ההתראות כבויות. הפעילו כדי לקבל תזכורות למשחקים ועדכוני תוצאות.'}</div>
@@ -840,8 +840,8 @@ function App(){
  /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
  const [st,setSt]=useState(false),[upd,setUpd]=useState(null);
  const checkUpd=useCallback(async()=>{if(!NATIVE)return 'none';try{const r=await latestRelease();if(r&&vcmp(r.v,window.APP_VERSION||'0.0.0')>0){setUpd(r);return 'new'}return 'none'}catch(e){return 'fail'}},[]);
- /* בדיקת עדכונים: רק בפתיחת האפליקציה. אם יש גרסה חדשה, מסך העדכון מופיע מיד */
- useEffect(()=>{if(NATIVE)checkUpd()},[checkUpd]);
+ /* בדיקת עדכונים: בפתיחת האפליקציה ובכל חזרה אליה. אם יש גרסה חדשה, מסך העדכון מופיע מיד */
+ useEffect(()=>{if(!NATIVE)return;checkUpd();const f=()=>{if(document.visibilityState==='visible')checkUpd()};document.addEventListener('visibilitychange',f);return()=>document.removeEventListener('visibilitychange',f)},[checkUpd]);
  useEffect(()=>{if(!upd)return;setSt(false);setDr(false);setMo0(false);const T=TK();if(T)T.hide().catch(()=>{})},[upd]);
  const backRef=useRef();backRef.current=()=>{if(VIDC.close){VIDC.close();return true}if(mo){setMo(false);return true}if(st){setSt(false);return true}if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(NATIVE&&(pg==='shop'||pg==='mem')&&FR.n>1){FR.n--;FR.skip++;history.back();return true}if(pg!=='home'){go('home');return true}return false};
  useEffect(()=>{window.hpjBack=()=>backRef.current()},[]);
