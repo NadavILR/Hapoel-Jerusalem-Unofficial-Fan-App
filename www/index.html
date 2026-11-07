@@ -316,7 +316,7 @@ function News(){
 function GameCard({kind,g,now,L}){
  const A=useContext(Ctx),[vid,setVid]=useState(false),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
  const box=red?'bg-white/10 glass-in':'bx',btn=red?'bg-white/15 glass-in':'bx',op=red?'opacity-80':'mu';
- const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-semibold':'font-normal')}>${n}</div>`;
+ const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
  return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
@@ -490,7 +490,7 @@ function GmP({g,gs,pf}){
 }
 /* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
 function LiveScore({L,g,big}){
- const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 '+(n===ME?'font-semibold':'font-normal')}>${n}</div>`;
+ const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  return html`<div class="flex items-center justify-between text-sm mb-2"><span class="flex items-center gap-2 font-medium">${L.status==='live'?html`<span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>LIVE`:L.status==='end'?'סיום':'ממתינים לשריקת הפתיחה'}</span><span class="font-medium">${L.st}${L.clock&&L.status==='live'?' · ':''}${L.status==='live'?html`<span dir="ltr">${L.clock}</span>`:null}</span></div>
  <div class="flex items-center justify-between gap-2"><div class="w-24 shrink-0 text-center"><div class="flex justify-center"><${Cr} n=${hm} s=${big?64:56}/></div>${nm(hm)}</div>
  <div class="flex-1 flex justify-center items-center gap-3 font-semibold sb tabular-nums text-5xl" dir="ltr"><span>${L.as}</span><span class="opacity-60 text-3xl">–</span><span>${L.hs}</span></div>
@@ -811,8 +811,8 @@ function App(){
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 border-b-2 border-[#D21919] glass-bar" style=${{top:'env(safe-area-inset-top,0px)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
-  ${gm||!PGT[pg]?html`<img src=${LOGO} alt="הפועל ירושלים" class="w-10 h-10 object-contain"/><div class="flex-1 font-bold text-xl leading-tight">${gm?'עמוד משחק':ME}</div>`
-  :html`<div class="flex-1 min-w-0"><div class="font-bold text-2xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
+  <img src=${LOGO} alt="הפועל ירושלים" class="w-10 h-10 object-contain shrink-0"/>${gm||!PGT[pg]?html`<div class="flex-1 font-extrabold text-xl leading-tight">${gm?'עמוד משחק':ME}</div>`
+  :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
   ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-[11px] font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(env(safe-area-inset-top,0px) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
  <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center text-[11px] mu mt-6">נתוני משחקים, טבלאות וסגל: 365scores · עונת ${SEASON} · נכון ל-${ASOF} · גרסה ${window.APP_VERSION||''} · מוצרי החנות וכרטיס ה-QR להמחשה · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline">האתר הרשמי של הקבוצה</a></div></main>
