@@ -23,7 +23,7 @@
 :root{--sat:env(safe-area-inset-top,0px);--bar:rgb(255 255 255/.62);--bar-tx:#282828;--bar-bd:rgb(40 40 40/.1);--glass:rgb(255 255 255/.62);--menu:rgb(255 255 255/.66);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
 :root[data-theme="dark"]{color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
-html{scroll-padding-top:var(--sat);touch-action:manipulation;-webkit-text-size-adjust:100%}
+html{overscroll-behavior-y:contain;scroll-padding-top:var(--sat);touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 /* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
 .sf{background:var(--sf);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
@@ -295,6 +295,28 @@ const Sk=()=>html`<div class="space-y-2 animate-pulse">${[1,2,3,4,5].map(i=>html
 /* שם המסך מופיע עכשיו ככותרת בראש המסך (ראו PGT), ולכן הכותרת בתוך הדף לא מוצגת */
 const Ttl=()=>null;
 const PGT={sched:'משחקים ותוצאות',stand:'טבלאות',roster:'סגל הקבוצה'};
+/* משיכה למטה לרענון: בראש כל מסך מושכים למטה, עיגול עם חץ מופיע מתחת לכותרת, ובשחרור אחרי מספיק משיכה הנתונים מתרעננים */
+function PullRefresh({onRefresh,off}){
+ const [d,setD]=useState(0),[busy,setBusy]=useState(false),st=useRef(null),offR=useRef(off),fnR=useRef(onRefresh),busyR=useRef(false),dR=useRef(0),topR=useRef(0);
+ offR.current=off;fnR.current=onRefresh;
+ const set=v=>{dR.current=v;setD(v)};
+ useEffect(()=>{
+  const start=e=>{if(offR.current||busyR.current||window.scrollY>0||e.touches.length!==1)return;const t=e.touches[0];st.current={x:t.clientX,y:t.clientY,on:false}};
+  const move=e=>{const s=st.current;if(!s)return;const t=e.touches[0],dy=t.clientY-s.y,dx=t.clientX-s.x;
+   if(!s.on){if(dy>8&&dy>Math.abs(dx)*1.5&&window.scrollY<=0){s.on=true;const h=document.getElementById('app-hd');topR.current=h?h.getBoundingClientRect().bottom:0}else if(Math.abs(dx)>8||dy<-4){st.current=null;return}else return}
+   set(Math.max(0,Math.min(120,dy*0.5)));if(e.cancelable)e.preventDefault()};
+  const end=()=>{const s=st.current;st.current=null;if(!s||!s.on)return;
+   if(dR.current>=64){busyR.current=true;setBusy(true);set(64);const t0=Date.now();
+    Promise.resolve().then(()=>fnR.current()).catch(()=>{}).finally(()=>setTimeout(()=>{busyR.current=false;setBusy(false);set(0)},Math.max(0,700-(Date.now()-t0))))}
+   else set(0)};
+  window.addEventListener('touchstart',start,{passive:true});window.addEventListener('touchmove',move,{passive:false});window.addEventListener('touchend',end);window.addEventListener('touchcancel',end);
+  return()=>{window.removeEventListener('touchstart',start);window.removeEventListener('touchmove',move);window.removeEventListener('touchend',end);window.removeEventListener('touchcancel',end)}},[]);
+ if(!d&&!busy)return null;
+ const ready=d>=64||busy;
+ return html`<div class="fixed inset-x-0 z-[19] flex justify-center pointer-events-none" style=${{top:topR.current+'px',transform:'translateY('+(d-44)+'px)',transition:st.current?'none':'transform .25s var(--ease)'}}>
+  <div class=${'w-10 h-10 rounded-full flex items-center justify-center shadow-lg '+(ready?'text-[#D21919]':'mu')} style=${{background:'var(--sf)',border:'1px solid var(--bd)',opacity:Math.min(1,d/48+(busy?1:0))}}>
+   <span class=${busy?'animate-spin':''} style=${busy?null:{transform:'rotate('+d*3+'deg)'}}><${I} n="sync" s=${20}/></span></div></div>`;
+}
 /* קישורים החוצה: שורות שקטות עם חץ, בכרטיס אחד */
 const LinkRows=({items})=>html`<div class="sf rounded-xl overflow-hidden mt-3">${items.filter(Boolean).map(([href,l],i)=>html`<a key=${i} href=${href} target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 border-t bd first:border-0"><span class="w-8 h-8 rounded-full bx flex items-center justify-center mu shrink-0"><${I} n="ext" s=${16}/></span><span class="flex-1 font-bold text-sm">${l}</span><span class="mu text-xl leading-none">‹</span></a>`)}</div>`;
 const Cta=({href,children})=>html`<a href=${href} target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#D21919] text-white font-bold">${children}<${I} n="ext" s=${16}/></a>`;
@@ -829,6 +851,7 @@ function App(){
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
+ <${PullRefresh} onRefresh=${S.refresh} off=${!!(EXT[pg]||dr||st||mo||upd)}/>
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 glass-bar" style=${{top:0,paddingTop:'var(--sat)',borderBottom:'1px solid var(--bar-bd)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
   <img src=${LOGO} alt="הפועל ירושלים" class="w-10 h-10 object-contain shrink-0"/>${gm||!PGT[pg]?html`<div class="flex-1 font-extrabold text-xl leading-tight">${gm?'עמוד משחק':ME}</div>`
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
