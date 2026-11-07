@@ -70,8 +70,8 @@ public class UpdateCheckWorker extends Worker {
                 body = out.toString("UTF-8");
             }
             JSONObject json = new JSONObject(body);
-            String latest = json.optString("tag_name", "").replaceFirst("^v", "");
-            if (!latest.matches("\\d+\\.\\d+\\.\\d+") || !hasApk(json.optJSONArray("assets"))) return Result.success();
+            String latest = json.optString("tag_name", "").replaceFirst("^v", "").replaceFirst("^(\\d+\\.\\d{2})\\.0$", "$1");
+            if (!latest.matches("\\d+\\.\\d+(\\.\\d+)?") || !hasApk(json.optJSONArray("assets"))) return Result.success();
 
             String installed = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionName;
             if (compare(latest, installed) <= 0) return Result.success();

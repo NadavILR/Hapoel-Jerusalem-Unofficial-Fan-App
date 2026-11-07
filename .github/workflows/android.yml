@@ -29,7 +29,11 @@ jobs:
         run: npx cap sync android
       - name: Read the app version
         id: ver
-        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+        run: |
+          v=$(tr -d '[:space:]' < VERSION)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          # Release tag is always X.Y.Z (1.19 -> v1.19.0): app versions up to 1.1.8 only recognize such tags
+          if [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then echo "tag=v$v.0" >> "$GITHUB_OUTPUT"; else echo "tag=v$v" >> "$GITHUB_OUTPUT"; fi
       - name: Build APK
         working-directory: android
         run: |
@@ -43,7 +47,7 @@ jobs:
       - name: Publish the release for this version
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.ver.outputs.version }}
+          tag_name: ${{ steps.ver.outputs.tag }}
           target_commitish: ${{ github.sha }}
           name: גרסה ${{ steps.ver.outputs.version }}
           body: |
