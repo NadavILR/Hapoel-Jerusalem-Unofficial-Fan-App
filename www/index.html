@@ -28,7 +28,7 @@ body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-
 /* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
 .sf{background:var(--sf);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .2s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
-.me-row{background:rgb(210 25 25/.08);color:#b31515}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
+.me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
 .glass{background:var(--glass);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
 .glass-menu{background:var(--bar);color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
@@ -394,7 +394,8 @@ const SCH={tab:'up',fl:'all',y:0};
 /* אריח תאריך (החתימה של האפליקציה): יום בשבוע מעל מספר היום, כמו על כרטיס כניסה */
 const monthOf=t=>new Date(t).toLocaleDateString('he-IL',{...ILT,month:'long',year:'numeric'});
 const hm=t=>new Date(t).toLocaleTimeString('he-IL',{...ILT,hour:'2-digit',minute:'2-digit',hour12:false});
-const DateTile=({t})=>{const d=new Date(t);return html`<div class="w-12 shrink-0 rounded-xl bx text-center py-2 leading-none"><div class="text-[11px] mu">${d.toLocaleDateString('he-IL',{...ILT,weekday:'short'})}</div><div class="text-xl font-semibold sb mt-1">${d.toLocaleDateString('he-IL',{...ILT,day:'numeric'})}</div></div>`};
+/* משחק בית: אריח אדום. משחק חוץ: אריח בצבע הטקסט – שחור במצב בהיר, לבן במצב כהה */
+const DateTile=({t,home})=>{const d=new Date(t);return html`<div class=${'w-12 shrink-0 rounded-xl text-center py-2 leading-none '+(home?'dt-home':'dt-away')}><div class="text-[11px] opacity-75">${d.toLocaleDateString('he-IL',{...ILT,weekday:'short'})}</div><div class="text-xl font-semibold sb mt-1">${d.toLocaleDateString('he-IL',{...ILT,day:'numeric'})}</div></div>`};
 function Sched(){
  const A=useContext(Ctx),[tab,setTab0]=useState(SCH.tab),[fl,setFl0]=useState(SCH.fl);
  const setTab=k=>{SCH.tab=k;setTab0(k)},setFl=k=>{SCH.fl=k;setFl0(k)};
@@ -404,10 +405,11 @@ function Sched(){
  return html`<div><${Ttl}>משחקים ותוצאות · עונת ${SEASON}<//>
  <div class="grid grid-cols-2 gap-1 p-1 rounded-xl sf mb-3">${[['up','המשחקים הבאים'],['past','המשחקים הקודמים']].map(([k,l])=>html`<button key=${k} onClick=${()=>setTab(k)} class=${'py-2 rounded-lg text-sm font-bold '+(tab===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
  <${Chips} o=${[['all','הכל'],...Object.entries(COMPS).map(([k,v])=>[k,CN[k]||v])]} v=${fl} set=${setFl}/>
+ <div class="flex items-center gap-4 text-xs mu mb-1"><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-home"></span>משחק בית</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-away"></span>משחק חוץ</span></div>
  <div key=${tab+fl} class="stg space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-2">${ls.length?ls.map((f,i)=>{const w=f.r&&f.r[0]>f.r[1],mo=monthOf(f.t),newMo=!i||monthOf(ls[i-1].t)!==mo;return html`<${React.Fragment} key=${f.id}>${newMo?html`<div class="md:col-span-2 text-sm font-bold mu pt-3 pb-1">${mo}</div>`:null}<div onClick=${()=>{SCH.y=window.scrollY;A.setGm(f);window.scrollTo(0,0)}} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer">
-  <${DateTile} t=${f.t}/>
+  <${DateTile} t=${f.t} home=${!!f.h}/>
   <${Cr} n=${f.o} s=${32}/>
-  <div class="flex-1 min-w-0"><div class="font-bold truncate">${f.o}</div><div class="text-xs mu truncate">${f.h?'בית':'חוץ'} · ${f.tbd?'שעה טרם נקבעה':hm(f.t)} · ${cmp(f)}</div><div class="text-xs mu truncate">${f.v||(f.h?'משחק בית':'משחק חוץ')}</div></div>
+  <div class="flex-1 min-w-0"><div class="font-bold truncate">${f.o}</div><div class="text-xs mu truncate">${f.tbd?'שעה טרם נקבעה':hm(f.t)} · ${cmp(f)}</div><div class="text-xs mu truncate">${f.v||(f.h?'משחק בית':'משחק חוץ')}</div></div>
   ${f.r?html`<div class="text-center shrink-0"><div dir="rtl" class="font-semibold sb flex gap-1 justify-center"><span>${f.h?f.r[0]:f.r[1]}</span><span>–</span><span>${f.h?f.r[1]:f.r[0]}</span></div><span class=${'text-xs font-medium px-2 rounded '+(w?'text-green-700 bg-green-600/10':'text-[#D21919] bg-[#D21919]/10')}>${w?'W':'L'}</span></div>`
   :html`<div class="flex flex-col items-center gap-1 shrink-0"><button onClick=${e=>{e.stopPropagation();A.togRem(f)}} aria-label="תזכורת" class=${'p-2 rounded-full '+(A.rem[f.id]?'bg-[#D21919] text-white':'bx mu')}><${I} n="bell" s=${16}/></button>${f.h?html`<button onClick=${e=>{e.stopPropagation();A.go('tix')}} class="text-xs font-bold text-[#D21919]">כרטיסים</button>`:null}</div>`}</div><//>`}):html`<div class="text-center mu py-10">אין משחקים להצגה במפעל הזה</div>`}</div></div>`;
 }
