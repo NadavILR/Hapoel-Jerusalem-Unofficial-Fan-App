@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -35,6 +37,9 @@ public class UpdateCheckWorker extends Worker {
 
     private static final String RELEASES_API =
         "https://api.github.com/repos/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases/latest";
+    // Fallback when the API is rate limited (60 requests an hour per IP; mobile networks share IPs): the public releases feed
+    private static final String RELEASES_FEED =
+        "https://github.com/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases.atom";
     private static final String CHANNEL = "app_updates";
     private static final int NOTIFICATION_ID = 7001;
 
@@ -54,24 +59,11 @@ public class UpdateCheckWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        HttpURLConnection conn = null;
         try {
             Context ctx = getApplicationContext();
-            conn = (HttpURLConnection) new URL(RELEASES_API).openConnection();
-            conn.setRequestProperty("Accept", "application/vnd.github+json");
-            conn.setConnectTimeout(20000);
-            conn.setReadTimeout(20000);
-            if (conn.getResponseCode() != 200) return Result.success();
-            String body;
-            try (InputStream in = conn.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                byte[] buf = new byte[8192];
-                int n;
-                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
-                body = out.toString("UTF-8");
-            }
-            JSONObject json = new JSONObject(body);
-            String latest = json.optString("tag_name", "").replaceFirst("^v", "").replaceFirst("^(\\d+\\.\\d{2})\\.0$", "$1");
-            if (!latest.matches("\\d+\\.\\d+(\\.\\d+)?") || !hasApk(json.optJSONArray("assets"))) return Result.success();
+            String latest = fromApi();
+            if (latest == null) latest = fromFeed();
+            if (latest == null) return Result.retry();
 
             String installed = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionName;
             if (compare(latest, installed) <= 0) return Result.success();
@@ -83,8 +75,59 @@ public class UpdateCheckWorker extends Worker {
             return Result.success();
         } catch (Exception e) {
             return Result.retry();
+        }
+    }
+
+    /** Latest version from the GitHub API, or null when it is unavailable (for example rate limited). */
+    private static String fromApi() {
+        try {
+            String body = get(RELEASES_API, "application/vnd.github+json");
+            if (body == null) return null;
+            JSONObject json = new JSONObject(body);
+            String v = clean(json.optString("tag_name", ""));
+            return v.matches("\\d+\\.\\d+(\\.\\d+)?") && hasApk(json.optJSONArray("assets")) ? v : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Highest version listed in the public releases feed, or null. */
+    private static String fromFeed() {
+        try {
+            String body = get(RELEASES_FEED, "application/atom+xml");
+            if (body == null) return null;
+            Matcher m = Pattern.compile("/releases/tag/(v\\d+\\.\\d+(?:\\.\\d+)?)[\"<]").matcher(body);
+            String best = null;
+            while (m.find()) {
+                String v = clean(m.group(1));
+                if (best == null || compare(v, best) > 0) best = v;
+            }
+            return best;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String clean(String tag) {
+        return tag.replaceFirst("^v", "").replaceFirst("^(\\d+\\.\\d{2})\\.0$", "$1");
+    }
+
+    private static String get(String url, String accept) throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        try {
+            conn.setRequestProperty("Accept", accept);
+            conn.setRequestProperty("User-Agent", "HapoelJerusalemFanApp");
+            conn.setConnectTimeout(20000);
+            conn.setReadTimeout(20000);
+            if (conn.getResponseCode() != 200) return null;
+            try (InputStream in = conn.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                return out.toString("UTF-8");
+            }
         } finally {
-            if (conn != null) conn.disconnect();
+            conn.disconnect();
         }
     }
 
