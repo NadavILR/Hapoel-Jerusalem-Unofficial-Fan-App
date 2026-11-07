@@ -31,7 +31,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#282828 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#282828 url(bg/pattern-dark.jpg) center/cover no-repeat}
 .sf{background:rgb(var(--sf-rgb)/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .2s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
-.me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
+.me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.solid-card{background:var(--sf)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
 .glass{background:var(--glass);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
 .glass-menu{background:var(--bar);color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
@@ -43,7 +43,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 :root{--ease:cubic-bezier(.2,.7,.3,1)}
 @keyframes hpjUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes hpjFade{from{opacity:0}to{opacity:1}}@keyframes hpjSheet{from{transform:translateY(100%)}to{transform:none}}@keyframes hpjPop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
 .pg-in{animation:hpjUp .32s var(--ease) backwards}.stg>*{animation:hpjUp .32s var(--ease) backwards}.stg>*:nth-child(2){animation-delay:.04s}.stg>*:nth-child(n+3){animation-delay:.08s}
-.fade-in{animation:hpjFade .2s var(--ease) backwards}.dim-in{animation:hpjDim .2s var(--ease) both}@keyframes hpjDim{from{background-color:transparent}}.sheet-in{animation:hpjSheet .32s var(--ease) backwards}.pop-in{animation:hpjPop .2s var(--ease) backwards}.row-in{animation:hpjFade .32s var(--ease) backwards}
+.fade-in{animation:hpjFade .2s var(--ease) backwards}.dim-in{animation:hpjDim .2s var(--ease) both}@keyframes hpjDim{from{background-color:transparent}}.sheet-in{animation:hpjSheet .32s var(--ease) backwards}.sheet-down{animation:hpjDown .32s var(--ease) backwards}@keyframes hpjDown{from{transform:translateY(-100%)}}.pop-in{animation:hpjPop .2s var(--ease) backwards}.row-in{animation:hpjFade .32s var(--ease) backwards}
 .ph-in,.nm-in,.num-in{animation:none}
 button,a{transition:transform .2s var(--ease),background-color .2s var(--ease),color .2s var(--ease),opacity .2s var(--ease)}button:active,a:active{transform:scale(.97)}
 .sb{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -344,7 +344,7 @@ function GameCard({kind,g,now,L}){
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
- return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf')} style=${red?{background:'linear-gradient(135deg,rgb(210 25 25/.86),rgb(var(--blk-rgb)/.72))',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'}:null}>
+ return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf solid-card')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
  ${L?html`<${LiveCard} L=${L} g=${g}/>`:html`
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
@@ -703,7 +703,7 @@ function Drawer(){
  /* "סמן הכל כנקרא": ההתראות יוצאות אחת אחרי השנייה, נמחקות, ומופיעה הודעה קצרה. בפתיחה הבאה המסך ריק */
  const list=A.notes.slice(0,8);
  const clearAll=()=>{if(!A.notes.length||clr)return;setClr('out');setTimeout(()=>{A.setNotes([]);setClr('done')},Math.min(list.length,8)*60+360)};
- return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-start justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-b-2xl sheet-down glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'16px'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="flex gap-2 mb-3">${A.notes.length&&clr!=='done'?html`<button onClick=${clearAll} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button>`:null}<button onClick=${()=>{const go=()=>A.nf.current('התראת בדיקה: ההתראות של הפועל ירושלים פועלות');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()}} class="flex-1 py-2 rounded-lg bg-[#D21919] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
  ${list.length&&!clr?html`<div class="text-[11px] mu mb-2">החליקו התראה הצידה כדי למחוק אותה</div>`:null}
@@ -720,7 +720,7 @@ function Settings(){
   if(typeof Notification==='undefined'&&!LN()){A.toast('המכשיר או הדפדפן לא תומכים בהתראות');return}
   askNotify().then(p=>{A.setPerm(p);if(p==='granted'){A.setPf({...pf,on:1});if(pf.hour)A.F.forEach(f=>{if(A.rem[f.id]&&!f.r)schedRem(f)});setTimeout(()=>A.nf.current('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר'),80)}else A.toast('ההרשאה להתראות לא אושרה – אפשר לאשר אותה בהגדרות המכשיר')})};
  const check=()=>{setChk('בודק אם יש גרסה חדשה…');A.checkUpd().then(r=>setChk(r==='new'?'':r==='none'?'האפליקציה מעודכנת לגרסה האחרונה':'לא ניתן לבדוק כרגע. נסו שוב בעוד כמה דקות'))};
- return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-end justify-center" onClick=${()=>A.setSt(false)}><div class="w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] flex" onClick=${()=>A.setSt(false)}><div class="w-full h-full overflow-y-auto fade-in glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">הגדרות</div><button onClick=${()=>A.setSt(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="sf rounded-xl p-3 mb-3"><${Tg} on=${on} f=${toggle} l=${html`<span class="font-medium">התראות</span>`}/>
  <div class="text-xs mu">${on?'ההתראות פעילות ויופיעו גם במגש ההתראות של המכשיר.':A.perm==='denied'?'ההתראות חסומות בהגדרות המכשיר. כדי להפעיל אותן יש לאשר התראות לאפליקציה בהגדרות המכשיר.':'ההתראות כבויות. הפעילו כדי לקבל תזכורות למשחקים ועדכוני תוצאות.'}</div>
