@@ -20,25 +20,12 @@
 <script src="vendor/capacitor.js"></script>
 <script src="version.js"></script>
 <style>
-:root{--on-bg:#fff;--on-bg-mu:rgb(255 255 255/.72);--sat:env(safe-area-inset-top,0px);--bar:rgb(255 255 255/.62);--bar-tx:#282828;--bar-bd:rgb(40 40 40/.1);--glass:rgb(255 255 255/.62);--menu:rgb(255 255 255/.66);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--on-bg:#1c1c1c;--on-bg-mu:rgb(28 28 28/.72);--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
-:root[data-theme="dark"]{color-scheme:dark;--on-bg:#1c1c1c;--on-bg-mu:rgb(28 28 28/.72);--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
+:root{--sat:env(safe-area-inset-top,0px);--bar:rgb(255 255 255/.62);--bar-tx:#282828;--bar-bd:rgb(40 40 40/.1);--glass:rgb(255 255 255/.62);--menu:rgb(255 255 255/.66);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
+:root[data-theme="dark"]{color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
 html,body{overscroll-behavior:none}html{scroll-padding-top:var(--sat);touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 /* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
-/* רקע לכל המסכים: גרדיאנט "רשת" לא סימטרי – אדום המועדון שנמזג ל-#282828 במצב בהיר ול-#E5E5E5 במצב כהה */
-body{color:var(--on-bg)}
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
- radial-gradient(90% 55% at 88% 6%,#D21919 0%,rgb(210 25 25/0) 70%),
- radial-gradient(70% 45% at 4% 38%,rgb(210 25 25/.85) 0%,rgb(210 25 25/0) 72%),
- radial-gradient(80% 50% at 96% 72%,var(--g2) 0%,rgb(0 0 0/0) 70%),
- radial-gradient(110% 60% at 10% 104%,var(--g2) 0%,rgb(0 0 0/0) 75%),
- linear-gradient(196deg,#D21919 0%,var(--g-mid) 48%,var(--g2) 100%)}
-:root{--g2:#282828;--g-mid:#7d1717}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--g2:#E5E5E5;--g-mid:#dc7373}}:root[data-theme="dark"]{--g2:#E5E5E5;--g-mid:#dc7373}
-.sf,.bx,.glass,.glass-sheet{color:var(--tx)}main .mu{color:var(--on-bg-mu)}main .sf .mu,main .bx .mu,main .glass .mu,main .sf.mu,.glass-sheet .mu{color:var(--mu)}
-.on-bg{color:var(--on-bg)!important}
-.chip-on{background:#fff;color:#D21919;border-color:#fff;box-shadow:0 2px 8px rgb(0 0 0/.12)}.chip-off{background:rgb(255 255 255/.16);color:var(--on-bg);border-color:rgb(255 255 255/.32);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .sf{background:var(--sf);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .2s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
 .me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
@@ -302,7 +289,7 @@ function Cr({n,s=40}){
  if(src)return html`<img src=${src} alt=${n} width=${s} height=${s} class="shrink-0 object-contain" style=${{width:s,height:s}} referrerPolicy="no-referrer" onError=${()=>i<ss.length?setI(x=>x+1):setD('')}/>`;
  const k=[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%6;return html`<div class="rounded-full flex items-center justify-center font-medium text-white shrink-0" style=${{width:s,height:s,background:['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2','#be185d'][k],fontSize:s/2.3}}>${n[0]}</div>`;
 }
-const Chips=({o,v,set})=>html`<div class="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 no-sb">${o.map(([k,l])=>html`<button key=${k} onClick=${()=>set(k)} class=${'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border shrink-0 '+(v===k?'chip-on':'chip-off')}>${l}</button>`)}</div>`;
+const Chips=({o,v,set})=>html`<div class="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 no-sb">${o.map(([k,l])=>html`<button key=${k} onClick=${()=>set(k)} class=${'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border shrink-0 '+(v===k?'bg-[#D21919] border-[#D21919] text-white':'sf mu')}>${l}</button>`)}</div>`;
 const Tg=({on,f,l})=>html`<button onClick=${f} class="flex items-center justify-between w-full py-2 text-sm"><span>${l}</span><span class=${'w-11 h-6 rounded-full p-0.5 transition '+(on?'bg-[#D21919]':'bg-zinc-400')}><span class=${'block w-5 h-5 bg-white rounded-full transition '+(on?'-translate-x-5':'')}></span></span></button>`;
 const Sk=()=>html`<div class="space-y-2 animate-pulse">${[1,2,3,4,5].map(i=>html`<div key=${i} class="h-12 rounded-xl sf"></div>`)}</div>`;
 /* שם המסך מופיע עכשיו ככותרת בראש המסך (ראו PGT), ולכן הכותרת בתוך הדף לא מוצגת */
@@ -394,9 +381,9 @@ function Home(){
  const nx2=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[1];
  /* קרוסלה (מימין לשמאל): המשחק הקודם ← המשחק הבא (אדום, נפתח במרכז) ← המשחק שאחריו */
  const cards=[ls&&['prev',ls],['next',nx],nx2&&['after',nx2]].filter(Boolean);
- return html`<div class=${'stg space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'opacity-70':'')}>
+ return html`<div class=${'stg on-photo space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'opacity-70':'')}><${HomeBg}/>
  <${Carousel} key=${nx.id} start=${ls?1:0} items=${cards.map(([k,g])=>html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k==='next'?L:null}/>`)}/>
- <div class="flex items-center justify-between text-xs mu md:col-span-2"><span>${A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'נכון ל-'+ASOF}</span><button onClick=${A.refresh} class="flex items-center gap-1 on-bg font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
+ <div class="flex items-center justify-between text-xs mu md:col-span-2"><span>${A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'נכון ל-'+ASOF}</span><button onClick=${A.refresh} class="flex items-center gap-1 text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
  ${(me||em)&&html`<div class=${'grid gap-2 '+(me&&em?'grid-cols-2':'grid-cols-1')}>${me&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום בליגת ווינר סל</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${rk+1}</div><div class="text-xs mu mt-1">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></div>`}${em&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום ביורוקאפ</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${er+1}</div><div class="text-xs mu mt-1">${eg[0]} · ${em[1]} נצ׳ · ${em[2]} הפ׳</div></div>`}</div>`}
  <${News}/>
  </div>`;
@@ -418,7 +405,7 @@ function Sched(){
  return html`<div><${Ttl}>משחקים ותוצאות · עונת ${SEASON}<//>
  <div class="grid grid-cols-2 gap-1 p-1 rounded-xl sf mb-3">${[['up','המשחקים הבאים'],['past','המשחקים הקודמים']].map(([k,l])=>html`<button key=${k} onClick=${()=>setTab(k)} class=${'py-2 rounded-lg text-sm font-bold '+(tab===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
  <${Chips} o=${[['all','הכל'],...Object.entries(COMPS).map(([k,v])=>[k,CN[k]||v])]} v=${fl} set=${setFl}/>
- <div class="flex items-center gap-4 text-xs mu mb-1"><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded ring-1 ring-white/70 dt-home"></span>משחק בית</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded ring-1 ring-white/70 dt-away"></span>משחק חוץ</span></div>
+ <div class="flex items-center gap-4 text-xs mu mb-1"><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-home"></span>משחק בית</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-away"></span>משחק חוץ</span></div>
  <div key=${tab+fl} class="stg space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-2">${ls.length?ls.map((f,i)=>{const w=f.r&&f.r[0]>f.r[1],mo=monthOf(f.t),newMo=!i||monthOf(ls[i-1].t)!==mo;return html`<${React.Fragment} key=${f.id}>${newMo?html`<div class="md:col-span-2 text-sm font-bold mu pt-3 pb-1">${mo}</div>`:null}<div onClick=${()=>{SCH.y=window.scrollY;A.setGm(f);window.scrollTo(0,0)}} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer">
   <${DateTile} t=${f.t} home=${!!f.h}/>
   <${Cr} n=${f.o} s=${32}/>
@@ -590,7 +577,7 @@ function Pbp({L}){
 
 function Game({g}){
  const A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),gs=LG&&LG.gs?LG.gs:(GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
- return html`<div><button onClick=${()=>A.setGm(null)} class="flex items-center gap-1 on-bg font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
+ return html`<div><button onClick=${()=>A.setGm(null)} class="flex items-center gap-1 text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
  ${LG?html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="text-[11px] mu mt-2 text-center">${LG.status==='live'?'סטטיסטיקות בלייב מ-365scores · מתעדכן כל 20 שניות':'סטטיסטיקות סיום מ-365scores'}</div>`:html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
  <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class="text-sm mt-1">${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl font-semibold sb" dir="rtl"><span>${sc[0]}</span><span class="opacity-60">–</span><span>${sc[1]}</span></div>`:html`<div class="text-2xl font-semibold sb opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class="text-sm mt-1">${aw}</div></div></div>
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
@@ -638,7 +625,7 @@ function Player({p}){
  const A=useContext(Ctx),[md,setMd]=useState('a'),{by,log}=pStats(p[7]),ks=Object.keys(COMPS).filter(k=>by[k]),
  tt=ks.reduce((t,k)=>t.map((x,i)=>x+by[k][i]),new Array(17).fill(0)),fm=md==='a'?avgRow:totRow,ag=ageOf(p[5]),
  HD=['מש׳','דק׳','נק׳','ריב׳','אס׳','חט׳','חס׳',md==='a'?'FG%':'FG',md==='a'?'3P%':'3P',md==='a'?'FT%':'FT','ר״ה','ר״ג','איב׳','עב׳'];
- return html`<div class="stg"><button onClick=${()=>A.setPl(null)} class="flex items-center gap-1 on-bg font-bold mb-3"><${I} n="back" s=${16}/>חזרה לסגל</button>
+ return html`<div class="stg"><button onClick=${()=>A.setPl(null)} class="flex items-center gap-1 text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה לסגל</button>
  <div class="rounded-2xl text-white overflow-hidden flex items-stretch" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}>
   <div class="w-[132px] shrink-0 relative ph-in" style=${{aspectRatio:'4/5'}}><${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls="absolute inset-0 w-full h-full object-cover object-top"/></div>
   <div class="p-4 flex-1 flex flex-col justify-center min-w-0 nm-in"><div class="text-5xl font-semibold sb opacity-90 leading-none num-in">${p[0]}</div><div class="text-xl font-bold leading-tight mt-1">${p[1]}</div><div class="text-sm opacity-80 mt-1">${p[2]}</div></div></div>
