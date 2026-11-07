@@ -42,21 +42,39 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TicketsPlugin.class);
         registerPlugin(UpdaterPlugin.class);
         super.onCreate(savedInstanceState);
-        // Status bar: club red (#D21919) with white icons
-        getWindow().setStatusBarColor(Color.parseColor("#D21919"));
-        new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(false);
-        // Check for app updates in the background too, so a notification arrives even when the app is closed
+        // Transparent status bar: the app's frosted header continues underneath it (the page gets its height as --sat)
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        applyStatusBarIcons();
+        // No background update checks any more (the app checks when it opens); cancel the one older versions scheduled
         try {
-            UpdateCheckWorker.schedule(this);
+            UpdateCheckWorker.cancel(this);
         } catch (Exception ignored) {
         }
         if (bridge == null) return;
 
+        // No Android overscroll "stretch" at the top or bottom of a screen: it stretched the whole page,
+        // header, bottom bar and menu included. Pull to refresh is handled by the page itself.
+        bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                injectStatusBarHeight(view);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                injectStatusBarHeight(view);
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
-                if (isExternalWebPage(url)) {
+                // Embedded frames (the game highlights video, shop / membership pages) stay inside the page
+                if (isExternalWebPage(url) && request.isForMainFrame()) {
                     openExternal(url.toString());
                     return true; // the app itself stays where it is, underneath
                 }
@@ -84,6 +102,32 @@ public class MainActivity extends BridgeActivity {
         getOnBackPressedDispatcher().addCallback(this, appBack);
     }
 
+    /** Height of the status bar in pixels. */
+    static int statusBarPx(android.content.Context ctx) {
+        int id = ctx.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        return id > 0 ? ctx.getResources().getDimensionPixelSize(id) : (int) (24 * ctx.getResources().getDisplayMetrics().density);
+    }
+
+    private void injectStatusBarHeight(WebView view) {
+        float css = statusBarPx(this) / getResources().getDisplayMetrics().density;
+        view.evaluateJavascript("document.documentElement.style.setProperty('--sat','" + css + "px')", null);
+    }
+
+    private boolean isDark() {
+        return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    /** Dark status-bar icons over the white header in light mode, white icons in dark mode. */
+    private void applyStatusBarIcons() {
+        new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(!isDark());
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        applyStatusBarIcons();
+    }
+
     private static boolean isExternalWebPage(Uri url) {
         if (url == null) return false;
         String scheme = url.getScheme(), host = url.getHost();
@@ -103,17 +147,20 @@ public class MainActivity extends BridgeActivity {
         layer.setOrientation(LinearLayout.VERTICAL);
         layer.setBackgroundColor(dark ? Color.BLACK : Color.WHITE);
         layer.setClickable(true); // touches never reach the app underneath
+        layer.setPadding(0, statusBarPx(this), 0, 0); // the status bar stays visible above the window
 
         // Top bar (right-to-left): "→ חזור" on the right, the page title next to it
         LinearLayout bar = new LinearLayout(this);
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setBackgroundColor(Color.parseColor(dark ? "#000000" : "#282828"));
+        // Top bar like the app's header: white in light mode, black in dark mode, with a thin red line under it
+        bar.setBackgroundColor(dark ? Color.BLACK : Color.WHITE);
+        int barText = dark ? Color.WHITE : Color.parseColor("#282828");
 
         TextView back = new TextView(this);
         back.setText("→  חזור");
-        back.setTextColor(Color.WHITE);
+        back.setTextColor(barText);
         back.setTextSize(17);
         back.setTypeface(Typeface.DEFAULT_BOLD);
         back.setGravity(Gravity.CENTER_VERTICAL);
@@ -123,7 +170,7 @@ public class MainActivity extends BridgeActivity {
         bar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         TextView title = new TextView(this);
-        title.setTextColor(0xB3FFFFFF);
+        title.setTextColor(dark ? 0xB3FFFFFF : 0xB3282828);
         title.setTextSize(13);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
@@ -133,6 +180,9 @@ public class MainActivity extends BridgeActivity {
         bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
         layer.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (52 * d)));
+        View line = new View(this);
+        line.setBackgroundColor(Color.parseColor("#D21919"));
+        layer.addView(line, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, (int) (2 * d))));
 
         WebView web = new WebView(this);
         WebSettings s = web.getSettings();

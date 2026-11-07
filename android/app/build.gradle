@@ -1,8 +1,10 @@
 apply plugin: 'com.android.application'
 
-// App version comes from the VERSION file at the repo root (1.2.3 -> versionCode 10203)
+// App version comes from the VERSION file at the repo root (1.2.3 -> versionCode 10203, 1.19 -> 11900)
 def appVersion = rootProject.file('../VERSION').text.trim()
-def appVersionCode = appVersion.tokenize('.').inject(0) { acc, n -> acc * 100 + (n as int) }
+def appVersionParts = appVersion.tokenize('.')
+if (appVersionParts.size() == 2) appVersionParts = appVersionParts + ['0']
+def appVersionCode = appVersionParts.inject(0) { acc, n -> acc * 100 + (n as int) }
 
 
 android {

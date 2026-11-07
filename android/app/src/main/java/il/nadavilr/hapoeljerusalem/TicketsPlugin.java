@@ -49,6 +49,7 @@ public class TicketsPlugin extends Plugin {
             ensure(url);
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) web.getLayoutParams();
             lp.bottomMargin = Math.max(0, bottom);
+            lp.topMargin = MainActivity.statusBarPx(getActivity()); // below the transparent status bar
             web.setLayoutParams(lp);
             if (home && url != null) web.loadUrl(url);
             web.setVisibility(View.VISIBLE);
