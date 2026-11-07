@@ -20,13 +20,20 @@
 <script src="vendor/capacitor.js"></script>
 <script src="version.js"></script>
 <style>
-:root{--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
-:root[data-theme="dark"]{color-scheme:dark;--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
+:root{--glass:rgb(255 255 255/.62);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
+:root[data-theme="dark"]{color-scheme:dark;--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
 html{scroll-padding-top:env(safe-area-inset-top,0px);touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:#D21919}
-.sf{background:var(--sf);border:1px solid var(--bd)}.mu{color:var(--mu)}.bd{border-color:var(--bd)}.bx{background:var(--bg)}
+.sf{background:var(--sf);border:1px solid var(--bd)}
+/* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
+.glass{background:var(--glass);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
+.glass-bar{background:rgb(var(--blk-rgb)/.84);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
+.glass-sheet{background:var(--glass-strong)!important;-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border-top:1px solid var(--glass-bd)}
+.glass-in{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgb(255 255 255/.14)}
+.on-photo .sf{background:var(--glass);border-color:var(--glass-bd);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
+.home-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}.home-bg img{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);object-fit:cover;filter:blur(36px) saturate(1.3);opacity:.7}.home-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgb(var(--bg-rgb)/.25),rgb(var(--bg-rgb)/.75) 60%,var(--bg))}.mu{color:var(--mu)}.bd{border-color:var(--bd)}.bx{background:var(--bg)}
 :root{--ease:cubic-bezier(.2,.7,.3,1)}
 @keyframes hpjUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes hpjFade{from{opacity:0}to{opacity:1}}@keyframes hpjSheet{from{transform:translateY(100%)}to{transform:none}}@keyframes hpjPop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
 .pg-in{animation:hpjUp .32s var(--ease) both}.stg>*{animation:hpjUp .32s var(--ease) both}.stg>*:nth-child(2){animation-delay:.04s}.stg>*:nth-child(n+3){animation-delay:.08s}
@@ -165,7 +172,7 @@ function VideoPop({g,onClose}){
  const id=ytId(g);
  useEffect(()=>{VIDC.close=onClose;const k=e=>{if(e.key==='Escape')onClose()};document.addEventListener('keydown',k);return()=>{VIDC.close=null;document.removeEventListener('keydown',k)}},[]);
  /* מוצג ישירות ב-body, כדי שהאנימציות של הכרטיסים לא יגבילו אותו לגבולות הכרטיס */
- return ReactDOM.createPortal(html`<div class="fixed inset-0 z-[70] flex items-center justify-center p-3 fade-in" style=${{background:'rgb(0 0 0/0.85)'}} onClick=${onClose}>
+ return ReactDOM.createPortal(html`<div class="fixed inset-0 z-[70] flex items-center justify-center p-3 fade-in" style=${{background:'rgb(0 0 0/0.6)',WebkitBackdropFilter:'blur(16px)',backdropFilter:'blur(16px)'}} onClick=${onClose}>
  <div class="w-full max-w-3xl pop-in" onClick=${e=>e.stopPropagation()}>
   <div class="flex items-center justify-between text-white mb-2"><div class="text-sm font-medium truncate">תקציר: ${g.h?ME+' – '+g.o:g.o+' – '+ME}</div><button onClick=${onClose} aria-label="סגירה" class="p-2 -m-2"><${I} n="x" s=${22}/></button></div>
   <div class="rounded-xl overflow-hidden bg-black" style=${{aspectRatio:'16/9'}}><iframe src=${'https://www.youtube-nocookie.com/embed/'+id+'?rel=0&playsinline=1&autoplay=1'} title="תקציר המשחק" class="w-full h-full border-0" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>
@@ -298,7 +305,7 @@ function News(){
 /* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
 function GameCard({kind,g,now,L}){
  const A=useContext(Ctx),[vid,setVid]=useState(false),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
- const box=red?'bg-[rgb(var(--blk-rgb)/0.40)]':'bx',btn=red?'bg-white/15':'bx',op=red?'opacity-80':'mu';
+ const box=red?'bg-white/10 glass-in':'bx',btn=red?'bg-white/15 glass-in':'bx',op=red?'opacity-80':'mu';
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-semibold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
@@ -327,6 +334,11 @@ function Carousel({items,start}){
  return html`<div class="md:col-span-2"><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
  ${items.length>1?html`<div class="flex justify-center gap-2 mt-2">${items.map((_,k)=>html`<button key=${k} aria-label=${'כרטיס '+(k+1)} onClick=${()=>to(k,1)} style=${k===i?null:{background:'var(--mu)'}} class=${'h-2 rounded-full transition-colors '+(k===i?'w-5 bg-[#D21919]':'w-2 opacity-40')}></button>`)}</div>`:null}</div>`;
 }
+/* רקע מסך הבית: תמונת הקבוצה מטושטשת, והכרטיסים מעליה מזכוכית חלבית */
+function HomeBg(){
+ const [src,err]=usePh(TP,'team');
+ return src?ReactDOM.createPortal(html`<div class="home-bg fade-in" aria-hidden="true"><img src=${src} alt="" referrerPolicy="no-referrer" onError=${err}/></div>`,document.body):null;
+}
 function Home(){
  const A=useContext(Ctx),now=useNow();
  const nx=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0],ls=A.F.filter(f=>f.r).sort((a,b)=>b.t-a.t)[0];
@@ -337,7 +349,7 @@ function Home(){
  const nx2=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[1];
  /* קרוסלה (מימין לשמאל): המשחק הקודם ← המשחק הבא (אדום, נפתח במרכז) ← המשחק שאחריו */
  const cards=[ls&&['prev',ls],['next',nx],nx2&&['after',nx2]].filter(Boolean);
- return html`<div class=${'stg space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'opacity-70':'')}>
+ return html`<div class=${'stg on-photo space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'opacity-70':'')}><${HomeBg}/>
  <${Carousel} key=${nx.id} start=${ls?1:0} items=${cards.map(([k,g])=>html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k==='next'?L:null}/>`)}/>
  <div class="flex items-center justify-between text-xs mu md:col-span-2"><span>${A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'נכון ל-'+ASOF}</span><button onClick=${A.refresh} class="flex items-center gap-1 text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
  ${(me||em)&&html`<div class=${'grid gap-2 '+(me&&em?'grid-cols-2':'grid-cols-1')}>${me&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום בליגת ווינר סל</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${rk+1}</div><div class="text-xs mu mt-1">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></div>`}${em&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום ביורוקאפ</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${er+1}</div><div class="text-xs mu mt-1">${eg[0]} · ${em[1]} נצ׳ · ${em[2]} הפ׳</div></div>`}</div>`}
@@ -636,7 +648,7 @@ function Embed({k}){
 /* ---------- Notifications ---------- */
 function Drawer(){
  const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v});
- return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.60)] fade-in flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] fade-in flex items-end justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="flex gap-2 mb-3"><button onClick=${()=>A.setNotes(n=>n.map(x=>({...x,r:1})))} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button><button onClick=${()=>{const go=()=>A.nf.current('התראת בדיקה: ההתראות של הפועל ירושלים פועלות');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()}} class="flex-1 py-2 rounded-lg bg-[#D21919] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
  <div class="space-y-2 mb-4">${A.notes.slice(0,8).map(n=>html`<div key=${n.id} class=${'sf rounded-xl p-3 text-sm flex gap-2 '+(n.r?'opacity-60':'')}>${!n.r&&html`<span class="w-2 h-2 mt-1.5 rounded-full bg-[#D21919] shrink-0"></span>`}<div class="flex-1">${n.t}<div class="text-xs mu">${n.ts?ago(n.ts):n.w}</div></div></div>`)}</div>
@@ -651,7 +663,7 @@ function Settings(){
   if(typeof Notification==='undefined'&&!LN()){A.toast('המכשיר או הדפדפן לא תומכים בהתראות');return}
   askNotify().then(p=>{A.setPerm(p);if(p==='granted'){A.setPf({...pf,on:1});if(pf.hour)A.F.forEach(f=>{if(A.rem[f.id]&&!f.r)schedRem(f)});setTimeout(()=>A.nf.current('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר'),80)}else A.toast('ההרשאה להתראות לא אושרה – אפשר לאשר אותה בהגדרות המכשיר')})};
  const check=()=>{setChk('בודק אם יש גרסה חדשה…');A.checkUpd().then(r=>setChk(r==='new'?'':r==='none'?'האפליקציה מעודכנת לגרסה האחרונה':'לא ניתן לבדוק כרגע – בדקו את החיבור לאינטרנט'))};
- return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.60)] fade-in flex items-end justify-center" onClick=${()=>A.setSt(false)}><div class="w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] fade-in flex items-end justify-center" onClick=${()=>A.setSt(false)}><div class="w-full max-w-xl max-h-[88%] overflow-y-auto rounded-t-2xl sheet-in glass-sheet p-4" style=${{background:'var(--bg)',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">הגדרות</div><button onClick=${()=>A.setSt(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="sf rounded-xl p-3 mb-3"><${Tg} on=${on} f=${toggle} l=${html`<span class="font-medium">התראות</span>`}/>
  <div class="text-xs mu">${on?'ההתראות פעילות ויופיעו גם במגש ההתראות של המכשיר.':A.perm==='denied'?'ההתראות חסומות בהגדרות המכשיר. כדי להפעיל אותן יש לאשר התראות לאפליקציה בהגדרות המכשיר.':'ההתראות כבויות. הפעילו כדי לקבל תזכורות למשחקים ועדכוני תוצאות.'}</div>
@@ -760,16 +772,16 @@ function App(){
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
- ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 text-white border-b-2 border-[#D21919]" style=${{top:'env(safe-area-inset-top,0px)',background:'var(--blk)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
+ ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 text-white border-b-2 border-[#D21919] glass-bar" style=${{top:'env(safe-area-inset-top,0px)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
   <img src=${LOGO} alt="הפועל ירושלים" class="w-12 h-12 object-contain"/><div class="flex-1 font-bold text-xl leading-tight">${ME}</div>
   ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-[11px] font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(env(safe-area-inset-top,0px) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
  <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center text-[11px] mu mt-6">נתוני משחקים, טבלאות וסגל: 365scores · עונת ${SEASON} · נכון ל-${ASOF} · גרסה ${window.APP_VERSION||''} · מוצרי החנות וכרטיס ה-QR להמחשה · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline">האתר הרשמי של הקבוצה</a></div></main>
- ${mo?html`<div class="fixed inset-0 z-[44] fade-in" style=${{background:'rgb(var(--blk-rgb)/0.45)'}} onClick=${()=>setMo(false)}></div>
- <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in sf" style=${{bottom:'calc(68px + env(safe-area-inset-bottom,0px))',transformOrigin:'bottom left'}}>
+ ${mo?html`<div class="fixed inset-0 z-[44] fade-in" style=${{background:'rgb(var(--blk-rgb)/0.30)'}} onClick=${()=>setMo(false)}></div>
+ <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass" style=${{bottom:'calc(68px + env(safe-area-inset-bottom,0px))',transformOrigin:'bottom left'}}>
   ${MORE.map(([k,l,ic,sub])=>html`<button key=${k} onClick=${()=>go(k)} class=${'w-full flex items-center gap-3 px-4 py-3 text-right border-b bd last:border-0 '+(pg===k?'text-[#D21919]':'')}><span class="w-9 h-9 rounded-full flex items-center justify-center bg-[#D21919] text-white shrink-0"><${I} n=${ic} s=${18}/></span><span class="min-w-0"><span class="block font-medium">${l}</span><span class="block text-[11px] mu truncate">${sub}</span></span></button>`)}
  </div>`:null}
- <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t border-white/10 text-white" style=${{background:'var(--blk)',paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex">${NAV.map(([k,l,ic])=>{const on=k==='more'?(mo||!!EXT[pg]):pg===k&&!mo;const cl='flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] '+(on?'text-[#D21919] font-bold border-t-2 border-[#D21919]':'opacity-70 border-t-2 border-transparent');return html`<button key=${k} onClick=${()=>k==='more'?setMo(!mo):go(k)} aria-expanded=${k==='more'?String(mo):undefined} class=${cl}><${I} n=${ic} s=${21}/>${l}</button>`})}</div></nav>
+ <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t border-white/10 text-white glass-bar" style=${{paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex">${NAV.map(([k,l,ic])=>{const on=k==='more'?(mo||!!EXT[pg]):pg===k&&!mo;const cl='flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] '+(on?'text-[#D21919] font-bold border-t-2 border-[#D21919]':'opacity-70 border-t-2 border-transparent');return html`<button key=${k} onClick=${()=>k==='more'?setMo(!mo):go(k)} aria-expanded=${k==='more'?String(mo):undefined} class=${cl}><${I} n=${ic} s=${21}/>${l}</button>`})}</div></nav>
  ${dr&&html`<${Drawer}/>`}${st&&html`<${Settings}/>`}${upd&&html`<${UpdGate} u=${upd}/>`}<//>`;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
