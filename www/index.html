@@ -20,12 +20,12 @@
 <script src="vendor/capacitor.js"></script>
 <script src="version.js"></script>
 <style>
-:root{--bar:rgb(255 255 255/.62);--bar-tx:#282828;--bar-bd:rgb(40 40 40/.1);--glass:rgb(255 255 255/.62);--menu:rgb(255 255 255/.66);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--sat:env(safe-area-inset-top,0px);--bar:rgb(255 255 255/.62);--bar-tx:#282828;--bar-bd:rgb(40 40 40/.1);--glass:rgb(255 255 255/.62);--menu:rgb(255 255 255/.66);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
 :root[data-theme="dark"]{color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
-html{scroll-padding-top:env(safe-area-inset-top,0px);touch-action:manipulation;-webkit-text-size-adjust:100%}
+html{scroll-padding-top:var(--sat);touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:#D21919}
+/* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
 .sf{background:var(--sf);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .2s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
 .me-row{background:rgb(210 25 25/.08);color:#b31515}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
@@ -656,7 +656,7 @@ function Embed({k}){
  const u=EXT[k],[bt,setBt]=useState(54),[blk,setBlk]=useState(k==='tix'?false:FRBLK);
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const f=()=>setBt(n.offsetHeight);f();window.addEventListener('resize',f);let ro;try{ro=new ResizeObserver(f);ro.observe(n)}catch(e){}return()=>{window.removeEventListener('resize',f);ro&&ro.disconnect()}},[]);
  React.useLayoutEffect(()=>{if(!EMB[k])return;const h=e=>{if(/^(frame|child)-src/.test(e.effectiveDirective||e.violatedDirective||'')){FRBLK=true;setBlk(true)}};document.addEventListener('securitypolicyviolation',h);return()=>document.removeEventListener('securitypolicyviolation',h)},[k]);
- const box={top:'env(safe-area-inset-top,0px)',bottom:bt+'px'};
+ const box={top:'var(--sat)',bottom:bt+'px'};
  if(!EMB[k]||blk)return html`<${ExtPage} k=${k} box=${box}/>`;
  return html`<div class="fixed inset-x-0 z-20 bg-white" style=${box}><iframe key=${k} title=${k} src=${u} onLoad=${frLoad} class="w-full h-full border-0" allow="camera; fullscreen; clipboard-write; payment"></iframe>${k==='tix'?html`<a href=${u} target="_self" rel="noopener noreferrer" class="absolute top-2 left-2 text-[11px] bg-[rgb(var(--blk-rgb)/0.70)] text-white px-2 py-1 rounded-full">לא נטען? פתיחה במסך מלא</a>`:null}</div>`;
 }
@@ -715,7 +715,7 @@ function UpdGate({u}){
  /* מסך מלא: תמונת הקבוצה מטושטשת ברקע, אייקון האפליקציה, מעבר בין הגרסאות בספרות לוח התוצאות, "מה חדש" וכפתור עדכון עם התקדמות ההורדה בתוכו */
  return html`<div class="fixed inset-0 z-[80] flex flex-col fade-in" style=${{background:'var(--bg)'}}>
  <div class="absolute inset-x-0 top-0 h-[55%] overflow-hidden pointer-events-none" aria-hidden="true">${src?html`<img src=${src} alt="" referrerPolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover scale-125" style=${{filter:'blur(28px) saturate(1.3)',opacity:.75}}/>`:null}<div class="absolute inset-0" style=${{background:'linear-gradient(160deg,rgb(210 25 25/.6),rgb(40 40 40/.45) 55%,var(--bg))'}}></div><div class="absolute inset-x-0 bottom-0 h-1/2" style=${{background:'linear-gradient(to bottom,transparent,var(--bg))'}}></div></div>
- <div class="relative flex-1 overflow-y-auto px-6 text-center" style=${{paddingTop:'calc(env(safe-area-inset-top,0px) + 56px)'}}>
+ <div class="relative flex-1 overflow-y-auto px-6 text-center" style=${{paddingTop:'calc(var(--sat) + 56px)'}}>
   <img src="icons/icon-192.png" alt="" class="w-24 h-24 mx-auto rounded-[28px] shadow-xl pop-in"/>
   <div class="inline-flex items-center gap-2 mt-5 px-3 py-1 rounded-full glass text-xs font-bold">גרסה חדשה</div>
   <div class="text-3xl font-extrabold mt-3 leading-tight text-white" style=${{textShadow:'0 2px 12px rgb(0 0 0/.35)'}}>עדכון חדש זמין</div>
@@ -829,11 +829,11 @@ function App(){
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  return html`<${Ctx.Provider} value=${A}>
- ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 border-b-2 border-[#D21919] glass-bar" style=${{top:'env(safe-area-inset-top,0px)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
+ ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 glass-bar" style=${{top:0,paddingTop:'var(--sat)',borderBottom:'1px solid var(--bar-bd)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
   <img src=${LOGO} alt="הפועל ירושלים" class="w-10 h-10 object-contain shrink-0"/>${gm||!PGT[pg]?html`<div class="flex-1 font-extrabold text-xl leading-tight">${gm?'עמוד משחק':ME}</div>`
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
   ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-[11px] font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
- <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(env(safe-area-inset-top,0px) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
+ <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(var(--sat) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
  <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center text-[11px] mu mt-6">נתוני משחקים, טבלאות וסגל: 365scores · עונת ${SEASON} · נכון ל-${ASOF} · גרסה ${window.APP_VERSION||''} · מוצרי החנות וכרטיס ה-QR להמחשה · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline">האתר הרשמי של הקבוצה</a></div></main>
  ${mo?html`<div class="fixed inset-0 z-[44]" onClick=${()=>setMo(false)}></div>
  <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass glass-menu" style=${{bottom:'calc(68px + env(safe-area-inset-bottom,0px))',transformOrigin:'bottom left'}}>
