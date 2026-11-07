@@ -1,11 +1,11 @@
 // Service worker: works offline after the first visit.
 // data.json is network-first (fresh results when online, last copy when offline);
 // everything else is cache-first with a background refresh.
-const CACHE = 'hpj-v1.25';
+const CACHE = 'hpj-v1.26';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './data.json', './crests.json', './photos.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/notify-badge.png',
-  './version.js', './vendor/capacitor.js', './vendor/app.css', './vendor/react.production.min.js', './vendor/react-dom.production.min.js', './vendor/htm.umd.js'
+  './version.js', './vendor/capacitor.js', './vendor/app.css', './vendor/noto-sans-hebrew.css', './vendor/fonts/noto-sans-hebrew-hebrew.woff2', './vendor/fonts/noto-sans-hebrew-latin.woff2', './vendor/fonts/noto-sans-hebrew-latin-ext.woff2', './vendor/react.production.min.js', './vendor/react-dom.production.min.js', './vendor/htm.umd.js'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled(CORE.map(u => c.add(u)))).then(() => self.skipWaiting()));

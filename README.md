@@ -9,7 +9,7 @@
 |---|---|
 | `www/index.html` | קוד האפליקציה (React + htm), כמו בארטיפקט |
 | `www/data.json`, `crests.json`, `photos.json` | נתוני העונה, סמלי קבוצות ותמונות שחקנים |
-| `www/vendor/` | React, htm ו-CSS של Tailwind – מקומיים, בלי תלות ב-CDN |
+| `www/vendor/` | React, htm, ה-CSS של Tailwind והגופן Noto Sans Hebrew (Google Fonts, רישיון SIL OFL 1.1). הכול שמור מקומית, בלי תלות ב-CDN |
 | `www/manifest.webmanifest`, `www/sw.js`, `www/icons/` | הגדרות PWA: התקנה למסך הבית ועבודה בלי אינטרנט |
 | `capacitor.config.json` | אריזה כאפליקציית Android / iOS |
 | `UPDATE.md` | נוהל רענון `data.json` |
