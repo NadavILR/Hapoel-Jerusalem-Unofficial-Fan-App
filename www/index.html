@@ -515,10 +515,24 @@ function GmP({g,gs,pf}){
  bgs={background:'rgb(var(--sf-rgb)/.4)',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'};
  return html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה אישית</div>
  <div class="grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg">${tn.map((n,i)=>html`<button key=${i} onClick=${()=>setSi(i)} class=${'flex items-center justify-center gap-2 py-2 px-1 rounded-lg text-[13px] font-bold '+(si===i?'bg-[#D21919] text-white':'mu')}><${Cr} n=${n} s=${18}/><span class="truncate">${n}</span></button>`)}</div>
- <div class="overflow-x-auto -mx-1"><table class="text-xs text-center whitespace-nowrap min-w-full" dir="rtl"><thead><tr class="mu text-[11px]"><th class="sticky right-0 text-right font-normal px-1.5 py-1" style=${bgs}>שחקן</th>${PH.map(h=>html`<th key=${h} class="font-normal px-1.5 py-1">${h}</th>`)}</tr></thead>
- <tbody>${ws.map((w,i)=>html`<tr key=${i} class=${'border-t bd'+(isDnp(w)?' mu':'')}><td class="sticky right-0 text-right px-1.5 py-1.5 font-medium whitespace-normal min-w-[112px]" style=${bgs}>${w[2]?html`<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>`:null}${w[1]!=null?html`<bdi class="inline-block mu font-normal text-[11px] ml-1">${w[1]}</bdi>`:null}<bdi>${w[0]}</bdi></td>${isDnp(w)?html`<td colSpan=13 class="text-right px-1.5 py-1.5 text-[11px]">לא שיחק</td>`:prw(w).map((v,j)=>html`<td key=${j} class=${'px-1.5 py-1.5 '+(j===1?'font-medium':'')}>${v}</td>`)}</tr>`)}
- <tr class="border-t-2 bd font-medium"><td class="sticky right-0 text-right px-1.5 py-1.5" style=${bgs}>סה״כ</td>${tot.map((v,j)=>html`<td key=${j} class="px-1.5 py-1.5">${v}</td>`)}</tr></tbody></table></div>
+ <${SplitTable} key=${si} nameHead="שחקן" heads=${PH} rows=${[...ws.map((w,i)=>({key:i,cls:'border-t bd'+(isDnp(w)?' mu':''),ncls:'font-medium whitespace-normal min-w-[112px] max-w-[132px]',
+  name:html`${w[2]?html`<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>`:null}${w[1]!=null?html`<bdi class="inline-block mu font-normal text-[11px] ml-1">${w[1]}</bdi>`:null}<bdi>${w[0]}</bdi>`,
+  cells:isDnp(w)?html`<td colSpan=13 class="text-right px-1.5 py-1.5 text-[11px]">לא שיחק</td>`:prw(w).map((v,j)=>html`<td key=${j} class=${'px-1.5 py-1.5 '+(j===1?'font-medium':'')}>${v}</td>`)})),
+  {key:'tot',cls:'border-t-2 bd font-medium',name:'סה״כ',cells:tot.map((v,j)=>html`<td key=${j} class="px-1.5 py-1.5">${v}</td>`)}]}/>
  <div class="text-xs mu mt-2"><span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>חמישייה פותחת · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · הנתונים מ-365scores.</div></div>`;
+}
+/* טבלת סטטיסטיקה עם עמודת שמות קבועה: השמות בטבלה נפרדת שהיא חלק מהכרטיס (בלי רקע משלה), והנתונים בטבלה שנגללת לידה –
+   כך שבגלילה הצידה הנתונים נחתכים בדיוק בקצה עמודת השמות. גובה כל שורה מסונכרן בין שתי הטבלאות */
+function SplitTable({nameHead,heads,rows}){
+ const a=useRef(null),b=useRef(null);
+ const sync=()=>{const A=a.current,B=b.current;if(!A||!B)return;const ra=A.rows,rb=B.rows;for(let i=0;i<ra.length&&i<rb.length;i++){const h=Math.max(ra[i].getBoundingClientRect().height,rb[i].getBoundingClientRect().height);if(Math.abs(ra[i].getBoundingClientRect().height-h)>.5)ra[i].style.height=h+'px';if(Math.abs(rb[i].getBoundingClientRect().height-h)>.5)rb[i].style.height=h+'px'}};
+ React.useLayoutEffect(sync);
+ useEffect(()=>{let ro=null;try{ro=new ResizeObserver(()=>sync());a.current&&ro.observe(a.current);b.current&&ro.observe(b.current)}catch(e){}if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sync);return()=>{ro&&ro.disconnect()}},[]);
+ return html`<div class="flex items-start -mx-1" dir="rtl">
+ <table ref=${a} class="text-xs shrink-0"><thead><tr class="mu text-[11px]"><th class="text-right font-normal px-1.5 py-1 whitespace-nowrap">${nameHead}</th></tr></thead>
+ <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}><td class=${'text-right px-1.5 py-1.5 '+(r.ncls||'')}>${r.name}</td></tr>`)}</tbody></table>
+ <div class="overflow-x-auto min-w-0 flex-1 no-sb"><table ref=${b} class="text-xs text-center whitespace-nowrap min-w-full"><thead><tr class="mu text-[11px]">${heads.map((h,i)=>html`<th key=${i} class="font-normal px-1.5 py-1">${h}</th>`)}</tr></thead>
+ <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}>${r.cells}</tr>`)}</tbody></table></div></div>`;
 }
 /* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
 function LiveScore({L,g,big}){
@@ -640,14 +654,15 @@ function Player({p}){
  <div class="stg grid grid-cols-2 gap-2 mt-3">${[['גובה',p[3]+' מ׳'],['אזרחות',p[4]],['תאריך לידה',p[5]+(ag!==''?' · גיל '+ag:'')],['עמדה',p[2]]].map(([l,v])=>html`<div key=${l} class="sf rounded-xl p-3"><div class="text-xs mu">${l}</div><div class="font-medium text-sm mt-0.5">${v}</div></div>`)}</div>
  <div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה אישית · עונת ${SEASON}</div>
  ${ks.length?html`<div><div class="grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg">${[['a','ממוצע למשחק'],['t','סה״כ']].map(([k,l])=>html`<button key=${k} onClick=${()=>setMd(k)} class=${'py-2 rounded-lg text-[13px] font-bold '+(md===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
- <div key=${md} class="overflow-x-auto -mx-1 fade-in"><table class="text-xs text-center whitespace-nowrap min-w-full" dir="rtl"><thead><tr class="mu text-[11px]"><th class="sticky right-0 text-right font-normal px-1.5 py-1" style=${SD}>מפעל</th>${HD.map(h=>html`<th key=${h} class="font-normal px-1.5 py-1">${h}</th>`)}</tr></thead>
- <tbody>${ks.map((k,i)=>html`<tr key=${k} style=${{animationDelay:(80+i*30)+'ms'}} class="row-in border-t bd"><td class="sticky right-0 text-right px-1.5 py-1.5 font-medium whitespace-normal min-w-[84px]" style=${SD}>${CN[k]||COMPS[k]}</td>${fm(by[k]).map((v,j)=>html`<td key=${j} class=${TDC+(j===2?' font-medium':'')}>${v}</td>`)}</tr>`)}
- ${ks.length>1?html`<tr class="border-t-2 bd font-medium"><td class="sticky right-0 text-right px-1.5 py-1.5" style=${SD}>כל המפעלים</td>${fm(tt).map((v,j)=>html`<td key=${j} class=${TDC}>${v}</td>`)}</tr>`:null}</tbody></table></div>
+ <div key=${md} class="fade-in"><${SplitTable} nameHead="מפעל" heads=${HD} rows=${[...ks.map((k,i)=>({key:k,style:{animationDelay:(80+i*30)+'ms'},cls:'row-in border-t bd',ncls:'font-medium whitespace-normal min-w-[84px]',name:CN[k]||COMPS[k],
+  cells:fm(by[k]).map((v,j)=>html`<td key=${j} class=${TDC+(j===2?' font-medium':'')}>${v}</td>`)})),
+  ...(ks.length>1?[{key:'all',cls:'border-t-2 bd font-medium',name:'כל המפעלים',cells:fm(tt).map((v,j)=>html`<td key=${j} class=${TDC}>${v}</td>`)}]:[])]}/></div>
  <div class="text-xs mu mt-2">מש׳ = משחקים שבהם נכלל בסגל · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · לא כולל משחקי הכנה · הנתונים מ-365scores · אפשר לגלול את הטבלה הצידה.</div></div>`
  :html`<div class="text-sm mu">${p[7]?'השחקן טרם נכלל בסגל של משחק עם נתונים ב-365scores העונה.':'השחקן לא נמצא ב-365scores, ולכן אין לו סטטיסטיקה אישית.'}</div>`}</div>
  ${log.length?html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">משחק אחר משחק</div>
- <div class="overflow-x-auto -mx-1"><table class="text-xs text-center whitespace-nowrap min-w-full" dir="rtl"><thead><tr class="mu text-[11px]"><th class="sticky right-0 text-right font-normal px-1.5 py-1" style=${SD}>משחק</th><th class="font-normal px-1.5 py-1">תוצאה</th>${PH.map(h=>html`<th key=${h} class="font-normal px-1.5 py-1">${h}</th>`)}</tr></thead>
- <tbody>${log.map(([f,w],i)=>html`<tr key=${f.id} style=${{animationDelay:(100+Math.min(i,15)*20)+'ms'}} class="row-in border-t bd"><td class="sticky right-0 text-right px-1.5 py-1.5 whitespace-normal min-w-[116px]" style=${SD}><div class="font-medium">${f.h?'':'@ '}${f.o}</div><div class="mu text-[11px]">${sdt(f.t)} · ${CN[f.c]||COMPS[f.c]}</div></td><td class=${TDC+' font-medium '+(f.r[0]>f.r[1]?'text-green-600':'text-[#D21919]')}>${f.r[0]}–${f.r[1]}</td>${isDnp(w)?html`<td colSpan=13 class="mu text-right px-1.5 py-1.5 text-[11px]">לא שיחק</td>`:prw(w).map((v,j)=>html`<td key=${j} class=${TDC+(j===1?' font-medium':'')}>${v}</td>`)}</tr>`)}</tbody></table></div></div>`:null}
+ <${SplitTable} nameHead="משחק" heads=${['תוצאה',...PH]} rows=${log.map(([f,w],i)=>({key:f.id,style:{animationDelay:(100+Math.min(i,15)*20)+'ms'},cls:'row-in border-t bd',ncls:'whitespace-normal min-w-[116px]',
+  name:html`<div class="font-medium">${f.h?'':'@ '}${f.o}</div><div class="mu text-[11px]">${sdt(f.t)} · ${CN[f.c]||COMPS[f.c]}</div>`,
+  cells:[html`<td key="r" class=${TDC+' font-medium '+(f.r[0]>f.r[1]?'text-green-600':'text-[#D21919]')}>${f.r[0]}–${f.r[1]}</td>`,...(isDnp(w)?[html`<td key="d" colSpan=13 class="mu text-right px-1.5 py-1.5 text-[11px]">לא שיחק</td>`]:prw(w).map((v,j)=>html`<td key=${j} class=${TDC+(j===1?' font-medium':'')}>${v}</td>`))]}))}/></div>`:null}
  ${p[8]||p[9]?html`<${LinkRows} items=${[p[8]&&['https://www.365scores.com/en-us/basketball/player/'+p[8],'הדף המלא ב-365scores'],p[9]&&['https://hapoel.co.il/player.asp?PlayerId='+p[9],'הדף באתר הרשמי של המועדון']]}/>`:null}</div>`;
 }
 
