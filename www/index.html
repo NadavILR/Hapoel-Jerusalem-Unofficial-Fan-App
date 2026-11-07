@@ -31,6 +31,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .fade-in{animation:hpjFade .4s ease both}.sheet-in{animation:hpjSheet .28s cubic-bezier(.2,.8,.3,1) both}
 button,a{transition:transform .12s ease,background-color .2s ease,color .2s ease,opacity .2s ease}button:active,a:active{transform:scale(.97)}
 .car>*{transition:transform .3s ease}.tick{display:inline-block;animation:hpjUp .3s ease both}
+@keyframes hpjPop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}.pop-in{animation:hpjPop .25s cubic-bezier(.2,.8,.3,1) both}.row-in{animation:hpjUp .35s cubic-bezier(.2,.7,.3,1) both}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 .car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}
 </style>
@@ -154,6 +155,18 @@ const openExt=u=>{if(NATIVE)location.href=u;else window.open(u,'_blank','noopene
 /* תקציר המשחק ביוטיוב: הקישור מהנתונים (שדה hl – הערוץ הרשמי של המפעל, ואם אין – של הפועל ירושלים); אם עוד לא הוזן – חיפוש ביוטיוב */
 const HLN={euro:'יורוקאפ',league:'ליגת ווינר',wcup:'גביע ווינר',cup:'גביע המדינה',super:'',prep:''};
 const ytId=g=>{const m=typeof g.hl==='string'&&/^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/.exec(g.hl);return m?m[1]:''};
+/* תקציר בחלון קופץ בתוך האפליקציה (כפתור "חזור" של המכשיר סוגר אותו) */
+const VIDC={close:null};
+function VideoPop({g,onClose}){
+ const id=ytId(g);
+ useEffect(()=>{VIDC.close=onClose;const k=e=>{if(e.key==='Escape')onClose()};document.addEventListener('keydown',k);return()=>{VIDC.close=null;document.removeEventListener('keydown',k)}},[]);
+ /* מוצג ישירות ב-body, כדי שהאנימציות של הכרטיסים לא יגבילו אותו לגבולות הכרטיס */
+ return ReactDOM.createPortal(html`<div class="fixed inset-0 z-[70] flex items-center justify-center p-3 fade-in" style=${{background:'rgb(0 0 0/0.85)'}} onClick=${onClose}>
+ <div class="w-full max-w-3xl pop-in" onClick=${e=>e.stopPropagation()}>
+  <div class="flex items-center justify-between text-white mb-2"><div class="text-sm font-bold truncate">תקציר: ${g.h?ME+' – '+g.o:g.o+' – '+ME}</div><button onClick=${onClose} aria-label="סגירה" class="p-2 -m-2"><${I} n="x" s=${22}/></button></div>
+  <div class="rounded-xl overflow-hidden bg-black" style=${{aspectRatio:'16/9'}}><iframe src=${'https://www.youtube-nocookie.com/embed/'+id+'?rel=0&playsinline=1&autoplay=1'} title="תקציר המשחק" class="w-full h-full border-0" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>
+ </div></div>`,document.body);
+}
 const hlUrl=g=>typeof g.hl==='string'&&/^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/.test(g.hl)?g.hl:'https://www.youtube.com/results?search_query='+encodeURIComponent(('תקציר '+(g.h?ME+' '+g.o:g.o+' '+ME)+' '+(HLN[g.c]||'')).trim());
 /* סטטיסטיקות מלאות מ-365scores, באותו מבנה של הסטטיסטיקות שבאפליקציה אחרי המשחק ([הפועל ירושלים, יריבה]) */
 const sv=(a,t)=>{const x=(a||[]).find(y=>y.type===t);return x?x.value:''},mk2=v=>{const m=/(\d+)\s*\/\s*(\d+)/.exec(v||'');return m?[+m[1],+m[2]]:[0,0]},int=v=>parseInt(v,10)||0;
@@ -280,7 +293,7 @@ function News(){
 }
 /* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
 function GameCard({kind,g,now,L}){
- const A=useContext(Ctx),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
+ const A=useContext(Ctx),[vid,setVid]=useState(false),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
  const box=red?'bg-[rgb(var(--blk-rgb)/0.40)]':'bx',btn=red?'bg-white/15':'bx',op=red?'opacity-80':'mu';
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-black':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
@@ -296,7 +309,8 @@ function GameCard({kind,g,now,L}){
   ${res?html`<div class="text-center mb-1"><span class=${'inline-block px-3 py-1 rounded-full text-sm font-bold text-white '+(w?'bg-green-600':'bg-[#D21919]')}>${(w?'ניצחון':'הפסד')+' · הפרש '+Math.abs(g.r[0]-g.r[1])}</span></div>`
   :html`<div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class=${box+' rounded-xl py-2'}><div class="text-2xl font-black tabular-nums"><span key=${v} class="tick">${String(v).padStart(2,'0')}</span></div><div class=${'text-[11px] '+(red?'opacity-70':'mu')}>${l}</div></div>`)}</div>
   <button onClick=${()=>A.togRem(g)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[g.id]?(red?'bg-white text-[#D21919]':'bg-[#D21919] text-white'):btn)}><${I} n="bell" s=${16}/>${A.rem[g.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
-  ${res?html`<button onClick=${()=>openExt(hlUrl(g))} class="mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-[#D21919] text-white"><${I} n="play" s=${16}/>לתקציר המשחק</button>`:null}
+  ${vid?html`<${VideoPop} g=${g} onClose=${()=>setVid(false)}/>`:null}
+  ${res?html`<button onClick=${()=>ytId(g)?setVid(true):openExt(hlUrl(g))} class="mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-[#D21919] text-white"><${I} n="play" s=${16}/>לתקציר המשחק</button>`:null}
   <button onClick=${open} class=${'mt-2 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+btn}><${I} n="cal" s=${16}/>לעמוד המשחק</button>`}
  </div>`;
 }
@@ -344,8 +358,10 @@ function Sched(){
   :html`<div class="flex items-center gap-2"><button onClick=${e=>{e.stopPropagation();A.togRem(f)}} aria-label="תזכורת" class=${'p-2 rounded-full '+(A.rem[f.id]?'bg-[#D21919] text-white':'sf mu')}><${I} n="bell" s=${16}/></button>${f.h?html`<button onClick=${e=>{e.stopPropagation();A.go('tix')}} class="text-xs font-bold text-[#D21919]">כרטיסים</button>`:null}</div>`}</div>`}):html`<div class="text-center mu py-10">אין משחקים להצגה במפעל הזה</div>`}</div></div>`;
 }
 
-function Tb({nm,rows,diff}){
- return html`<div class="mb-4"><div class="font-bold mb-1">${nm}</div><div class="sf rounded-xl overflow-hidden"><table class="w-full text-sm text-center table-fixed"><colgroup><col style=${{width:'2.25rem'}}/><col/><col style=${{width:'2.5rem'}}/><col style=${{width:'2.5rem'}}/><col style=${{width:'2.5rem'}}/><col style=${{width:'3.25rem'}}/></colgroup><thead class="mu text-xs"><tr><th class="p-2">#</th><th class="text-right">קבוצה</th><th>מש׳</th><th>נצ׳</th><th>הפ׳</th><th>${diff?'+/-':'נק׳'}</th></tr></thead><tbody>${rows.map((r,i)=>html`<tr key=${r[0]} class=${'border-t bd '+(r[0]===ME?'bg-[#D21919] text-white font-bold':'')}><td class="p-2">${i+1}</td><td class="text-right py-1.5"><div class="flex items-center gap-2 min-w-0"><span class="w-6 h-6 shrink-0 flex items-center justify-center"><${Cr} n=${r[0]} s=${22}/></span><span class="min-w-0 leading-tight"><span class="block truncate">${r[0]}</span>${diff&&r[4]?html`<span class="block text-[10px] opacity-75">${r[4]}</span>`:null}</span></div></td><td>${r[1]==null?'—':r[1]+r[2]}</td><td>${r[1]??'—'}</td><td>${r[2]??'—'}</td><td dir="ltr">${diff?(r[3]>0?'+':'')+r[3]:(r[3]??'—')}</td></tr>`)}</tbody></table></div></div>`;
+/* סימון מקומות בטבלה: ירוק – פלייאוף / רבע גמר, סגול – פליי-אין, אדום – בית תחתון */
+const MKC={g:'#16a34a',p:'#8b5cf6',r:'#D21919'},MKL={g:'פלייאוף',p:'פליי-אין',r:'בית תחתון'};
+function Tb({nm,rows,diff,mk,lg}){
+ return html`<div class="mb-4"><div class="font-bold mb-1">${nm}</div><div class="sf rounded-xl overflow-hidden"><table class="w-full text-sm text-center table-fixed"><colgroup><col style=${{width:'2.25rem'}}/><col/><col style=${{width:'2.5rem'}}/><col style=${{width:'2.5rem'}}/><col style=${{width:'2.5rem'}}/><col style=${{width:'3.25rem'}}/></colgroup><thead class="mu text-xs"><tr><th class="p-2">#</th><th class="text-right">קבוצה</th><th>מש׳</th><th>נצ׳</th><th>הפ׳</th><th>${diff?'+/-':'נק׳'}</th></tr></thead><tbody>${rows.map((r,i)=>html`<tr key=${r[0]} style=${{animationDelay:Math.min(i,14)*25+'ms'}} class=${'row-in border-t bd '+(r[0]===ME?'bg-[#D21919] text-white font-bold':'')}><td class="p-2 relative">${mk&&mk(i,r)?html`<span class=${'absolute right-0 top-1 bottom-1 w-1 rounded-l '+(r[0]===ME?'ring-1 ring-white':'')} style=${{background:MKC[mk(i,r)]}}></span>`:null}${i+1}</td><td class="text-right py-1.5"><div class="flex items-center gap-2 min-w-0"><span class="w-6 h-6 shrink-0 flex items-center justify-center"><${Cr} n=${r[0]} s=${22}/></span><span class="min-w-0 leading-tight"><span class="block truncate">${r[0]}</span>${diff&&r[4]?html`<span class="block text-[10px] opacity-75">${r[4]}</span>`:null}</span></div></td><td>${r[1]==null?'—':r[1]+r[2]}</td><td>${r[1]??'—'}</td><td>${r[2]??'—'}</td><td dir="ltr">${diff?(r[3]>0?'+':'')+r[3]:(r[3]??'—')}</td></tr>`)}</tbody></table></div>${lg?html`<div class="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[11px] mu">${lg.map(c=>html`<span key=${c} class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style=${{background:MKC[c]}}></span>${c==='g'&&lg.includes('p')&&!lg.includes('r')?'רבע גמר':MKL[c]}</span>`)}</div>`:null}</div>`;
 }
 
 /* בראקטים: כל מפעל מוגדר כאן בשלבים (שם, הטוב מ-N, מספר צמדים). הנתונים (BR / WC.KO) הם מערך שלבים, כל שלב מערך צמדים לפי סדר הבראקט */
@@ -388,11 +404,11 @@ function Stand(){
  const note=txt=>html`<div class="text-xs mu mb-3">מקור: 365scores · נכון ל-${ASOF} · ${txt}</div>`;
  return html`<div><${Ttl}>טבלאות · עונת ${SEASON}<//>
  <${Chips} o=${[['league','ליגת ווינר סל'],['euro','יורוקאפ'],['cup','גביע המדינה'],['wcup','גביע ווינר סל']]} v=${k} set=${setK}/>
- ${ld?html`<${Sk}/>`:html`<div>
+ ${ld?html`<${Sk}/>`:html`<div key=${k} class="stg">
  ${none?html`<${SeasonEmpty} msg=${HAS?'אין נתונים למפעל הזה בעונה הנוכחית.':'הטבלאות של עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${CT[0][0]} cta=${CT[0][1]}/>`
- :k==='league'?html`<div><${Tb} nm="ליגת ווינר סל" rows=${LG.map(r=>[r.n,r.w,r.l,r.p])}/>${note('2 נק׳ לניצחון, נק׳ להפסד')}</div>`
- :k==='euro'?html`<div>${EC.map(([n,t])=>html`<${Tb} key=${n} nm=${n} rows=${t} diff=${1}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
- :k==='wcup'?html`<div>${WC.G.map(([n,t])=>html`<${Tb} key=${n} nm=${n} rows=${t} diff=${1}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
+ :k==='league'?html`<div><${Tb} nm="ליגת ווינר סל" rows=${LG.map(r=>[r.n,r.w,r.l,r.p])} mk=${i=>i<6?'g':i<10?'p':'r'} lg=${['g','p','r']}/>${note('2 נק׳ לניצחון, נק׳ להפסד')}</div>`
+ :k==='euro'?html`<div>${EC.map(([n,t])=>html`<${Tb} key=${n} nm=${n} rows=${t} diff=${1} mk=${i=>i<4?'g':''} lg=${['g']}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
+ :k==='wcup'?html`<div>${WC.G.map(([n,t])=>html`<${Tb} key=${n} nm=${n} rows=${t} diff=${1} mk=${(i,r)=>/רבע/.test(r[4]||'')?'g':/פליי/.test(r[4]||'')?'p':''} lg=${['g','p']}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
  :null}
  <${BrSec} k=${k}/></div>`}</div>`;
 }
@@ -573,14 +589,14 @@ function Player({p}){
 
 function Roster(){
  const A=useContext(Ctx),[v,setV]=useState('pl'),[ps,setPs]=useState('all');
- if(A.pl)return html`<${Player} p=${A.pl}/>`;
+ if(A.pl)return html`<div key=${'pl'+A.pl[0]+A.pl[1]} class="pg-in"><${Player} p=${A.pl}/></div>`;
  if(!PL.length)return html`<div><${Ttl}>סגל הקבוצה · עונת ${SEASON}<//><${SeasonEmpty} msg=${'הסגל של עונת '+SEASON+' טרם נטען לאפליקציה.'} href=${LINKS.club+'/team'} cta="הסגל באתר הרשמי"/></div>`;
- const lst=l=>html`<div class="space-y-2">${l.map((s,i)=>html`<div key=${i} class="sf rounded-xl p-3 flex justify-between gap-3"><span class="font-bold">${s[1]}</span><span class="mu text-sm text-left">${s[0]}</span></div>`)}</div>`;
- return html`<div><${Ttl}>סגל הקבוצה · עונת ${SEASON}<//>
+ const lst=l=>html`<div key=${l===ST?'st':'of'} class="stg space-y-2">${l.map((s,i)=>html`<div key=${i} class="sf rounded-xl p-3 flex justify-between gap-3"><span class="font-bold">${s[1]}</span><span class="mu text-sm text-left">${s[0]}</span></div>`)}</div>`;
+ return html`<div class="pg-in"><${Ttl}>סגל הקבוצה · עונת ${SEASON}<//>
  <${TeamPh}/>
  <${Chips} o=${[['pl','שחקנים'],['st','צוות האימון'],['of','בעלי תפקידים']]} v=${v} set=${setV}/>
- ${v==='pl'?html`<div><${Chips} o=${[['all','הכל'],['G','גארדים'],['F','פורוורדים'],['C','סנטרים']]} v=${ps} set=${setPs}/>
- <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">${PL.filter(p=>ps==='all'||grp(p).includes(ps)).map(p=>html`<button key=${p[0]+p[1]} onClick=${()=>A.setPl(p)} class="sf rounded-2xl overflow-hidden text-right"><div class="relative" style=${{aspectRatio:'4/4.6',background:'linear-gradient(160deg,#D21919,var(--blk))'}}><${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls="absolute inset-0 w-full h-full object-cover object-top"/><span class="absolute top-2 right-2 min-w-[28px] h-7 px-1.5 rounded-full bg-[rgb(var(--blk-rgb)/0.60)] text-white text-sm font-black flex items-center justify-center">${p[0]}</span></div><div class="p-2.5"><div class="font-bold leading-tight">${p[1]}</div><div class="text-xs mu mt-0.5">${p[2]} · ${p[3]} מ׳</div></div></button>`)}</div></div>`
+ ${v==='pl'?html`<div key="pl" class="fade-in"><${Chips} o=${[['all','הכל'],['G','גארדים'],['F','פורוורדים'],['C','סנטרים']]} v=${ps} set=${setPs}/>
+ <div key=${ps} class="stg grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">${PL.filter(p=>ps==='all'||grp(p).includes(ps)).map(p=>html`<button key=${p[0]+p[1]} onClick=${()=>A.setPl(p)} class="sf rounded-2xl overflow-hidden text-right"><div class="relative" style=${{aspectRatio:'4/4.6',background:'linear-gradient(160deg,#D21919,var(--blk))'}}><${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls="absolute inset-0 w-full h-full object-cover object-top"/><span class="absolute top-2 right-2 min-w-[28px] h-7 px-1.5 rounded-full bg-[rgb(var(--blk-rgb)/0.60)] text-white text-sm font-black flex items-center justify-center">${p[0]}</span></div><div class="p-2.5"><div class="font-bold leading-tight">${p[1]}</div><div class="text-xs mu mt-0.5">${p[2]} · ${p[3]} מ׳</div></div></button>`)}</div></div>`
  :v==='st'?lst(ST):lst(OF)}
  <div class="text-xs mu mt-3">מקור: האתר הרשמי של המועדון · הסטטיסטיקה האישית מ-365scores · נכון ל-${ASOF}</div></div>`;
 }
@@ -725,7 +741,7 @@ function App(){
  const checkUpd=useCallback(async()=>{if(!NATIVE)return 'none';try{const r=await latestRelease();if(r&&vcmp(r.v,window.APP_VERSION||'0.0.0')>0){setUpd(r);return 'new'}return 'none'}catch(e){return 'fail'}},[]);
  useEffect(()=>{if(!NATIVE)return;checkUpd();const f=()=>{if(document.visibilityState==='visible')checkUpd()};document.addEventListener('visibilitychange',f);const i=setInterval(checkUpd,6*H);return()=>{document.removeEventListener('visibilitychange',f);clearInterval(i)}},[checkUpd]);
  useEffect(()=>{if(!upd)return;setSt(false);setDr(false);const T=TK();if(T)T.hide().catch(()=>{});const t='עדכון חדש זמין: גרסה '+upd.v+'. כדי להמשיך להשתמש באפליקציה יש לעדכן.';setNotes(n=>{if(n.some(x=>x.upd===upd.v))return n;if(pf.on!==0)devNotify(t);return[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0,upd:upd.v},...n]})},[upd]);
- const backRef=useRef();backRef.current=()=>{if(st){setSt(false);return true}if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(NATIVE&&(pg==='shop'||pg==='mem')&&FR.n>1){FR.n--;FR.skip++;history.back();return true}if(pg!=='home'){go('home');return true}return false};
+ const backRef=useRef();backRef.current=()=>{if(VIDC.close){VIDC.close();return true}if(st){setSt(false);return true}if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(NATIVE&&(pg==='shop'||pg==='mem')&&FR.n>1){FR.n--;FR.skip++;history.back();return true}if(pg!=='home'){go('home');return true}return false};
  useEffect(()=>{window.hpjBack=()=>backRef.current()},[]);
  /* בגרסת הדפדפן (כולל האפליקציה המותקנת למסך הבית) כפתור החזור עובר דרך היסטוריית הדפדפן */
  const atRoot=!st&&!dr&&!gm&&!pl&&pg==='home',skipPop=useRef(false);
