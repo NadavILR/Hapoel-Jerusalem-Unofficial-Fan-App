@@ -64,7 +64,7 @@ Rules:
 - `ASOF`: Israel time of the refresh, "D.M.YYYY HH:MM"
 - `updated`: ISO timestamp
 - `F`: all games of Hapoel Jerusalem this season, played and upcoming: `{id, c, rd?, cl?, v?, o, h, t, tbd?, r?, tp?}` (see "Games source"; `cl` = competition + round/stage label from 365scores, every game except `prep`). `tp` is optional free text (for example a top performer) and is normally left out; the page writes "ניצחון/הפסד בית/חוץ" itself.
-- `LG`: Winner League table: `[{n, g, w, l, p}]` (name, played, wins, losses, points), in table order.
+- `LG`: Winner League table: `[{n, g, w, l, p, d, s}]` (name, played, wins, losses, points, point differential, current streak), in table order. Source: https://basket.co.il/table.asp, the table that contains 'שם הקבוצה': `p` = נק' (cell 2), `g`/`w`/`l` = סה"כ מש'/נצ'/הפ' (cells 3-5), `d` = +/- (cell 6, as a number, e.g. +57 → 57), `s` = רצף (cell 21: "+4" = 4 wins in a row → 4, "-2" = 2 losses → -2).
 - `EC`: Eurocup groups: `[["בית א׳", [["הפועל ירושלים", W, L, diff], ...]], ...]` in table order, diff = +/-.
 - `WC`: Winner Cup (גביע ווינר סל): `{G, KO}`.
   - `G`: groups in page order: `[["בית א׳", [["גליל עליון", W, L, diff, "רבע גמר"], ...]], ...]`. Rows are `[team, W, L, diff, status?]`; `status` is the label 365scores shows next to the team ("רבע גמר", "פליי-אין"), omitted when none.

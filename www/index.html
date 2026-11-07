@@ -168,7 +168,7 @@ async function liveIsrael(){
   if(g.sc)o.r=f.h?[g.sc[1],g.sc[0]]:[g.sc[0],g.sc[1]];n++;return o});
  const tbl=await getText('https://basket.co.il/table.asp'),rows=[];
  const t=(tbl.match(/<table[^>]*>[\s\S]*?<\/table>/g)||[]).find(x=>x.includes('שם הקבוצה'));
- if(t)for(const r of t.match(/<tr[^>]*>[\s\S]*?<\/tr>/g)||[]){const c=cellsOf(r);if(/^\d+$/.test(c[0])&&c.length>=6&&/^\d+$/.test(c[3]))rows.push({n:bName(c[1]),g:+c[3],w:+c[4],l:+c[5],p:+c[2]})}
+ if(t)for(const r of t.match(/<tr[^>]*>[\s\S]*?<\/tr>/g)||[]){const c=cellsOf(r);if(/^\d+$/.test(c[0])&&c.length>=6&&/^\d+$/.test(c[3]))rows.push({n:bName(c[1]),g:+c[3],w:+c[4],l:+c[5],p:+c[2],d:/^[+-]?\d+$/.test(c[6]||'')?parseInt(c[6],10):null,s:/^[+-]\d+$/.test(c[21]||'')?parseInt(c[21],10):null})}
  if(rows.length>=8)LG=rows;
  return n}
 
@@ -424,9 +424,19 @@ function Sched(){
 
 /* סימון מקומות בטבלה: ירוק – פלייאוף / רבע גמר, סגול – פליי-אין, אדום – בית תחתון */
 const MKC={g:'#16a34a',p:'#8b5cf6',r:'#D21919'},MKL={g:'פלייאוף',p:'פליי-אין',r:'בית תחתון'};
-function Tb({nm,rows,diff,mk,lg}){
- return html`<div class="mb-4"><div class="font-bold mb-1">${nm}</div><div class="sf rounded-xl overflow-hidden"><table class="w-full text-sm text-center table-fixed"><colgroup><col style=${{width:'2.25rem'}}/><col/><col style=${{width:'2.5rem'}}/><col style=${{width:'2.5rem'}}/><col style=${{width:'2.5rem'}}/><col style=${{width:'3.25rem'}}/></colgroup><thead class="mu text-xs"><tr><th class="p-2">#</th><th class="text-right">קבוצה</th><th>מש׳</th><th>נצ׳</th><th>הפ׳</th><th>${diff?'+/-':'נק׳'}</th></tr></thead><tbody>${rows.map((r,i)=>html`<tr key=${r[0]} style=${{animationDelay:Math.min(i,14)*15+'ms'}} class=${'row-in border-t bd '+(r[0]===ME?'me-row font-bold':'')}><td class="p-2 relative">${mk&&mk(i,r)?html`<span class=${'absolute right-0 top-1 bottom-1 w-1 rounded-l '+''} style=${{background:MKC[mk(i,r)]}}></span>`:null}${i+1}</td><td class="text-right py-1.5"><div class="flex items-center gap-2 min-w-0"><span class="w-6 h-6 shrink-0 flex items-center justify-center"><${Cr} n=${r[0]} s=${22}/></span><span class="min-w-0 leading-tight"><span class="block truncate">${r[0]}</span>${diff&&r[4]?html`<span class="block text-[11px] opacity-75">${r[4]}</span>`:null}</span></div></td><td>${r[1]==null?'—':r[1]+r[2]}</td><td>${r[1]??'—'}</td><td>${r[2]??'—'}</td><td dir="ltr">${diff?(r[3]>0?'+':'')+r[3]:(r[3]??'—')}</td></tr>`)}</tbody></table></div>${lg?html`<div class="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[11px] mu">${lg.map(c=>html`<span key=${c} class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style=${{background:MKC[c]}}></span>${c==='g'&&lg.includes('p')&&!lg.includes('r')?'רבע גמר':MKL[c]}</span>`)}</div>`:null}</div>`;
+function Tb({nm,heads,rows,endHead,mk,lg}){
+ return html`<div class="mb-4"><div class="font-bold mb-1">${nm}</div><div class="sf rounded-xl overflow-hidden px-1">
+ <${SplitTable} size="text-sm" nameHead=${html`<span class="inline-block w-5 text-center">#</span><span class="mr-8">קבוצה</span>`} heads=${heads} endHead=${endHead} rows=${rows.map((r,i)=>({key:r.n,style:{animationDelay:Math.min(i,14)*15+'ms'},cls:'row-in border-t bd'+(r.n===ME?' me-row font-bold':''),ncls:'relative py-1.5 min-w-[124px] max-w-[150px]',
+  name:html`${mk&&mk(i,r)?html`<span class="absolute right-0 top-1 bottom-1 w-1 rounded-l" style=${{background:MKC[mk(i,r)]}}></span>`:null}<div class="flex items-center gap-2 min-w-0"><span class="w-5 text-center shrink-0 sb">${i+1}</span><span class="w-6 h-6 shrink-0 flex items-center justify-center"><${Cr} n=${r.n} s=${22}/></span><span class="min-w-0 leading-tight"><span class="block truncate">${r.n}</span>${r.tag?html`<span class="block text-[11px] opacity-75">${r.tag}</span>`:null}</span></div>`,
+  cells:r.cells.map((v,j)=>html`<td key=${j} class="px-1.5 py-1.5 sb">${v}</td>`),end:html`<span class="font-bold sb">${r.end}</span>`}))}/></div>
+ ${lg?html`<div class="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[11px] mu">${lg.map(c=>html`<span key=${c} class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style=${{background:MKC[c]}}></span>${c==='g'&&lg.includes('p')&&!lg.includes('r')?'רבע גמר':MKL[c]}</span>`)}</div>`:null}</div>`;
 }
+/* ערכים לעמודות הטבלאות */
+const PM=html`<span dir="ltr" class="inline-block">+/-</span>`;
+const sgn=v=>v==null||isNaN(v)?'—':html`<span dir="ltr" class="inline-block">${(v>0?'+':v<0?'−':'')+Math.abs(v)}</span>`;
+const streak=v=>!v?'—':html`<span class=${v>0?'text-green-700':'text-[#D21919]'}>${Math.abs(v)} ${v>0?'נצ׳':'הפ׳'}</span>`;
+const pct=(w,l)=>w+l?html`<span dir="ltr" class="inline-block">${Math.round(w/(w+l)*100)}%</span>`:'—';
+const grpRows=t=>t.map(r=>({n:r[0],tag:r[4]||'',cells:[r[1]==null?'—':r[1]+r[2],r[1]??'—',r[2]??'—',sgn(r[3])],end:r[1]==null?'—':pct(r[1],r[2]),raw:r}));
 
 /* בראקטים: כל מפעל מוגדר כאן בשלבים (שם, הטוב מ-N, מספר צמדים). הנתונים (BR / WC.KO) הם מערך שלבים, כל שלב מערך צמדים לפי סדר הבראקט */
 const B365='https://www.365scores.com/he/basketball/league/';
@@ -470,9 +480,9 @@ function Stand(){
  <${Chips} o=${[['league','ליגת ווינר סל'],['euro','יורוקאפ'],['cup','גביע המדינה'],['wcup','גביע ווינר סל']]} v=${k} set=${setK}/>
  ${ld?html`<${Sk}/>`:html`<div key=${k} class="stg">
  ${none?html`<${SeasonEmpty} msg=${HAS?'אין נתונים למפעל הזה בעונה הנוכחית.':'הטבלאות של עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${CT[0][0]} cta=${CT[0][1]}/>`
- :k==='league'?html`<div><${Tb} nm="ליגת ווינר סל" rows=${LG.map(r=>[r.n,r.w,r.l,r.p])} mk=${i=>i<6?'g':i<10?'p':'r'} lg=${['g','p','r']}/>${note('2 נק׳ לניצחון, נק׳ להפסד')}</div>`
- :k==='euro'?html`<div>${EC.map(([n,t])=>html`<${Tb} key=${n} nm=${n} rows=${t} diff=${1} mk=${i=>i<4?'g':''} lg=${['g']}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
- :k==='wcup'?html`<div>${WC.G.map(([n,t])=>html`<${Tb} key=${n} nm=${n} rows=${t} diff=${1} mk=${(i,r)=>/רבע/.test(r[4]||'')?'g':/פליי/.test(r[4]||'')?'p':''} lg=${['g','p']}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
+ :k==='league'?html`<div><${Tb} nm="ליגת ווינר סל" heads=${['מש׳','נצ׳','הפ׳',PM,'רצף']} endHead="נק׳" rows=${LG.map(r=>({n:r.n,cells:[r.g??(r.w+r.l),r.w,r.l,sgn(r.d),streak(r.s)],end:r.p}))} mk=${i=>i<6?'g':i<10?'p':'r'} lg=${['g','p','r']}/>${note('2 נק׳ לניצחון, נק׳ להפסד')}</div>`
+ :k==='euro'?html`<div>${EC.map(([n,t])=>html`<${Tb} key=${n} nm=${n} heads=${['מש׳','נצ׳','הפ׳',PM]} endHead="% נצ׳" rows=${grpRows(t)} mk=${i=>i<4?'g':''} lg=${['g']}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
+ :k==='wcup'?html`<div>${WC.G.map(([n,t])=>html`<${Tb} key=${n} nm=${n} heads=${['מש׳','נצ׳','הפ׳',PM]} endHead="% נצ׳" rows=${grpRows(t)} mk=${(i,r)=>/רבע/.test(r.tag)?'g':/פליי/.test(r.tag)?'p':''} lg=${['g','p']}/>`)}${note('+/- הוא הפרש הסלים')}</div>`
  :null}
  <${BrSec} k=${k}/></div>`}</div>`;
 }
@@ -523,16 +533,18 @@ function GmP({g,gs,pf}){
 }
 /* טבלת סטטיסטיקה עם עמודת שמות קבועה: השמות בטבלה נפרדת שהיא חלק מהכרטיס (בלי רקע משלה), והנתונים בטבלה שנגללת לידה –
    כך שבגלילה הצידה הנתונים נחתכים בדיוק בקצה עמודת השמות. גובה כל שורה מסונכרן בין שתי הטבלאות */
-function SplitTable({nameHead,heads,rows}){
- const a=useRef(null),b=useRef(null);
- const sync=()=>{const A=a.current,B=b.current;if(!A||!B)return;const ra=A.rows,rb=B.rows;for(let i=0;i<ra.length&&i<rb.length;i++){const h=Math.max(ra[i].getBoundingClientRect().height,rb[i].getBoundingClientRect().height);if(Math.abs(ra[i].getBoundingClientRect().height-h)>.5)ra[i].style.height=h+'px';if(Math.abs(rb[i].getBoundingClientRect().height-h)>.5)rb[i].style.height=h+'px'}};
+function SplitTable({nameHead,heads,rows,endHead,size}){
+ const a=useRef(null),b=useRef(null),c=useRef(null);
+ const sync=()=>{const T=[a.current,b.current,c.current].filter(Boolean);if(T.length<2)return;const n=Math.min(...T.map(t=>t.rows.length));for(let i=0;i<n;i++){const hs=T.map(t=>t.rows[i].getBoundingClientRect().height),h=Math.max(...hs);T.forEach((t,k)=>{if(Math.abs(hs[k]-h)>.5)t.rows[i].style.height=h+'px'})}};
  React.useLayoutEffect(sync);
- useEffect(()=>{let ro=null;try{ro=new ResizeObserver(()=>sync());a.current&&ro.observe(a.current);b.current&&ro.observe(b.current)}catch(e){}if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sync);return()=>{ro&&ro.disconnect()}},[]);
+ useEffect(()=>{let ro=null;try{ro=new ResizeObserver(()=>sync());[a,b,c].forEach(r=>r.current&&ro.observe(r.current))}catch(e){}if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sync);return()=>{ro&&ro.disconnect()}},[]);
  return html`<div class="flex items-start -mx-1" dir="rtl">
- <table ref=${a} class="text-xs shrink-0"><thead><tr class="mu text-[11px]"><th class="text-right font-normal px-1.5 py-1 whitespace-nowrap">${nameHead}</th></tr></thead>
+ <table ref=${a} class=${(size||'text-xs')+' shrink-0'}><thead><tr class="mu text-[11px]"><th class="text-right font-normal px-1.5 py-1 whitespace-nowrap">${nameHead}</th></tr></thead>
  <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}><td class=${'text-right px-1.5 py-1.5 '+(r.ncls||'')}>${r.name}</td></tr>`)}</tbody></table>
- <div class="overflow-x-auto min-w-0 flex-1 no-sb"><table ref=${b} class="text-xs text-center whitespace-nowrap min-w-full"><thead><tr class="mu text-[11px]">${heads.map((h,i)=>html`<th key=${i} class="font-normal px-1.5 py-1">${h}</th>`)}</tr></thead>
- <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}>${r.cells}</tr>`)}</tbody></table></div></div>`;
+ <div class="overflow-x-auto min-w-0 flex-1 no-sb"><table ref=${b} class=${(size||'text-xs')+' text-center whitespace-nowrap min-w-full'}><thead><tr class="mu text-[11px]">${heads.map((h,i)=>html`<th key=${i} class="font-normal px-1.5 py-1">${h}</th>`)}</tr></thead>
+ <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}>${r.cells}</tr>`)}</tbody></table></div>
+ ${endHead!=null?html`<table ref=${c} class=${(size||'text-xs')+' shrink-0 text-center'}><thead><tr class="mu text-[11px]"><th class="font-normal px-2 py-1 whitespace-nowrap">${endHead}</th></tr></thead>
+ <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}><td class="px-2 py-1.5 whitespace-nowrap">${r.end}</td></tr>`)}</tbody></table>`:null}</div>`;
 }
 /* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
 function LiveScore({L,g,big}){
