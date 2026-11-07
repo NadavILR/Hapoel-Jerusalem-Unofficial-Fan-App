@@ -1,0 +1,38 @@
+# Keeps the "what's new" text of every GitHub release in sync with CHANGELOG.md
+# (also fills in the notes of releases that were published before the changelog existed).
+name: Sync release notes
+
+on:
+  push:
+    branches: [main]
+    paths: ['CHANGELOG.md', 'scripts/release-notes.js']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-notes
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Update the notes of each existing release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/release-notes.js --list | while IFS=$'\t' read -r tag version; do
+            if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+              node scripts/release-notes.js "$version" > notes.md
+              gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+              echo "updated $tag"
+            else
+              echo "no release $tag (skipped)"
+            fi
+          done

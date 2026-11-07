@@ -44,16 +44,17 @@ jobs:
         with:
           name: hapoel-jerusalem-v${{ steps.ver.outputs.version }}
           path: hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk
+      - name: Write the release notes (what's new, from CHANGELOG.md)
+        run: |
+          node scripts/release-notes.js "${{ steps.ver.outputs.version }}" > release-notes.md || printf 'אפליקציית האנדרואיד של הפועל ירושלים – גרסה %s.\n' "${{ steps.ver.outputs.version }}" > release-notes.md
+          cat release-notes.md
       - name: Publish the release for this version
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           target_commitish: ${{ github.sha }}
           name: גרסה ${{ steps.ver.outputs.version }}
-          body: |
-            אפליקציית האנדרואיד של הפועל ירושלים – גרסה ${{ steps.ver.outputs.version }}.
-            להתקנה: מורידים מהטלפון את hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk ופותחים אותו (מתקינים מעל הגרסה הקיימת).
-            נבנה מ-${{ github.sha }}.
+          body_path: release-notes.md
           files: hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk
           make_latest: true
       - name: Remove the old unversioned release
