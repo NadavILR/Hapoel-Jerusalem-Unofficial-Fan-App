@@ -840,8 +840,9 @@ function App(){
  /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
  const [st,setSt]=useState(false),[upd,setUpd]=useState(null);
  const checkUpd=useCallback(async()=>{if(!NATIVE)return 'none';try{const r=await latestRelease();if(r&&vcmp(r.v,window.APP_VERSION||'0.0.0')>0){setUpd(r);return 'new'}return 'none'}catch(e){return 'fail'}},[]);
- useEffect(()=>{if(!NATIVE)return;const auto=()=>{const l=LS.get('hpj-updchk',0);if(Date.now()-l<20*6e4)return;LS.set('hpj-updchk',Date.now());checkUpd()};auto();const f=()=>{if(document.visibilityState==='visible')auto()};document.addEventListener('visibilitychange',f);const i=setInterval(checkUpd,6*H);return()=>{document.removeEventListener('visibilitychange',f);clearInterval(i)}},[checkUpd]);
- useEffect(()=>{if(!upd)return;setSt(false);setDr(false);const T=TK();if(T)T.hide().catch(()=>{});const t='עדכון חדש זמין: גרסה '+upd.v+'. כדי להמשיך להשתמש באפליקציה יש לעדכן.';setNotes(n=>{if(n.some(x=>x.upd===upd.v))return n;if(pf.on!==0)devNotify(t);return[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0,upd:upd.v},...n]})},[upd]);
+ /* בדיקת עדכונים: רק בפתיחת האפליקציה. אם יש גרסה חדשה, מסך העדכון מופיע מיד */
+ useEffect(()=>{if(NATIVE)checkUpd()},[checkUpd]);
+ useEffect(()=>{if(!upd)return;setSt(false);setDr(false);setMo0(false);const T=TK();if(T)T.hide().catch(()=>{})},[upd]);
  const backRef=useRef();backRef.current=()=>{if(VIDC.close){VIDC.close();return true}if(mo){setMo(false);return true}if(st){setSt(false);return true}if(dr){setDr(false);return true}if(gm){setGm(null);return true}if(pl){setPl(null);return true}if(NATIVE&&(pg==='shop'||pg==='mem')&&FR.n>1){FR.n--;FR.skip++;history.back();return true}if(pg!=='home'){go('home');return true}return false};
  useEffect(()=>{window.hpjBack=()=>backRef.current()},[]);
  /* בגרסת הדפדפן (כולל האפליקציה המותקנת למסך הבית) כפתור החזור עובר דרך היסטוריית הדפדפן */

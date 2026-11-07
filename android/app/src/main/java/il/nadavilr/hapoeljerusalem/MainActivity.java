@@ -46,9 +46,9 @@ public class MainActivity extends BridgeActivity {
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         applyStatusBarIcons();
-        // Check for app updates in the background too, so a notification arrives even when the app is closed
+        // No background update checks any more (the app checks when it opens); cancel the one older versions scheduled
         try {
-            UpdateCheckWorker.schedule(this);
+            UpdateCheckWorker.cancel(this);
         } catch (Exception ignored) {
         }
         if (bridge == null) return;
