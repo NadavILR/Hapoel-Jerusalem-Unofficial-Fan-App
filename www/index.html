@@ -25,7 +25,8 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px);touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:#D21919}
-.sf{background:var(--sf);border:1px solid var(--bd)}.mu{color:var(--mu)}.bd{border-color:var(--bd)}
+.sf{background:var(--sf);border:1px solid var(--bd)}.mu{color:var(--mu)}.bd{border-color:var(--bd)}.bx{background:var(--bg)}
+.car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}
 </style>
 </head>
 <body>
@@ -226,10 +227,10 @@ const applyLive=j=>{
  Object.assign(CR,O(j.CR,{}));HAS=true;return true};
 const ILT={timeZone:'Asia/Jerusalem'};
 const fdate=t=>new Date(t).toLocaleDateString('he-IL',{...ILT,weekday:'long',day:'numeric',month:'numeric'});
-/* "יום ראשון - 08.11.2026 - 20:15" (שעון ישראל) – לכרטיס המשחק הבא במסך הבית */
+/* "יום ראשון · 08.11.2026 · 20:15" (שעון ישראל) – לכרטיס המשחק הבא במסך הבית */
 const fdLong=f=>{const d=new Date(f.t),o={...ILT},p=new Intl.DateTimeFormat('en-GB',{...o,day:'2-digit',month:'2-digit',year:'numeric'}).formatToParts(d),g=k=>(p.find(x=>x.type===k)||{}).value||'';
  const day=d.toLocaleDateString('he-IL',{...o,weekday:'long'}),date=g('day')+'.'+g('month')+'.'+g('year'),time=f.tbd?'שעה טרם נקבעה':d.toLocaleTimeString('he-IL',{...o,hour:'2-digit',minute:'2-digit',hour12:false});
- return day+' - '+date+' - '+time};
+ return day+' · '+date+' · '+time};
 const fd=t=>fdate(t)+' · '+new Date(t).toLocaleTimeString('he-IL',{...ILT,hour:'2-digit',minute:'2-digit',hour12:false});
 const fdf=f=>f.tbd?fdate(f.t)+' · תאריך ושעה לא סופיים':fd(f.t);
 const mm=s=>`${Math.max(s,0)/60|0}:${String(Math.max(s,0)%60).padStart(2,'0')}`;
@@ -267,6 +268,36 @@ function News(){
    return html`<${T} key=${n.u||n.t} href=${n.u||undefined} target=${n.u?'_blank':undefined} rel=${n.u?'noopener noreferrer':undefined} class="block py-2.5 border-t bd"><div class="text-sm font-semibold leading-snug">${n.t}</div>${meta||n.u?html`<div class="text-xs mu mt-0.5 flex items-center gap-1">${meta}${n.u?html`<${I} n="ext" s=${11}/>`:null}</div>`:null}<//>`})}
   ${more>0?html`<button onClick=${()=>setAll(!all)} class="w-full pt-2.5 border-t bd text-sm font-bold text-[#D21919]">${all?'הצג פחות':'עוד כותרות ('+more+')'}</button>`:null}</div>`;
 }
+/* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
+function GameCard({kind,g,now,L}){
+ const A=useContext(Ctx),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
+ const box=red?'bg-[rgb(var(--blk-rgb)/0.40)]':'bx',btn=red?'bg-white/15':'bx',op=red?'opacity-80':'mu';
+ const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-black':'font-normal')}>${n}</div>`;
+ const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
+ const open=()=>{A.setGm(g);window.scrollTo(0,0)};
+ return html`<div class=${'rounded-2xl p-4 '+(red?'text-white':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ ${L?html`<${LiveCard} L=${L} g=${g}/>`:html`
+  <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
+  <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
+  <div class="flex-1 min-w-0 text-center">${nm(hm)}${res?html`<div class="text-3xl font-black tabular-nums my-1">${g.h?g.r[0]:g.r[1]} – ${g.h?g.r[1]:g.r[0]}</div>`:html`<div class=${'text-sm my-0.5 '+op} dir="ltr">VS</div>`}${nm(aw)}</div>
+  <div class="shrink-0"><${Cr} n=${aw} s=${60}/></div></div>
+  <div class=${'text-center text-sm '+(red?'opacity-90':'')}>${fdLong(g)}</div>
+  <div class=${'text-center text-sm mb-3 flex items-center justify-center gap-1 '+op}><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div>
+  ${res?html`<div class="text-center mb-1"><span class=${'inline-block px-3 py-1 rounded-full text-sm font-bold text-white '+(w?'bg-green-600':'bg-[#D21919]')}>${(w?'ניצחון':'הפסד')+(g.h?' בית':' חוץ')+' · הפרש '+Math.abs(g.r[0]-g.r[1])}</span></div>`
+  :html`<div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class=${box+' rounded-xl py-2'}><div class="text-2xl font-black tabular-nums">${String(v).padStart(2,'0')}</div><div class=${'text-[11px] '+(red?'opacity-70':'mu')}>${l}</div></div>`)}</div>
+  <button onClick=${()=>A.togRem(g)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[g.id]?(red?'bg-white text-[#D21919]':'bg-[#D21919] text-white'):btn)}><${I} n="bell" s=${16}/>${A.rem[g.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
+  <button onClick=${open} class=${'mt-2 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+btn}><${I} n="cal" s=${16}/>לעמוד המשחק</button>`}
+ </div>`;
+}
+/* קרוסלה עם החלקה ונקודות; נפתחת על הכרטיס start */
+function Carousel({items,start}){
+ const r=useRef(null),[i,setI]=useState(start);
+ const to=(k,sm)=>{const el=r.current,c=el&&el.children[k];if(!c)return;el.scrollBy({left:c.getBoundingClientRect().left-el.getBoundingClientRect().left,behavior:sm?'smooth':'auto'})};
+ React.useLayoutEffect(()=>{to(start)},[]);
+ const onScroll=()=>{const el=r.current;if(!el)return;const x=el.getBoundingClientRect().left;let b=0,bd=1e9;[...el.children].forEach((c,k)=>{const d=Math.abs(c.getBoundingClientRect().left-x);if(d<bd){bd=d;b=k}});if(b!==i)setI(b)};
+ return html`<div class="md:col-span-2"><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
+ ${items.length>1?html`<div class="flex justify-center gap-1.5 mt-2">${items.map((_,k)=>html`<button key=${k} aria-label=${'כרטיס '+(k+1)} onClick=${()=>to(k,1)} style=${k===i?null:{background:'var(--mu)'}} class=${'h-2 rounded-full transition-all '+(k===i?'w-5 bg-[#D21919]':'w-2 opacity-40')}></button>`)}</div>`:null}</div>`;
+}
 function Home(){
  const A=useContext(Ctx),now=useNow();
  const nx=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0],ls=A.F.filter(f=>f.r).sort((a,b)=>b.t-a.t)[0];
@@ -274,24 +305,12 @@ function Home(){
  const L=A.lg&&nx&&A.lg.app===nx.id&&(A.lg.status!=='pre'||now>=nx.t)?A.lg:null;
  const rk=LG.findIndex(r=>r.n===ME),me=LG[rk],eg=EC.find(([,t])=>t.some(r=>r[0]===ME)),er=eg?eg[1].findIndex(r=>r[0]===ME):-1,em=er>=0?eg[1][er]:null;
  if(!nx)return html`<${SeasonEmpty} msg=${HAS?'אין משחקים קרובים בלוח כרגע.':'משחקי עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${LINKS.club} cta="לאתר הרשמי של הקבוצה"/>`;
- const df=Math.max(0,nx.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
+ const nx2=A.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[1];
+ /* קרוסלה (מימין לשמאל): המשחק הקודם ← המשחק הבא (אדום, נפתח במרכז) ← המשחק שאחריו */
+ const cards=[ls&&['prev',ls],['next',nx],nx2&&['after',nx2]].filter(Boolean);
  return html`<div class=${'space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start '+(A.ld?'animate-pulse opacity-70':'')}>
- <div class="rounded-2xl p-4 text-white md:col-span-2" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}>
- ${L?html`<${LiveCard} L=${L} g=${nx}/>` :html`
-  <div class="text-sm opacity-80 mb-3 text-center">המשחק הבא · ${cmp(nx)}</div>
-  ${(()=>{const hm=nx.h?ME:nx.o,aw=nx.h?nx.o:ME,nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-black':'font-normal')}>${n}</div>`;
-  /* מארחת מימין, אורחת משמאל; רק השם של הפועל ירושלים מודגש */
-  return html`<div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
-  <div class="flex-1 min-w-0 text-center">${nm(hm)}<div class="text-sm opacity-80 my-0.5" dir="ltr">VS</div>${nm(aw)}</div>
-  <div class="shrink-0"><${Cr} n=${aw} s=${60}/></div></div>
-  <div class="text-center text-sm opacity-90">${fdLong(nx)}</div>
-  <div class="text-center text-sm opacity-80 mb-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${nx.v||(nx.h?'משחק בית':'משחק חוץ')}</div>`})()}
-  <div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class="bg-[rgb(var(--blk-rgb)/0.40)] rounded-xl py-2"><div class="text-2xl font-black tabular-nums">${String(v).padStart(2,'0')}</div><div class="text-[11px] opacity-70">${l}</div></div>`)}</div>
-  <button onClick=${()=>A.togRem(nx)} class=${'mt-3 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[nx.id]?'bg-white text-[#D21919]':'bg-white/15')}><${I} n="bell" s=${16}/>${A.rem[nx.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>
-  <button onClick=${()=>{A.setGm(nx);window.scrollTo(0,0)}} class="mt-2 w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>`}
- </div>
+ <${Carousel} key=${nx.id} start=${ls?1:0} items=${cards.map(([k,g])=>html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k==='next'?L:null}/>`)}/>
  <div class="flex items-center justify-between text-xs mu md:col-span-2"><span>${A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'נכון ל-'+ASOF}</span><button onClick=${A.refresh} class="flex items-center gap-1 text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
- ${ls&&html`<div onClick=${()=>A.setGm(ls)} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer"><span class=${'w-9 h-9 rounded-full flex items-center justify-center font-bold text-white '+(ls.r[0]>ls.r[1]?'bg-green-600':'bg-[#D21919]')}>${ls.r[0]>ls.r[1]?'W':'L'}</span><${Cr} n=${ls.o} s=${36}/><div class="flex-1"><div class="text-xs mu">המשחק האחרון · ${cmp(ls)}</div><div class="font-bold">${ME} נגד ${ls.o}</div></div><div dir="ltr" class="text-2xl font-black">${ls.r[0]}–${ls.r[1]}</div></div>`}
  ${(me||em)&&html`<div class=${'grid gap-2 '+(me&&em?'grid-cols-2':'grid-cols-1')}>${me&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום בליגת ווינר סל</div><div class="text-2xl font-black text-[#D21919] leading-tight">מקום ${rk+1}</div><div class="text-xs mu mt-1">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></div>`}${em&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום ביורוקאפ</div><div class="text-2xl font-black text-[#D21919] leading-tight">מקום ${er+1}</div><div class="text-xs mu mt-1">${eg[0]} · ${em[1]} נצ׳ · ${em[2]} הפ׳</div></div>`}</div>`}
  <${News}/>
  </div>`;
