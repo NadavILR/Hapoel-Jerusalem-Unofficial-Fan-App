@@ -31,7 +31,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .me-row{background:rgb(210 25 25/.08);color:#b31515}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
 .glass{background:var(--glass);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
-.glass-menu{background:var(--menu,var(--glass));-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
+.glass-menu{background:var(--bar);color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
 .glass-bar{background:var(--bar);color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
 .glass-sheet{background:var(--glass-strong)!important;-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border-top:1px solid var(--glass-bd)}
 .glass-in{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgb(255 255 255/.14)}
@@ -711,16 +711,32 @@ function UpdGate({u}){
   try{const c=await U.canInstall();if(!c||!c.allowed){setSt('perm');await U.openInstallSettings();return}}catch(e){}
   setSt('dl');setP(0);let h=null;try{h=await U.addListener('progress',e=>setP(Math.round(e&&e.p||0)))}catch(e){}
   try{await U.downloadAndInstall({url:u.url});setSt('inst')}catch(e){setSt('err')}finally{try{h&&h.remove&&Promise.resolve(h.remove()).catch(()=>{})}catch(e){}}};
- return html`<div class="fixed inset-0 z-[80] flex items-center justify-center p-5" style=${{background:'rgb(var(--blk-rgb)/0.92)'}}><div class="w-full max-w-sm rounded-2xl p-5 text-center" style=${{background:'var(--bg)'}}>
- <img src="icons/icon-192.png" alt="" class="w-20 h-20 mx-auto rounded-2xl mb-3"/>
- <div class="text-xl font-bold mb-1">עדכון חדש זמין</div>
- <div class="text-sm mu mb-4">גרסה ${u.v} זמינה (מותקנת ${window.APP_VERSION||''}). כדי להמשיך להשתמש באפליקציה יש לעדכן.</div>
- ${st==='dl'?html`<div class="h-2 rounded-full bg-[rgb(var(--blk-rgb)/0.15)] overflow-hidden mb-2"><div class="h-full bg-[#D21919]" style=${{width:Math.max(3,p)+'%'}}></div></div><div class="text-xs mu mb-3">מוריד את העדכון… ${p>=0?p+'%':''}</div>`:null}
- ${st==='perm'?html`<div class="text-xs mu mb-3">כדי להתקין את העדכון מתוך האפליקציה, אשרו בהגדרות שנפתחו "התרת התקנה ממקור זה", חזרו לכאן ולחצו שוב "עדכן עכשיו".</div>`:null}
- ${st==='inst'?html`<div class="text-xs mu mb-3">במסך ההתקנה שנפתח לחצו "עדכון". אם הוא לא נפתח, לחצו שוב "עדכן עכשיו".</div>`:null}
- ${st==='err'?html`<div class="text-xs text-[#D21919] mb-3">ההורדה נכשלה. בדקו את החיבור לאינטרנט ונסו שוב.</div>`:null}
- <button disabled=${st==='dl'} onClick=${run} class="w-full py-3 rounded-xl bg-[#D21919] text-white font-bold disabled:opacity-60">${st==='dl'?'מוריד…':'עדכן עכשיו'}</button>
- </div></div>`;
+ const [src]=usePh(TP,'team'),busy=st==='dl',notes=(u.notes||[]).filter(Boolean);
+ /* מסך מלא: תמונת הקבוצה מטושטשת ברקע, אייקון האפליקציה, מעבר בין הגרסאות בספרות לוח התוצאות, "מה חדש" וכפתור עדכון עם התקדמות ההורדה בתוכו */
+ return html`<div class="fixed inset-0 z-[80] flex flex-col fade-in" style=${{background:'var(--bg)'}}>
+ <div class="absolute inset-x-0 top-0 h-[55%] overflow-hidden pointer-events-none" aria-hidden="true">${src?html`<img src=${src} alt="" referrerPolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover scale-125" style=${{filter:'blur(28px) saturate(1.3)',opacity:.75}}/>`:null}<div class="absolute inset-0" style=${{background:'linear-gradient(160deg,rgb(210 25 25/.55),rgb(var(--blk-rgb)/.35) 55%,var(--bg))'}}></div><div class="absolute inset-x-0 bottom-0 h-1/2" style=${{background:'linear-gradient(to bottom,transparent,var(--bg))'}}></div></div>
+ <div class="relative flex-1 overflow-y-auto px-6 text-center" style=${{paddingTop:'calc(env(safe-area-inset-top,0px) + 56px)'}}>
+  <img src="icons/icon-192.png" alt="" class="w-24 h-24 mx-auto rounded-[28px] shadow-xl pop-in"/>
+  <div class="inline-flex items-center gap-2 mt-5 px-3 py-1 rounded-full glass text-xs font-bold">גרסה חדשה</div>
+  <div class="text-3xl font-extrabold mt-3 leading-tight">עדכון חדש זמין</div>
+  <div class="flex items-center justify-center gap-3 mt-4" dir="ltr">
+   <span class="px-3 py-1.5 rounded-xl glass sb font-semibold text-lg mu">${window.APP_VERSION||''}</span>
+   <span class="mu text-lg">→</span>
+   <span class="px-3 py-1.5 rounded-xl bg-[#D21919] text-white sb font-semibold text-lg">${u.v}</span>
+  </div>
+  <div class="text-sm mu mt-3">כדי להמשיך להשתמש באפליקציה יש לעדכן</div>
+  ${notes.length?html`<div class="sf rounded-2xl p-4 mt-6 text-right max-w-md mx-auto"><div class="font-bold mb-2">מה חדש</div>${notes.map((n,i)=>html`<div key=${i} class="flex gap-2 py-1.5 text-sm leading-snug"><span class="w-1.5 h-1.5 rounded-full bg-[#D21919] mt-2 shrink-0"></span><span>${n}</span></div>`)}</div>`:null}
+ </div>
+ <div class="relative px-6 pt-3 max-w-md w-full mx-auto" style=${{paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 20px)'}}>
+  ${st==='perm'?html`<div class="text-xs mu mb-3 text-center">אשרו בהגדרות שנפתחו "התרת התקנה ממקור זה", חזרו לכאן ולחצו שוב "עדכן עכשיו"</div>`:null}
+  ${st==='inst'?html`<div class="text-xs mu mb-3 text-center">במסך ההתקנה שנפתח לחצו "עדכון". אם הוא לא נפתח, לחצו שוב "עדכן עכשיו"</div>`:null}
+  ${st==='err'?html`<div class="text-xs text-[#D21919] mb-3 text-center">ההורדה נכשלה. בדקו את החיבור ונסו שוב</div>`:null}
+  <button disabled=${busy} onClick=${run} class="relative w-full h-14 rounded-2xl bg-[#D21919] text-white font-bold text-base overflow-hidden shadow-lg">
+   ${busy?html`<span class="absolute inset-y-0 right-0 bg-white/25" style=${{width:Math.max(3,p)+'%',transition:'width .3s var(--ease)'}}></span>`:null}
+   <span class="relative flex items-center justify-center gap-2">${busy?html`מוריד את העדכון <span class="sb">${p>=0?p+'%':''}</span>`:html`<${I} n="sync" s=${18}/>עדכן עכשיו`}</span>
+  </button>
+ </div>
+ </div>`;
 }
 
 /* ---------- App ---------- */
@@ -744,11 +760,14 @@ const DLPFX='https://github.com/'+REPO+'/releases/download/';
 /* הגרסה האחרונה: קודם ה-API של GitHub; אם הוא חסום (מגבלת 60 בקשות לשעה לכל כתובת IP – בסלולר הרבה משתמשים חולקים כתובת אחת)
    או לא זמין – פיד ה-releases הציבורי (releases.atom), שאין עליו מגבלה כזו. שם קובץ ה-APK נגזר מהגרסה, כמו ב-workflow */
 const relVer=tag=>String(tag||'').replace(/^v/,'').replace(/^(\d+\.\d{2})\.0$/,'$1');
+const notesOf=t=>String(t||'').split('\n').map(l=>/^\s*-\s+(.+)/.exec(l)).filter(Boolean).map(m=>m[1].replace(/`/g,'').trim()).filter(x=>!/^להתקנה/.test(x)).slice(0,8);
+const unHtml=t=>t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&');
 async function relApi(){const raw=NATIVE?await getText('https://api.github.com/repos/'+REPO+'/releases/latest'):await (async()=>{const r=await fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw new Error('http '+r.status);return r.text()})();
- const j=JSON.parse(raw),v=relVer(j.tag_name),a=(j.assets||[]).find(x=>/\.apk$/i.test(x.name||''));if(!/^\d+\.\d+(\.\d+)?$/.test(v)||!a||typeof a.browser_download_url!=='string'||!a.browser_download_url.startsWith(DLPFX))return null;return{v,url:a.browser_download_url}}
+ const j=JSON.parse(raw),v=relVer(j.tag_name),a=(j.assets||[]).find(x=>/\.apk$/i.test(x.name||''));if(!/^\d+\.\d+(\.\d+)?$/.test(v)||!a||typeof a.browser_download_url!=='string'||!a.browser_download_url.startsWith(DLPFX))return null;return{v,url:a.browser_download_url,notes:notesOf(j.body)}}
 async function relAtom(){const t=await getText('https://github.com/'+REPO+'/releases.atom?t='+Date.now());let best=null;
  for(const m of t.matchAll(/\/releases\/tag\/(v\d+\.\d+(?:\.\d+)?)["<]/g)){const v=relVer(m[1]);if(!best||vcmp(v,best.v)>0)best={v,tag:m[1]}}
- return best?{v:best.v,url:DLPFX+best.tag+'/hapoel-jerusalem-v'+best.v+'.apk'}:null}
+ if(!best)return null;let notes=[];try{const e=t.split('<entry>').find(x=>x.includes('/releases/tag/'+best.tag+'"')),c=e&&/<content[^>]*>([\s\S]*?)<\/content>/.exec(e);if(c)notes=[...unHtml(c[1]).matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m=>unHtml(m[1].replace(/<[^>]+>/g,'')).trim()).filter(x=>x&&!/^להתקנה/.test(x)).slice(0,8)}catch(_){}
+ return{v:best.v,url:DLPFX+best.tag+'/hapoel-jerusalem-v'+best.v+'.apk',notes}}
 async function latestRelease(){try{const r=await relApi();if(r)return r}catch(e){}return relAtom()}
 const schedRem=(f)=>{const L=LN();if(!L||f.tbd||f.t-H<=Date.now())return;L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(f.t-H),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919'}]}).catch(()=>{})};
 const lnPerm=r=>r&&r.display==='granted'?'granted':r&&r.display==='denied'?'denied':'default';
