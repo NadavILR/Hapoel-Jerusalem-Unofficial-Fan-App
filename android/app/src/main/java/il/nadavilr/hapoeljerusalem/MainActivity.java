@@ -56,7 +56,8 @@ public class MainActivity extends BridgeActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
-                if (isExternalWebPage(url)) {
+                // Embedded frames (the game highlights video, shop / membership pages) stay inside the page
+                if (isExternalWebPage(url) && request.isForMainFrame()) {
                     openExternal(url.toString());
                     return true; // the app itself stays where it is, underneath
                 }
