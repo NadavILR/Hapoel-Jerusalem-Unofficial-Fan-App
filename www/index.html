@@ -23,7 +23,7 @@
 :root{--sat:env(safe-area-inset-top,0px);--bar:rgb(255 255 255/.62);--bar-tx:#282828;--bar-bd:rgb(40 40 40/.1);--glass:rgb(255 255 255/.62);--menu:rgb(255 255 255/.66);--glass-strong:rgb(244 244 245/.9);--glass-bd:rgb(255 255 255/.55);--blk:#282828;--blk-rgb:40 40 40;--bg:#f4f4f5;--bg-rgb:244 244 245;--sf:#fff;--tx:#282828;--mu:#71717a;--bd:#e4e4e7;box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}}
 :root[data-theme="dark"]{color-scheme:dark;--menu:rgb(38 38 40/.6);--bar:rgb(0 0 0/.6);--bar-tx:#fff;--bar-bd:rgb(255 255 255/.1);--glass:rgb(38 38 40/.55);--glass-strong:rgb(20 20 22/.88);--glass-bd:rgb(255 255 255/.08);--blk:#000000;--blk-rgb:0 0 0;--bg:#000000;--bg-rgb:0 0 0;--sf:#333333;--tx:#f4f4f5;--mu:#a1a1aa;--bd:#444444}
-html{overscroll-behavior-y:contain;scroll-padding-top:var(--sat);touch-action:manipulation;-webkit-text-size-adjust:100%}
+html,body{overscroll-behavior:none}html{scroll-padding-top:var(--sat);touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 /* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
 .sf{background:var(--sf);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}

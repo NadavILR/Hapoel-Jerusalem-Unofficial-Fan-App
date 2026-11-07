@@ -53,6 +53,10 @@ public class MainActivity extends BridgeActivity {
         }
         if (bridge == null) return;
 
+        // No Android overscroll "stretch" at the top or bottom of a screen: it stretched the whole page,
+        // header, bottom bar and menu included. Pull to refresh is handled by the page itself.
+        bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
