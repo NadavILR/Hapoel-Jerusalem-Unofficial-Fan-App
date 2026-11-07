@@ -31,7 +31,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#282828 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#282828 url(bg/pattern-dark.jpg) center/cover no-repeat}
 .sf{background:rgb(var(--sf-rgb)/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid transparent;box-shadow:0 1px 2px rgb(0 0 0/.04),0 6px 20px rgb(0 0 0/.05)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .2s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
-.me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.solid-card{background:var(--sf)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
+.me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.tint-glass{background:rgb(0 0 0/.09);-webkit-backdrop-filter:blur(16px) saturate(1.6);backdrop-filter:blur(16px) saturate(1.6)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tint-glass{background:rgb(255 255 255/.1)}}:root[data-theme="dark"] .tint-glass{background:rgb(255 255 255/.1)}
+.red-glass{background:rgb(210 25 25/.72);-webkit-backdrop-filter:blur(16px) saturate(1.6);backdrop-filter:blur(16px) saturate(1.6);box-shadow:inset 0 1px 0 rgb(255 255 255/.18)}
+.solid-card{background:var(--sf)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
 .glass{background:var(--glass);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
 .glass-menu{background:var(--bar);color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
@@ -340,7 +343,7 @@ function News(){
 /* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
 function GameCard({kind,g,now,L}){
  const A=useContext(Ctx),[vid,setVid]=useState(false),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
- const box=red?'bg-white/10 glass-in':'bx',btn=red?'bg-white/15 glass-in':'bx',op=red?'opacity-80':'mu';
+ const box=red?'bg-white/10 glass-in':'tint-glass',btn=red?'bg-white/15 glass-in':'tint-glass',op=red?'opacity-80':'mu';
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
@@ -356,7 +359,7 @@ function GameCard({kind,g,now,L}){
   :html`<div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class=${box+' rounded-xl py-2'}><div class="text-2xl font-semibold sb tabular-nums"><span key=${v} class="tick">${String(v).padStart(2,'0')}</span></div><div class=${'text-[11px] '+(red?'opacity-70':'mu')}>${l}</div></div>`)}</div>
   <button onClick=${()=>A.togRem(g)} class=${'mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[g.id]?(red?'bg-white text-[#D21919]':'bg-[#D21919] text-white'):btn)}><${I} n="bell" s=${16}/>${A.rem[g.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
   ${vid?html`<${VideoPop} g=${g} onClose=${()=>setVid(false)}/>`:null}
-  ${res?html`<button onClick=${()=>ytId(g)?setVid(true):openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-[#D21919] text-white"><${I} n="play" s=${16}/>לתקציר המשחק</button>`:null}
+  ${res?html`<button onClick=${()=>ytId(g)?setVid(true):openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 red-glass text-white"><${I} n="play" s=${16}/>לתקציר המשחק</button>`:null}
   <button onClick=${open} class=${'mt-2 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+btn}><${I} n="cal" s=${16}/>לעמוד המשחק</button>`}
  </div>`;
 }
