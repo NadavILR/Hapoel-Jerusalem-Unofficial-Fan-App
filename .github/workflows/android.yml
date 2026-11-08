@@ -23,20 +23,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - name: Cache Gradle (the Gradle download and libraries)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/hpj
-            ~/.gradle/caches
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle') }}
-          restore-keys: gradle-${{ runner.os }}-
       - name: Install dependencies
-        # --ignore-scripts: skips native downloads the APK build does not need (e.g. sharp for @capacitor/assets,
-        # whose download from GitHub can time out and fail the whole build)
-        run: |
-          for i in 1 2 3; do npm install --no-audit --no-fund --ignore-scripts && break; echo "npm install failed, retrying ($i)"; sleep 10; done
-          test -d node_modules/@capacitor/cli
+        run: npm install --no-audit --no-fund
       - name: Copy the web app into the Android project
         run: npx cap sync android
       - name: Read the app version
@@ -57,20 +45,6 @@ jobs:
           else
             echo "::error::The HPJ_KEYSTORE_BASE64 secret is missing – the APK must be signed with the app's key"; exit 1
           fi
-      - name: Get Gradle 8.2.1 (official download, or a mirror when GitHub's file storage is down)
-        run: |
-          Z="$HOME/.gradle/hpj/gradle-8.2.1-bin.zip"; SUM=03ec176d388f2aa99defcadc3ac6adf8dd2bce5145a129659537c0874dea5ad1
-          mkdir -p "$(dirname "$Z")"
-          ok() { [ -f "$Z" ] && echo "$SUM  $Z" | sha256sum -c --quiet; }
-          for u in https://services.gradle.org/distributions/gradle-8.2.1-bin.zip \
-                   https://mirrors.aliyun.com/gradle/distributions/v8.2.1/gradle-8.2.1-bin.zip \
-                   https://mirrors.cloud.tencent.com/gradle/gradle-8.2.1-bin.zip; do
-            ok && break
-            echo "Downloading $u"; curl -fsSL --retry 2 --max-time 600 -o "$Z" "$u" || rm -f "$Z"
-          done
-          ok || { echo "::error::Could not download Gradle 8.2.1 (checksum checked)"; exit 1; }
-          unzip -q -o "$Z" -d "$RUNNER_TEMP/gradle"
-          echo "GRADLE_BIN=$RUNNER_TEMP/gradle/gradle-8.2.1/bin/gradle" >> "$GITHUB_ENV"
       - name: Build APK
         working-directory: android
         env:
@@ -78,10 +52,8 @@ jobs:
           HPJ_KEY_ALIAS: ${{ secrets.HPJ_KEY_ALIAS }}
           HPJ_KEY_PASSWORD: ${{ secrets.HPJ_KEY_PASSWORD }}
         run: |
-          # Gradle itself comes from the previous step (checksum-verified), so the build does not depend on the wrapper download.
-          # Library downloads sometimes time out on the runner: try up to 3 times
-          for i in 1 2 3; do "$GRADLE_BIN" assembleRelease --no-daemon && break; echo "Gradle build failed, retrying ($i)"; sleep 20; done
-          test -f app/build/outputs/apk/release/app-release.apk
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
         with:
