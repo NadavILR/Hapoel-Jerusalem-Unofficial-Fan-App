@@ -280,6 +280,24 @@ function gs365(d,ts){const jh=d.homeCompetitor.id===634,J=jh?d.homeCompetitor:d.
  return{q,fg:pr(5,9,10),p3:pr(9,11,12),ft:pr(13,13,14),t:{ast:pr(18,6),reb:pr(17,5),or:pr(15,15),dr:pr(16,16),stl:pr(19,7),blk:pr(21,8),to:pr(20,17),pf:pr(22,18)},pl,live:1}}
 /* סטטיסטיקות של משחקים שהסתיימו בזמן שהאפליקציה עקבה אחריהם בלייב */
 let LIVEGS0=null;const liveGS=()=>LIVEGS0||(LIVEGS0=LS.get('hpj-livegs',{}));
+/* סטטיסטיקות 365scores של משחקים שהסתיימו ועדיין אינם בקובץ הנתונים: האפליקציה מורידה אותן בעצמה אחרי כל משחק (נשמרות במכשיר),
+   כך שעמודי השחקנים ועמוד המשחק מתעדכנים מיד, בלי לחכות לעדכון הקובץ */
+let GSX0=null;const GSX=()=>GSX0||(GSX0=LS.get('hpj-gs365',{}));
+const gsOf=id=>GS[id]&&GS[id].pl?GS[id]:GSX()[id]||GS[id]||null;
+async function gsFetch(f){let id=id365(f);
+ if(!id){for(const k of ['games/current/','games/results/']){const l=await getJSON(S365+k+'?'+Q365+'&competitors=634').catch(()=>null),g=((l&&l.games)||[]).find(x=>Math.abs(Date.parse(x.startTime)-f.t)<3*H);if(g){id=String(g.id);break}}}
+ if(!id)return null;
+ const det=(await getJSON(S365+'game/?'+Q365+'&gameId='+id+'&withExpanded=true')).game;if(!det||det.statusGroup!==4)return null;
+ const ts=await getJSON(S365+'game/stats/?'+Q365+'&games='+id).catch(()=>null),gs=gs365(det,ts);delete gs.live;
+ const jh=det.homeCompetitor&&det.homeCompetitor.id===634,num=x=>x>=0?Math.round(x):0,hs=num(det.homeCompetitor.score),as=num(det.awayCompetitor.score);
+ return gs.pl[0].length?{gs,r:jh?[hs,as]:[as,hs]}:null}
+/* משחקים מ-30 הימים האחרונים שהסתיימו (שעתיים וחצי אחרי שריקת הפתיחה) בלי סטטיסטיקת שחקנים – עד 5 בכל בדיקה. מחזיר [מספר המשחקים שנוספו, תוצאות] */
+let gsBusy=false;
+async function gsScan(F){if(gsBusy)return[0,[]];gsBusy=true;try{return await gsScan1(F)}finally{gsBusy=false}}
+async function gsScan1(F){const now=Date.now(),m=GSX(),res=[];let n=0;
+ const need=F.filter(f=>f.c!=='prep'&&!f.tbd&&now>f.t+2.5*H&&now-f.t<30*D&&!(GS[f.id]&&GS[f.id].pl)&&!m[f.id]).slice(0,5);
+ for(const f of need){try{const x=await gsFetch(f);if(x){m[f.id]=x.gs;n++;if(!f.r)res.push([f.id,x.r])}}catch(e){}}
+ if(n)LS.set('hpj-gs365',Object.fromEntries(Object.entries(m).slice(-40)));return[n,res]}
 /* המשחק בלייב שמור במכשיר משריקת הפתיחה ועד הסיום (עד 3 שעות מהעדכון האחרון), כדי שהכרטיס יופיע מיד כשפותחים את האפליקציה מחדש */
 const lgSaved=()=>{const x=LS.get('hpj-live-L',null);return x&&x.L&&x.L.app&&x.L.status!=='end'&&Date.now()-x.ts<3*H?x.L:null};
 const lgSave=(L,n)=>{if(L.status==='end'||(L.status==='pre'&&Date.now()<n.t)){if(LS.get('hpj-live-L',null))LS.set('hpj-live-L',null);return}
@@ -903,7 +921,7 @@ function Game({g}){
  useEffect(()=>{setLd(null);if(!LG&&g.r&&OFFC(g.c)){let on=true;pastLs(g).then(d=>{if(on&&d)setLd(d)});return()=>{on=false}}},[g.id,!!LG]);
  const lsGs=ld?(()=>{try{return gsLs(ld)}catch(e){return null}})():null,lr=ld?lsFinal(ld):null;
  g=lr&&(lr[0]||lr[1])?{...g,r:lr}:g;
- const gs=LG&&LG.gs?LG.gs:(lsGs||GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null,
+ const gs=LG&&LG.gs?LG.gs:(lsGs||gsOf(g.id)||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null,
   /* המנצחת (0 – הקבוצה המארחת, 1 – האורחת): שמה והתוצאה שלה בבולד */
   wn=sc&&sc[0]!==sc[1]?(sc[0]>sc[1]?0:1):-1;
  useEffect(()=>{setPp(null);if(!LG&&g.r){let on=true;pastPbp(g).then(x=>{if(on)setPp(x)});return()=>{on=false}}},[g.id,!!LG]);
@@ -930,7 +948,7 @@ const isDnp=w=>w[3]==='0:00'&&w.slice(4,19).every(v=>!v);
 const sdt=t=>new Date(t).toLocaleDateString('he-IL',{...ILT,day:'numeric',month:'numeric'});
 /* סטטיסטיקה אישית מתוך טבלאות המשחקים של 365scores (GS), לפי מפעל. משחק נספר אם השחקן נכלל בסגל המשחק, כמו ב-365scores */
 function pStats(aid){const by={},log=[];if(!aid)return{by,log};
- for(const f of F0){const e=GS[f.id],w=e&&e.pl&&e.pl[0]&&e.pl[0].find(r=>r[19]===aid);if(!w)continue;
+ for(const f of F0){if(!f.r)continue;const e=gsOf(f.id),w=e&&e.pl&&e.pl[0]&&e.pl[0].find(r=>r[19]===aid);if(!w)continue;
   log.push([f,w]);const a=by[f.c]||(by[f.c]=new Array(17).fill(0));a[0]++;a[1]+=secOf(w[3]);for(let i=4;i<19;i++)a[i-2]+=w[i]}
  log.sort((x,y)=>y[0].t-x[0].t);return{by,log}}
 const avgRow=a=>[a[0],f1(a[1]/60/a[0]),f1(a[2]/a[0]),f1(a[3]/a[0]),f1(a[4]/a[0]),f1(a[5]/a[0]),f1(a[6]/a[0]),ppc(a[7],a[8]),ppc(a[9],a[10]),ppc(a[11],a[12]),f1(a[13]/a[0]),f1(a[14]/a[0]),f1(a[15]/a[0]),f1(a[16]/a[0])];
@@ -1216,6 +1234,10 @@ function App(){
  const [,setHlv]=useState(0);
  useEffect(()=>{let on=true;const f=()=>{if(document.visibilityState!=='hidden')hlScan(S.F).then(n=>{if(on&&n)setHlv(x=>x+1)}).catch(()=>{})};
   f();const i=setInterval(f,10*6e4),v=()=>{if(document.visibilityState==='visible')f()};document.addEventListener('visibilitychange',v);
+  return()=>{on=false;clearInterval(i);document.removeEventListener('visibilitychange',v)}},[S.F]);
+ /* אחרי כל משחק: הסטטיסטיקה של השחקנים מ-365scores (לעמודי השחקנים ולעמוד המשחק), ואם חסרה – גם התוצאה */
+ useEffect(()=>{let on=true;const f=()=>{if(document.visibilityState!=='hidden')gsScan(S.F).then(([n,res])=>{if(!on)return;res.forEach(([id,r])=>S.markResult(id,r));if(n)setHlv(x=>x+1)}).catch(()=>{})};
+  f();const i=setInterval(f,15*6e4),v=()=>{if(document.visibilityState==='visible')f()};document.addEventListener('visibilitychange',v);
   return()=>{on=false;clearInterval(i);document.removeEventListener('visibilitychange',v)}},[S.F]);
  /* לייב: מ-10 דקות לפני שריקת הפתיחה ועד הסיום – בדיקה ב-365scores כל 20 שניות */
  /* המשחק בלייב נשמר במכשיר: כשפותחים את האפליקציה מחדש באמצע משחק, הכרטיס מופיע מיד עם התוצאה האחרונה (בלי טעינה ובלי האנימציה), ומתעדכן מיד אחר כך */
