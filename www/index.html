@@ -67,6 +67,8 @@ button,a{-webkit-tap-highlight-color:transparent;transition:transform .18s var(-
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .text-green-700{color:#4ade80}:root:not([data-theme="light"]) .me-row{background:rgb(210 25 25/.18);color:#ff5c5c}:root:not([data-theme="light"]) .nav-pill.on{background:rgb(210 25 25/.25)}}
 :root[data-theme="dark"] .text-green-700{color:#4ade80}:root[data-theme="dark"] .me-row{background:rgb(210 25 25/.18);color:#ff5c5c}:root[data-theme="dark"] .nav-pill.on{background:rgb(210 25 25/.25)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.live-tag{position:relative;overflow:hidden;isolation:isolate}.live-tag.on{animation:hpjBeat 1.8s var(--ease) infinite}.live-tag.on::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(105deg,transparent 35%,rgb(210 25 25/.22) 50%,transparent 65%);transform:translateX(110%);animation:hpjShine 1.8s ease-in-out infinite}
+@keyframes hpjBeat{0%{box-shadow:0 0 0 0 rgb(255 255 255/.7),0 4px 12px rgb(0 0 0/.2);transform:scale(1)}12%{transform:scale(1.06)}24%{transform:scale(1)}70%{box-shadow:0 0 0 16px rgb(255 255 255/0),0 4px 12px rgb(0 0 0/.2)}100%{box-shadow:0 0 0 0 rgb(255 255 255/0),0 4px 12px rgb(0 0 0/.2)}}@keyframes hpjShine{from{transform:translateX(110%)}to{transform:translateX(-110%)}}
 .car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;padding:6px 12px;margin:-6px 0;scroll-padding:0 12px}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}.car .sf{box-shadow:var(--gl-hi)}
 </style>
 </head>
@@ -387,7 +389,7 @@ function GameCard({kind,g,now,L}){
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=()=>{A.setGm(g);window.scrollTo(0,0)};
- return html`<div class=${'rounded-2xl p-4 '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ return html`<div class=${'rounded-2xl p-4 '+(L?'h-full flex flex-col ':'')+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
  ${L?html`<${LiveCard} L=${L} g=${g}/>`:html`
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
@@ -607,7 +609,9 @@ function LiveScore({L,g,big}){
 }
 function LiveCard({L,g}){
  const A=useContext(Ctx);
- return html`<div class="flex items-center justify-center gap-2 mb-3" aria-label="הפועל לייב"><span class="text-[2rem] leading-none font-extrabold tracking-tight">הפועל</span><span class="text-[2rem] leading-none font-extrabold tracking-tight px-3 pt-1 pb-1.5 rounded-xl bg-white text-[#D21919] shadow-md">לייב</span></div>
+ const on=L.status==='live';
+ /* הכותרת ממלאת את השטח הפנוי בכרטיס (הכרטיסים בקרוסלה באותו גובה), ובזמן המשחק התגית "לייב" פועמת עד שריקת הסיום */
+ return html`<div class="flex-1 flex items-center justify-center gap-3 pt-1 pb-4" aria-label="הפועל לייב"><span class="text-5xl leading-none font-extrabold tracking-tight">הפועל</span><span class=${'live-tag text-5xl leading-none font-extrabold tracking-tight px-4 pt-1.5 pb-2.5 rounded-2xl bg-white text-[#D21919] shadow-md'+(on?' on':'')}>לייב</span></div>
  <${LiveScore} L=${L} g=${g}/>
  <button onClick=${()=>{A.setGm(g);window.scrollTo(0,0)}} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>
  <div class="text-[11px] opacity-75 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div>`;
