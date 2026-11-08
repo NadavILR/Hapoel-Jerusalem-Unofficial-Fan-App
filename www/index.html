@@ -42,6 +42,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .score-dock{position:fixed;left:0;right:0;top:var(--hdh,64px);z-index:21;opacity:0;transform:translateY(-10px) scale(1.06);pointer-events:none;transition:opacity .2s var(--ease),transform .25s var(--ease)}.score-dock.on{opacity:1;transform:none;pointer-events:auto}
 .back-stick{transition:top .25s var(--ease)}html.dock-on .back-stick{top:calc(var(--hdh,64px) + var(--dockh,0px) + 8px)}
 .pts-pop{transform:translateX(-50%);animation:hpjPts 2s var(--ease) both}@keyframes hpjPts{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}12%{opacity:1;transform:translate(-50%,0) scale(1.1)}22%{transform:translate(-50%,0) scale(1)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
+.cd-out{animation:hpjCdOut .42s var(--ease) both}@keyframes hpjCdOut{to{opacity:0;transform:scale(.9) translateY(10px);filter:blur(6px)}}
+.lt-in{animation:hpjLtIn .75s var(--ease) both}@keyframes hpjLtIn{0%{opacity:0;transform:scale(.55)}60%{opacity:1;transform:scale(1.08)}100%{transform:none}}
+.lr-in{animation:hpjLrIn .55s var(--ease) .8s both}@keyframes hpjLrIn{from{opacity:0;transform:translateY(14px)}}
 .pbp-hd{border-bottom:1px solid var(--gl-bd)}
 .chips>.sf{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(var(--sf-rgb)/.78)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
@@ -428,6 +431,32 @@ const Cta=({href,children})=>html`<a href=${href} target="_blank" rel="noopener 
 const SeasonEmpty=({msg,href,cta})=>html`<div class="sf rounded-xl p-5 text-center space-y-3"><div class="text-4xl font-semibold sb text-[#D21919]">${SEASON}</div><div class="font-medium">${HAS?'אין נתונים להצגה':'עונה חדשה התחילה'}</div><div class="text-sm mu">${msg}${HAS?'':' נתוני העונה הקודמת לא מוצגים.'}</div>${href&&html`<${Cta} href=${href}>${cta}<//>`}</div>`;
 
 /* ---------- Pages ---------- */
+/* מובילי הפועל (ממוצע למשחק) בנקודות, ריבאונדים ואסיסטים, לפי מפעל – מ-365scores. תמונות השחקנים מאתר המועדון (כמו בעמוד הסגל) */
+const LCAT=[[1,'נקודות','נק׳'],[3,'ריבאונדים','ריב׳'],[2,'אסיסטים','אס׳']];
+async function loadLeaders(){const u=c=>S365+'stats/?'+Q365+'&competitors=634'+(c?'&competitions='+c:'');
+ const base=await getJSON(u(0)),cs=(base.competitions||[]).map(c=>[c.id,c.name]);
+ const one=async([id,name])=>{const j=(base.stats&&base.stats.athletesStats&&base.stats.athletesStats.tables||[]).some(t=>t.competitionId===id)?base:await getJSON(u(id));
+  const T=((j.stats&&j.stats.athletesStats&&j.stats.athletesStats.tables)||[]).filter(t=>t.competitionId===id),cat={};
+  LCAT.forEach(([tid])=>{const t=T.find(x=>x.id===tid);cat[tid]=t?(t.rows||[]).slice(0,3).map(r=>({id:r.entity.id,n:String(r.entity.name||'').replace(/'/g,'׳'),iv:r.entity.imageVersion||1,v:(r.stats&&r.stats[0]&&r.stats[0].value)||''})):[]});
+  return LCAT.some(([tid])=>cat[tid].length)?{id,name,cat}:null};
+ const out=(await Promise.all(cs.map(c=>one(c).catch(()=>null)))).filter(Boolean);return out.length?{at:Date.now(),comps:out}:null}
+function LPh({a,cls}){const p=PL.find(x=>x[7]===a.id),[bad,setBad]=useState(false);
+ if(p&&p[6])return html`<${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls=${cls}/>`;
+ return bad?html`<div class=${cls+' flex items-center justify-center text-white/40 text-2xl font-bold'}>${a.n.slice(0,1)}</div>`:html`<img src=${'https://imagecache.365scores.com/image/upload/f_png,w_160,h_200,c_limit,q_auto:eco,d_Athletes:default.png/v'+a.iv+'/Athletes/'+a.id} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${()=>setBad(true)} class=${cls}/>`}
+function Leaders(){
+ const A=useContext(Ctx),[d,setD]=useState(()=>LS.get('hpj-ldr',null)),[ci,setCi]=useState(0);
+ useEffect(()=>{let on=true;loadLeaders().then(x=>{if(on&&x){setD(x);LS.set('hpj-ldr',x)}}).catch(()=>{});return()=>{on=false}},[A.up]);
+ if(!d||!d.comps.length)return null;
+ const c=d.comps[Math.min(ci,d.comps.length-1)];
+ const open=a=>{const p=PL.find(x=>x[7]===a.id);if(!p)return;A.go('roster');setTimeout(()=>{A.setPl(p);window.scrollTo(0,0)},0)};
+ return html`<div class="sf rounded-xl p-3 md:col-span-2"><div class="flex items-center justify-between mb-2"><div class="font-bold">מובילי הפועל</div><span class="text-[11px] mu">ממוצע למשחק · 365scores</span></div>
+ ${d.comps.length>1?html`<div class="segc grid gap-1 p-1 rounded-xl seg mb-3" style=${{gridTemplateColumns:'repeat('+d.comps.length+',minmax(0,1fr))'}}><${SegInd} k=${ci}/>${d.comps.map((x,i)=>html`<button key=${x.id} data-on=${i===ci?'':undefined} onClick=${()=>setCi(i)} class=${'py-1.5 px-1 rounded-lg text-[12px] font-bold whitespace-nowrap truncate '+(i===ci?'text-white':'mu')}>${x.name}</button>`)}</div>`:null}
+ <div key=${c.id} class="grid grid-cols-3 gap-2 fade-in">${LCAT.map(([tid,l,u])=>{const r=c.cat[tid]||[],a=r[0];return html`<div key=${tid} class="min-w-0 text-center">
+  <div class="text-xs mu mb-1.5">${l}</div>
+  ${a?html`<button onClick=${()=>open(a)} class="w-full rounded-xl overflow-hidden relative block" style=${{aspectRatio:'4/5',background:'linear-gradient(160deg,#D21919,var(--blk))'}}><${LPh} a=${a} cls="absolute inset-0 w-full h-full object-cover object-top"/>
+   <div class="absolute inset-x-0 bottom-0 pt-6 pb-1.5 px-1 text-white" style=${{background:'linear-gradient(to top,rgb(0 0 0/.75),transparent)'}}><div class="text-2xl font-extrabold sb leading-none">${a.v}</div><div class="text-[11px] font-bold truncate mt-0.5">${a.n}</div></div></button>`:html`<div class="text-sm mu py-6">—</div>`}
+  ${r.slice(1).map((x,i)=>html`<button key=${x.id} onClick=${()=>open(x)} class="w-full flex items-center justify-between gap-1 text-[11px] mt-1.5 px-0.5"><span class="truncate"><span class="mu">${i+2}.</span> ${x.n}</span><b class="sb shrink-0">${x.v}</b></button>`)}</div>`})}</div></div>`;
+}
 function News(){
  const [all,setAll]=useState(false);
  if(!NEWS.length)return null;
@@ -445,8 +474,12 @@ function GameCard({kind,g,now,L}){
  const nm=n=>html`<div class=${'text-2xl leading-tight '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=e=>openGame(A,g,e);
- return html`<div class=${'rounded-2xl p-4 '+(L?'h-full flex flex-col ':'')+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
- ${L?html`<${LiveCard} L=${L} g=${g}/>`:html`
+ /* כשהספירה לאחור נגמרת והמשחק עולה לאוויר בזמן שהמסך פתוח: תוכן הכרטיס יוצא, הכותרת "הפועל לייב" נכנסת, ורק אחריה שאר המידע */
+ const [ph,setPh]=useState(L?'live':'cd');
+ useEffect(()=>{if(L&&ph==='cd'){setPh('out');const t1=setTimeout(()=>setPh('in'),420),t2=setTimeout(()=>setPh('live'),2200);return()=>{clearTimeout(t1);clearTimeout(t2)}}if(!L&&ph!=='cd')setPh('cd')},[!!L]);
+ const LV=L&&(ph==='in'||ph==='live');
+ return html`<div class=${'rounded-2xl p-4 '+(LV?'h-full flex flex-col ':'')+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ ${LV?html`<${LiveCard} L=${L} g=${g} intro=${ph==='in'}/>`:html`<div class=${ph==='out'?'cd-out':''}>
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
   <div class="flex-1 min-w-0 text-center">${nm(hm)}${res?html`<div dir="rtl" class="text-3xl font-semibold sb tabular-nums my-1 flex gap-2 justify-center"><span>${g.h?g.r[0]:g.r[1]}</span><span>–</span><span>${g.h?g.r[1]:g.r[0]}</span></div>`:html`<div class=${'text-sm my-0.5 '+op} dir="ltr">VS</div>`}${nm(aw)}</div>
@@ -458,7 +491,7 @@ function GameCard({kind,g,now,L}){
   <button onClick=${()=>A.togRem(g)} class=${'mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[g.id]?(red?'bg-white text-[#D21919]':'bg-[#D21919] text-white'):btn)}><${I} n="bell" s=${16}/>${A.rem[g.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
   ${vid?html`<${VideoPop} g=${g} onClose=${()=>setVid(false)}/>`:null}
   ${res?html`<button onClick=${()=>ytId(g)?setVid(true):openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 red-glass text-white"><${I} n="play" s=${16}/>לתקציר המשחק</button>`:null}
-  <button onClick=${open} class=${'mt-2 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+btn}><${I} n="cal" s=${16}/>לעמוד המשחק</button>`}
+  <button onClick=${open} class=${'mt-2 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+btn}><${I} n="cal" s=${16}/>לעמוד המשחק</button></div>`}
  </div>`;
 }
 /* קרוסלה עם החלקה ונקודות; נפתחת על הכרטיס start */
@@ -490,6 +523,7 @@ function Home(){
  <${Carousel} key=${nx.id} start=${ls?1:0} items=${cards.map(([k,g])=>html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k==='next'?L:null}/>`)}/>
  <div class="flex items-center justify-between gap-2 text-xs mu md:col-span-2"><span class="on-glass">${A.ld?'נתוני האפליקציה מתעדכנים עכשיו…':A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'אין חיבור · נתונים נכונים ל-'+ASOF}</span><button onClick=${A.refresh} class="on-glass text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
  ${(me||em)&&html`<div class=${'grid gap-2 '+(me&&em?'grid-cols-2':'grid-cols-1')}>${me&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום בליגת ווינר סל</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${rk+1}</div><div class="text-xs mu mt-1">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></div>`}${em&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום ביורוקאפ</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${er+1}</div><div class="text-xs mu mt-1">${eg[0]} · ${em[1]} נצ׳ · ${em[2]} הפ׳</div></div>`}</div>`}
+ <${Leaders}/>
  <${News}/>
  </div>`;
 }
@@ -689,14 +723,14 @@ function LiveScore({L,g,big}){
   <span class="flex justify-center"><${Cr} n=${hm} s=${18}/></span>${L.q.map(x=>html`<b key=${x.n} class="sb">${x.h}</b>`)}
   <span class="flex justify-center"><${Cr} n=${aw} s=${18}/></span>${L.q.map(x=>html`<b key=${x.n} class="sb">${x.a}</b>`)}</div></div>`:null}`;
 }
-function LiveCard({L,g}){
+function LiveCard({L,g,intro}){
  const A=useContext(Ctx);
  const on=L.status==='live';
  /* הכותרת ממלאת את השטח הפנוי בכרטיס (הכרטיסים בקרוסלה באותו גובה), ובזמן המשחק התגית "לייב" פועמת עד שריקת הסיום */
- return html`<div class="flex-1 flex items-center justify-center gap-3 pt-1 pb-4" aria-label="הפועל לייב"><span class="text-5xl leading-none font-extrabold tracking-tight">הפועל</span><span class=${'live-tag text-5xl leading-none font-extrabold tracking-tight px-4 pt-1.5 pb-2.5 rounded-2xl bg-white text-[#D21919] shadow-md'+(on?' on':'')}>לייב</span></div>
- <${LiveScore} L=${L} g=${g}/>
+ return html`<div class=${'flex-1 flex items-center justify-center gap-3 pt-1 pb-4'+(intro?' lt-in':'')} aria-label="הפועל לייב"><span class="text-5xl leading-none font-extrabold tracking-tight">הפועל</span><span class=${'live-tag text-5xl leading-none font-extrabold tracking-tight px-4 pt-1.5 pb-2.5 rounded-2xl bg-white text-[#D21919] shadow-md'+(on?' on':'')}>לייב</span></div>
+ <div class=${intro?'lr-in':''}><${LiveScore} L=${L} g=${g}/>
  <button onClick=${e=>openGame(A,g,e)} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>
- <div class="text-[11px] opacity-75 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div>`;
+ <div class="text-[11px] opacity-75 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div></div>`;
 }
 /* ---------- מהלך המשחק (Play by Play) בלייב ---------- */
 const PBQ=q=>q<=4?'Q'+q:'OT'+(q-4),titleCase=x=>String(x||'').toLowerCase().replace(/(^|[\s'-])\S/g,c=>c.toUpperCase());
