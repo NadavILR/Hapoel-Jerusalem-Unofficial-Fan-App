@@ -45,6 +45,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .cd-out{animation:hpjCdOut .42s var(--ease) both}@keyframes hpjCdOut{to{opacity:0;transform:scale(.9) translateY(10px);filter:blur(6px)}}
 .lt-in{animation:hpjLtIn .75s var(--ease) both}@keyframes hpjLtIn{0%{opacity:0;transform:scale(.55)}60%{opacity:1;transform:scale(1.08)}100%{transform:none}}
 .lr-in{animation:hpjLrIn .55s var(--ease) .8s both}@keyframes hpjLrIn{from{opacity:0;transform:translateY(14px)}}
+.pts-side{transform:translateY(-50%);animation:hpjPtsS 2s var(--ease) both}@keyframes hpjPtsS{0%{opacity:0;transform:translateY(-50%) scale(.6)}12%{opacity:1;transform:translateY(-50%) scale(1.12)}22%{transform:translateY(-50%) scale(1)}80%{opacity:1;transform:translateY(-50%)}100%{opacity:0;transform:translateY(-50%) scale(.9)}}
 .pbp-hd{border-bottom:1px solid var(--gl-bd)}
 .chips>.sf{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(var(--sf-rgb)/.78)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
@@ -693,10 +694,10 @@ function SplitTable({nameHead,heads,rows,endHead,size}){
 }
 /* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
 /* תוצאה בלייב: כשקבוצה קולעת, מעל התוצאה שלה מופיע לכ-2 שניות כמה נקודות נוספו (+1 / +2 / +3) */
-function Pts({v,k,low}){
+function Pts({v,k,side}){
  const p=useRef({v,k}),[d,setD]=useState(null);
  useEffect(()=>{const o=p.current;p.current={v,k};if(o.k!==k)return;const n=v-o.v;if(n>0){setD({n,id:Date.now()});const t=setTimeout(()=>setD(null),2000);return()=>clearTimeout(t)}},[v,k]);
- return html`<span class="relative inline-block">${v}${d?html`<span key=${d.id} class=${'pts-pop absolute left-1/2 '+(low?'top-full mt-1':'bottom-full mb-1')+' px-2 py-0.5 rounded-full bg-white text-[#D21919] text-sm font-extrabold leading-none shadow-md whitespace-nowrap'} dir="ltr">+${d.n}</span>`:null}</span>`;
+ return html`<span class="relative inline-block">${v}${d?html`<span key=${d.id} class=${(side?'pts-side absolute top-1/2 '+(side==='l'?'right-full mr-1.5':'left-full ml-1.5'):'pts-pop absolute left-1/2 bottom-full mb-1')+' px-2 py-0.5 rounded-full bg-white text-[#D21919] text-sm font-extrabold leading-none shadow-md whitespace-nowrap'} dir="ltr">+${d.n}</span>`:null}</span>`;
 }
 function LiveScore({L,g,big}){
  const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 break-words '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
@@ -794,8 +795,9 @@ function ScoreDock({cardR,g,L,sc}){
   return()=>{window.removeEventListener('scroll',f);window.removeEventListener('resize',f);de.classList.remove('bar-stuck','dock-on');de.style.removeProperty('--dockh')}},[]);
  React.useLayoutEffect(()=>{const de=document.documentElement,h=r.current?r.current.offsetHeight:0;de.style.setProperty('--fbh',h+'px');de.style.setProperty('--dockh',(on?h:0)+'px');de.classList.toggle('bar-stuck',on);de.classList.toggle('dock-on',on)},[on]);
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,live=L&&L.status==='live',hs=L?L.hs:sc[0],as=L?L.as:sc[1];
- const num=v=>html`<span class="text-[26px] leading-none font-extrabold sb tabular-nums">${L?html`<${Pts} v=${v} k=${L.app} low=${1}/>`:v}</span>`;
- const side=(n,v)=>html`<div class="flex items-center gap-2 min-w-0 flex-1 ${n===hm?'justify-start':'justify-end'}">${n===hm?html`<${Cr} n=${n} s=${30}/>${num(v)}`:html`${num(v)}<${Cr} n=${n} s=${30}/>`}</div>`;
+ /* ה-+1/+2/+3 מופיע בצד של התוצאה שפונה למרכז: משמאל לתוצאה של הקבוצה שמימין, ומימין לתוצאה של הקבוצה שמשמאל */
+ const num=(v,sd)=>html`<span class="text-[26px] leading-none font-extrabold sb tabular-nums">${L?html`<${Pts} v=${v} k=${L.app} side=${sd}/>`:v}</span>`;
+ const side=(n,v)=>html`<div class="flex items-center gap-2 min-w-0 flex-1 ${n===hm?'justify-start':'justify-end'}">${n===hm?html`<${Cr} n=${n} s=${30}/>${num(v,'l')}`:html`${num(v,'r')}<${Cr} n=${n} s=${30}/>`}</div>`;
  return html`<div ref=${r} class=${'score-dock'+(on?' on':'')} aria-hidden=${on?undefined:'true'}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto px-4 pb-2 flex items-center gap-3" dir="rtl">
   ${side(hm,hs)}
   <div class="shrink-0 text-center leading-tight min-w-[64px]">${live?html`<div class="text-[11px] font-bold text-[#D21919] flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#D21919] animate-pulse"></span>${qLbl(L.st)||'LIVE'}</div><div class="text-sm font-bold sb" dir="ltr">${L.clock||''}</div>`:html`<div class="text-xs mu font-bold">${L&&L.status!=='end'?'':'סיום'}</div>`}</div>
