@@ -131,6 +131,25 @@ final class LiveGame {
         return b;
     }
 
+    private static Bitmap appCrest;
+
+    /** Hapoel's crest as in the app's header (not the 365scores image). */
+    static Bitmap hapoelCrest(Context c) {
+        synchronized (CRESTS) {
+            if (appCrest == null) {
+                Bitmap raw = BitmapFactory.decodeResource(c.getResources(), R.drawable.hpj_crest);
+                if (raw != null) appCrest = square(raw, 120);
+            }
+            return appCrest;
+        }
+    }
+
+    /** The crest for one side: Hapoel's from the app, the opponent's from 365scores. Call off the main thread. */
+    static Bitmap crestFor(Context c, String team, String url) {
+        if (team != null && team.contains(TEAM)) return hapoelCrest(c);
+        return crest(url);
+    }
+
     /** The crest centred on a transparent square, so it is not stretched. */
     private static Bitmap square(Bitmap src, int size) {
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
@@ -183,7 +202,7 @@ final class LiveGame {
             v.setDisplayedChild(flipper, 0);
             v.setViewVisibility(flipper, View.VISIBLE);
         } else {
-            v.setViewVisibility(flipper, View.GONE);
+            v.setViewVisibility(flipper, View.INVISIBLE); // keeps its space: nothing moves when it appears
         }
     }
 

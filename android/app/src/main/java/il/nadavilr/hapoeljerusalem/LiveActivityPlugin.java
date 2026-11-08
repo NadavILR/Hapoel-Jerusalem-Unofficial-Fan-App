@@ -114,7 +114,7 @@ public class LiveActivityPlugin extends Plugin {
         demoAs = g.as;
         LiveScoreService.ensureChannel(c);
         try {
-            android.graphics.Bitmap hc = LiveGame.crest(g.homeImg), ac = LiveGame.crest(g.awayImg);
+            android.graphics.Bitmap hc = LiveGame.crestFor(c, g.homeName, g.homeImg), ac = LiveGame.crestFor(c, g.awayName, g.awayImg);
             nm.notify(LiveScoreService.NOTIF_ID, LiveGame.card(c, g, hc, ac, false, null));
             r.put("shown", true);
             // Remove the +N badge once it has faded (in case the next simulated update is late)

@@ -200,7 +200,7 @@ public class LiveScoreService extends Service {
         shown = x;
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), false, del));
+        notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), false, del));
     }
 
     /** Removes the +N badge once it has faded. */
@@ -217,7 +217,7 @@ public class LiveScoreService extends Service {
         LiveGame x = finalGame != null ? game(finalGame) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         if (x != null && LiveScheduler.allowed(this)) {
-            notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), true, null));
+            notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), true, null));
             finalShown = true;
         }
         LiveScheduler.done(this, tipOff);
