@@ -576,7 +576,7 @@ function Sched(){
 /* סימון מקומות בטבלה: ירוק – פלייאוף / רבע גמר, סגול – פליי-אין, אדום – בית תחתון */
 const MKC={g:'#16a34a',p:'#8b5cf6',r:'#D21919'},MKL={g:'פלייאוף',p:'פליי-אין',r:'בית תחתון'};
 function Tb({nm,heads,rows,endHead,mk,lg}){
- return html`<div class="mb-4">${nm?html`<div class="mb-1"><span class="on-glass font-bold">${nm}</span></div>`:null}<div class="sf rounded-xl overflow-hidden px-1">
+ return html`<div class="mb-4">${nm?html`<div class="mb-1"><span class="on-glass font-bold">${nm}</span></div>`:null}<div class="sf rounded-xl overflow-hidden pr-1 pl-2.5">
  <${SplitTable} size="text-sm" nameHead=${html`<span class="inline-block w-5 text-center">#</span><span class="mr-8">קבוצה</span>`} heads=${heads} endHead=${endHead} rows=${rows.map((r,i)=>({key:r.n,style:{animationDelay:Math.min(i,14)*15+'ms'},cls:'row-in border-t bd'+(r.n===ME?' me-row font-bold':''),ncls:'relative py-1.5 whitespace-nowrap',
   name:html`${mk&&mk(i,r)?html`<span class="absolute right-0 top-1 bottom-1 w-1 rounded-l" style=${{background:MKC[mk(i,r)]}}></span>`:null}<div class="flex items-center gap-2 min-w-0"><span class="w-5 text-center shrink-0 sb">${i+1}</span><span class="w-6 h-6 shrink-0 flex items-center justify-center"><${Cr} n=${r.n} s=${22}/></span><span class="min-w-0 leading-tight"><span class="block">${r.n}</span>${r.tag?html`<span class="block text-[11px] opacity-75">${r.tag}</span>`:null}</span></div>`,
   cells:r.cells.map((v,j)=>html`<td key=${j} class="px-1.5 py-1.5 sb">${v}</td>`),end:html`<span class="font-bold sb">${r.end}</span>`}))}/></div>
