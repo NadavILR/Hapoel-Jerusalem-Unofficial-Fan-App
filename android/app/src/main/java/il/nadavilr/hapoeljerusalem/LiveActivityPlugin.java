@@ -79,8 +79,6 @@ public class LiveActivityPlugin extends Plugin {
         g.as = away.optInt("score", 0);
         g.homeImg = home.optString("img", null);
         g.awayImg = away.optString("img", null);
-        g.homeShort = home.optString("short", "");
-        g.awayShort = away.optString("short", "");
         g.venue = call.getString("venue", "");
         LiveScoreService.ensureChannel(c);
         try {

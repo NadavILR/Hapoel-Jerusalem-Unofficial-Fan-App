@@ -43,7 +43,7 @@ final class LiveGame {
     private static final String IMG = "https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,"
         + "d_Competitors:default1.png/v%d/Competitors/%d";
 
-    String comp = "", homeName = "", awayName = "", homeShort = "", awayShort = "", venue = "", status = "", clock = "", homeImg, awayImg;
+    String comp = "", homeName = "", awayName = "", venue = "", status = "", clock = "", homeImg, awayImg;
     int hs, as;
     boolean meHome = true;
 
@@ -55,8 +55,6 @@ final class LiveGame {
         x.meHome = h.optInt("id") == HAPOEL;
         x.homeName = name(h);
         x.awayName = name(a);
-        x.homeShort = shortName(h);
-        x.awayShort = shortName(a);
         JSONObject v = g.optJSONObject("venue");
         if (v != null) x.venue = v.optString("name", "").trim();
         x.hs = (int) Math.max(0, Math.round(h.optDouble("score", 0)));
@@ -65,24 +63,19 @@ final class LiveGame {
         x.awayImg = img(a);
         x.status = g.optString("statusText", g.optString("shortStatusText", "")).trim();
         x.clock = g.optString("gameTimeDisplay", "").trim();
-        String comp = g.optString("competitionDisplayName", "").trim();
-        String stage = g.optString("stageName", "").trim();
-        if ("null".equals(stage)) stage = "";
+        // 365scores puts the stage in the competition name ("ליגת ווינר - חצי גמר", "יורוקאפ - בית א'");
+        // the round is "מחזור N", or "משחק N" in a playoff series; a one-game knockout has no round number.
+        String comp = g.optString("competitionDisplayName", "").trim().replace(" - ", " – ");
         int round = g.optInt("roundNum", 0);
         String roundName = g.optString("roundName", "").trim();
-        String sub = !stage.isEmpty() ? stage : round > 0 ? (roundName.isEmpty() || "null".equals(roundName) ? "מחזור" : roundName) + " " + round : "";
-        x.comp = comp + (sub.isEmpty() ? "" : " – " + sub);
+        if (roundName.isEmpty() || "null".equals(roundName)) roundName = "מחזור";
+        x.comp = comp + (round > 0 ? (comp.isEmpty() ? "" : " · ") + roundName + " " + round : "");
         return x;
     }
 
     private static String name(JSONObject c) {
         String n = c.optString("name", "");
         return n.isEmpty() ? c.optString("shortName", "") : n;
-    }
-
-    private static String shortName(JSONObject c) {
-        String n = c.optString("shortName", "");
-        return n.isEmpty() || "null".equals(n) ? name(c) : n;
     }
 
     private static String img(JSONObject c) {
@@ -176,7 +169,7 @@ final class LiveGame {
         NotificationCompat.Builder b = LiveScoreService.base(c, title, text)
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
-        if (!g.comp.isEmpty()) b.setSubText(RLM + g.comp + RLM);
+        // No competition line here: in the Now Bar only the score, the crests and quarter • clock (it is in the card)
         if (del != null) b.setDeleteIntent(del);
 
         Bundle x = new Bundle();
@@ -272,7 +265,7 @@ final class LiveGame {
     /** The card's notification id, next to the Live Update (LiveScoreService.NOTIF_ID). */
     static final int CARD_ID = 63402;
 
-    private static void fill(android.widget.RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, boolean names) {
+    private static void fill(android.widget.RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, boolean details) {
         v.setTextViewText(R.id.home_score, String.valueOf(g.hs));
         v.setTextViewText(R.id.away_score, String.valueOf(g.as));
         String st = fin ? "סיום" : g.status + (g.clock.isEmpty() ? "" : (g.status.isEmpty() ? "" : " • ") + g.clock);
@@ -282,12 +275,9 @@ final class LiveGame {
         else v.setViewVisibility(R.id.home_crest, View.GONE);
         if (awayCrest != null) v.setImageViewBitmap(R.id.away_crest, awayCrest);
         else v.setViewVisibility(R.id.away_crest, View.GONE);
-        if (names) {
-            String hn = g.homeShort.isEmpty() ? g.homeName : g.homeShort, an = g.awayShort.isEmpty() ? g.awayName : g.awayShort;
-            v.setTextViewText(R.id.home_name, RLM + hn + RLM);
-            v.setTextViewText(R.id.away_name, RLM + an + RLM);
-            v.setContentDescription(R.id.home_crest, hn);
-            v.setContentDescription(R.id.away_crest, an);
+        v.setContentDescription(R.id.home_crest, g.homeName);
+        v.setContentDescription(R.id.away_crest, g.awayName);
+        if (details) {
             v.setTextViewText(R.id.comp, g.comp.isEmpty() ? "" : RLM + g.comp + RLM);
             v.setViewVisibility(R.id.comp, g.comp.isEmpty() ? View.GONE : View.VISIBLE);
             v.setTextViewText(R.id.venue, g.venue.isEmpty() ? "" : RLM + g.venue + RLM);
