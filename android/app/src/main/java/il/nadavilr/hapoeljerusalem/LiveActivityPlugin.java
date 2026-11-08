@@ -66,7 +66,7 @@ public class LiveActivityPlugin extends Plugin {
     }
 
     /**
-     * Test mode: demo({t, comp, venue, status, clock, play, home:{name, score, img}, away:{name, score, img}})
+     * Test mode: demo({t, comp, status, clock, play, home:{name, score, img}, away:{name, score, img}})
      * shows / updates the card; demo({}) without teams removes it. Runs on Capacitor's plugin thread, so the crests
      * can be downloaded here.
      */
@@ -96,7 +96,6 @@ public class LiveActivityPlugin extends Plugin {
         Long t = call.getLong("t");
         g.t = t != null ? t : 0L;
         g.comp = call.getString("comp", "");
-        g.venue = call.getString("venue", "");
         g.status = call.getString("status", "");
         g.clock = call.getString("clock", "");
         g.play = call.getString("play", "");

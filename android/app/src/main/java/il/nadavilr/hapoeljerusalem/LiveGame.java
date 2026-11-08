@@ -27,7 +27,7 @@ import org.json.JSONObject;
  * app's colours) – one compact card that does not expand, without the app-name row:
  *
  *   [home crest]  home score  (quarter • clock)  away score  [away crest]
- *   **competition – stage / round** · arena
+ *   **competition – stage / round**
  *   the latest line of the play-by-play
  *
  * Everything reads right to left (home team on the right) even on a phone set to English.
@@ -43,7 +43,7 @@ final class LiveGame {
     private static final String IMG = "https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,"
         + "d_Competitors:default1.png/v%d/Competitors/%d";
 
-    String comp = "", homeName = "", awayName = "", venue = "", status = "", clock = "", play = "", homeImg, awayImg;
+    String comp = "", homeName = "", awayName = "", status = "", clock = "", play = "", homeImg, awayImg;
     int hs, as;
     /** Points just scored (1–3), shown as +1 / +2 / +3 next to the score; 0 = none. */
     int popHome, popAway;
@@ -59,8 +59,6 @@ final class LiveGame {
         x.meHome = h.optInt("id") == HAPOEL;
         x.homeName = name(h);
         x.awayName = name(a);
-        JSONObject v = g.optJSONObject("venue");
-        if (v != null) x.venue = v.optString("name", "").trim();
         x.hs = (int) Math.max(0, Math.round(h.optDouble("score", 0)));
         x.as = (int) Math.max(0, Math.round(a.optDouble("score", 0)));
         x.homeImg = img(h);
@@ -176,18 +174,11 @@ final class LiveGame {
         v.setContentDescription(R.id.away_crest, g.awayName);
         pop(v, R.id.home_pop, R.id.home_pop_text, fin ? 0 : g.popHome);
         pop(v, R.id.away_pop, R.id.away_pop_text, fin ? 0 : g.popAway);
-        // **competition – stage / round** · arena  (one line)
-        SpannableStringBuilder info = new SpannableStringBuilder(RLM);
-        if (!g.comp.isEmpty()) {
-            int s = info.length();
-            info.append(g.comp);
-            info.setSpan(new StyleSpan(Typeface.BOLD), s, info.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        if (!g.venue.isEmpty()) info.append(g.comp.isEmpty() ? "" : " · ").append(g.venue);
-        info.append(RLM);
-        boolean hasInfo = !g.comp.isEmpty() || !g.venue.isEmpty();
+        // **competition – stage / round**  (bold)
+        SpannableStringBuilder info = new SpannableStringBuilder(RLM + g.comp + RLM);
+        info.setSpan(new StyleSpan(Typeface.BOLD), 0, info.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         v.setTextViewText(R.id.info, info);
-        v.setViewVisibility(R.id.info, hasInfo ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.info, g.comp.isEmpty() ? View.GONE : View.VISIBLE);
         v.setTextViewText(R.id.play, g.play.isEmpty() ? "" : RLM + g.play + RLM);
         v.setViewVisibility(R.id.play, g.play.isEmpty() ? View.GONE : View.VISIBLE);
     }

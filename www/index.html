@@ -1101,7 +1101,7 @@ function App(){
   const n=S.F.find(f=>f.id===demo.app)||nx,op=n?n.o:'',r=demo.r||[0,0],st=String(demo.st||'').replace(/^Q(\d)$/,'רבע $1').replace(/^OT(\d*)$/,(m,k)=>'הארכה'+(k&&k!=='1'?' '+k:'')),
    me={name:ME,score:r[0],img:'https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634'},them={name:op,score:r[1],img:crestSrcs(op)[0]||null},
    p0=(demo.pbp||[])[0],
-   o={t:n?n.t:0,comp:(n&&COMPS[n.c])||'',venue:(n&&n.v)||'',play:p0?(p0.clock?p0.clock+' · ':'')+p0.text:'',status:st,clock:demo.clock||'',home:n&&!n.h?them:me,away:n&&!n.h?me:them},k=JSON.stringify(o),first=!demoKey.current;
+   o={t:n?n.t:0,comp:(n&&COMPS[n.c])||'',play:p0?(p0.clock?p0.clock+' · ':'')+p0.text:'',status:st,clock:demo.clock||'',home:n&&!n.h?them:me,away:n&&!n.h?me:them},k=JSON.stringify(o),first=!demoKey.current;
   if(k===demoKey.current)return;demoKey.current=k;
   P.demo(o).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר')}).catch(()=>{})},[demo]);
  /* לחיצה על כרטיס התוצאה בלייב במגש ההתראות: האפליקציה נפתחת ישר בעמוד של אותו משחק */
