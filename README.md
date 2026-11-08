@@ -128,7 +128,7 @@
 - **אפליקציית ווב:** בכל דחיפה ל-`main` שמשנה את `www/`, ה-workflow `pages.yml` מעדכן את ענף `gh-pages`, ו-GitHub Pages מגיש אותו.
 - **אנדרואיד:**
   - ה-workflow `android.yml` בונה APK חתום ומפרסם release לפי מספר הגרסה.
-  - כל ה-APK-ים נחתמים באותו מפתח (`android/keystore/hpj-release.jks`), כך שכל גרסה מותקנת כעדכון.
+  - כל ה-APK-ים נחתמים באותו מפתח, כך שכל גרסה מותקנת כעדכון. המפתח והסיסמאות שלו שמורים בסודות של המאגר ב-GitHub (`HPJ_KEYSTORE_BASE64`, `HPJ_STORE_PASSWORD`, `HPJ_KEY_ALIAS`, `HPJ_KEY_PASSWORD`) ולא בקוד.
   - המפתח נמצא בריפו הציבורי לבקשת בעל הריפו, ולכן כדאי להתקין רק APK מעמוד ה-Releases של הריפו הזה.
 - **בנייה מקומית:** `npm install`, `npx cap sync android`, ואז `cd android && ./gradlew assembleRelease` (צריך Android SDK ו-JDK 17).
 - **בדיקה מקומית של הווב:** `npm run serve`, ואז <http://localhost:8080>.

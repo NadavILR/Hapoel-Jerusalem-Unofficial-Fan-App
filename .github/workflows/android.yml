@@ -43,7 +43,7 @@ jobs:
             echo "HPJ_KEYSTORE=$RUNNER_TEMP/hpj-release.jks" >> "$GITHUB_ENV"
             echo "Signing key: from secrets"
           else
-            echo "::warning::HPJ_KEYSTORE_BASE64 secret is not set – signing with the key file in the repository"
+            echo "::error::The HPJ_KEYSTORE_BASE64 secret is missing – the APK must be signed with the app's key"; exit 1
           fi
       - name: Build APK
         working-directory: android
