@@ -1,38 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Live score card, expanded: the same score row (same sizes) as the collapsed card, plus
-     **competition – stage · round** · arena
-     the latest line of the play-by-play -->
+<!-- Live score card: one compact card that does not expand, so Android shows it without the app-name row
+     (from Android 12 the name appears only in an expanded notification). It fits the ~48dp a collapsed
+     notification gets:
+       [home crest]  home score  (quarter • clock)  away score  [away crest]
+       **competition – stage / round** · arena
+       the latest line of the play-by-play
+     Home team on the right, right-to-left whatever the phone's language. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:gravity="center_vertical"
     android:layoutDirection="rtl"
-    android:orientation="vertical"
-    android:paddingTop="2dp"
-    android:paddingBottom="8dp">
+    android:orientation="vertical">
 
-    <include layout="@layout/notif_live_row" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layoutDirection="rtl"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/home_crest"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/home_score"
+            style="@style/TextAppearance.Compat.Notification.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:includeFontPadding="false"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/notif_pill"
+            android:includeFontPadding="false"
+            android:paddingStart="8dp"
+            android:paddingTop="1dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="1dp"
+            android:singleLine="true"
+            android:textColor="#FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/away_score"
+            style="@style/TextAppearance.Compat.Notification.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:includeFontPadding="false"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/away_crest"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:scaleType="fitCenter" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/info"
         style="@style/TextAppearance.Compat.Notification"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="1dp"
         android:ellipsize="end"
         android:gravity="center"
+        android:includeFontPadding="false"
         android:singleLine="true"
         android:textDirection="rtl"
-        android:textSize="13sp" />
+        android:textSize="10.5sp" />
 
     <TextView
         android:id="@+id/play"
         style="@style/TextAppearance.Compat.Notification"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="1dp"
         android:ellipsize="end"
         android:gravity="center"
-        android:maxLines="2"
+        android:includeFontPadding="false"
+        android:singleLine="true"
         android:textDirection="rtl"
-        android:textSize="13sp" />
+        android:textSize="10.5sp" />
 </LinearLayout>

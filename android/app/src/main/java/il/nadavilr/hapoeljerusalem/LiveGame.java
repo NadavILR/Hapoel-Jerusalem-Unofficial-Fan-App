@@ -24,12 +24,9 @@ import org.json.JSONObject;
 
 /**
  * One live game, shown as the live score card (one ongoing notification, laid out like Google's sports card in the
- * app's colours). Collapsed and expanded share the same score row:
+ * app's colours) – one compact card that does not expand, without the app-name row:
  *
  *   [home crest]  home score  (quarter • clock)  away score  [away crest]
- *
- * and the expanded card adds
- *
  *   **competition – stage / round** · arena
  *   the latest line of the play-by-play
  *
@@ -144,7 +141,7 @@ final class LiveGame {
 
     // ---------- the live score card ----------
 
-    private static void fill(RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, boolean details) {
+    private static void fill(RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin) {
         v.setTextViewText(R.id.home_score, String.valueOf(g.hs));
         v.setTextViewText(R.id.away_score, String.valueOf(g.as));
         String st = fin ? "סיום" : g.status + (g.clock.isEmpty() ? "" : (g.status.isEmpty() ? "" : " • ") + g.clock);
@@ -156,7 +153,6 @@ final class LiveGame {
         else v.setViewVisibility(R.id.away_crest, View.GONE);
         v.setContentDescription(R.id.home_crest, g.homeName);
         v.setContentDescription(R.id.away_crest, g.awayName);
-        if (!details) return;
         // **competition – stage / round** · arena  (one line)
         SpannableStringBuilder info = new SpannableStringBuilder(RLM);
         if (!g.comp.isEmpty()) {
@@ -185,17 +181,16 @@ final class LiveGame {
     /**
      * The live score card. {@code fin} = after the final buzzer (grey "סיום" pill, not ongoing, gone after 30 minutes).
      * {@code del} runs when the user swipes it away (may be null).
+     *
+     * One compact layout and nothing to expand (no expanded view, no style, no actions): from Android 12 the
+     * app-name row is shown only on an expanded notification, so this card has none.
      */
     static Notification card(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, PendingIntent del) {
-        RemoteViews big = new RemoteViews(c.getPackageName(), R.layout.notif_live_card);
-        RemoteViews small = new RemoteViews(c.getPackageName(), R.layout.notif_live_small);
-        fill(big, g, homeCrest, awayCrest, fin, true);
-        fill(small, g, homeCrest, awayCrest, fin, false);
+        RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.notif_live_card);
+        fill(v, g, homeCrest, awayCrest, fin);
         NotificationCompat.Builder b = LiveScoreService.base(c, (fin ? RLM + "סיום: " : "") + g.scoreWithNames(), g.statusLine())
             .setContentIntent(open(c, g.t))
-            .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(small)
-            .setCustomBigContentView(big)
+            .setCustomContentView(v)
             .setOngoing(!fin);
         if (fin) b.setAutoCancel(true).setTimeoutAfter(30 * 60_000L);
         else b.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
