@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Live score card: one compact card that does not expand, so Android shows it without the app-name row
-     (from Android 12 the name appears only in an expanded notification). It fits the ~48dp a collapsed
-     notification gets:
+<!-- Live score card: the whole notification is this layout (the app targets SDK 30, so Android does not wrap it
+     in its template: no app name, icon or expand arrow, and it never expands). Fits the 64dp of a collapsed
+     notification:
        [home crest]  home score  (quarter • clock)  away score  [away crest]
        **competition – stage / round** · arena
        the latest line of the play-by-play
@@ -11,7 +11,11 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:layoutDirection="rtl"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"

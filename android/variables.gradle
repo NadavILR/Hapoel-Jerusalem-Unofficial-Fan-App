@@ -1,7 +1,10 @@
 ext {
     minSdkVersion = 22
     compileSdkVersion = 34
-    targetSdkVersion = 34
+    // 30 on purpose: Android 12+ (targetSdk 31+) always wraps a custom notification in its template and adds an
+    // expanded state with the app-name row. Targeting 30 lets the live score card be fully the app's own design
+    // (no name, icon or expand arrow). See LiveGame.card.
+    targetSdkVersion = 30
     androidxActivityVersion = '1.8.0'
     androidxAppCompatVersion = '1.6.1'
     androidxCoordinatorLayoutVersion = '1.2.0'

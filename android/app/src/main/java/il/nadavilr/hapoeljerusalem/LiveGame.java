@@ -182,8 +182,9 @@ final class LiveGame {
      * The live score card. {@code fin} = after the final buzzer (grey "סיום" pill, not ongoing, gone after 30 minutes).
      * {@code del} runs when the user swipes it away (may be null).
      *
-     * One compact layout and nothing to expand (no expanded view, no style, no actions): from Android 12 the
-     * app-name row is shown only on an expanded notification, so this card has none.
+     * One compact layout and nothing to expand (no expanded view, no style, no actions). The app targets SDK 30, so
+     * Android shows this layout as the whole notification – without its template, the app-name row, the icon or an
+     * expand arrow (Notification.Builder: fullyCustomViewRequiresDecoration / expandedContentViewRequired).
      */
     static Notification card(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, PendingIntent del) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.notif_live_card);
