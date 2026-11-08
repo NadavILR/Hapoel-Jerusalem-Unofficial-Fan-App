@@ -468,7 +468,7 @@ function GameCard({kind,g,now,L}){
  const [ph,setPh]=useState(L?'live':'cd');
  useEffect(()=>{if(L&&ph==='cd'){setPh('out');const t1=setTimeout(()=>setPh('in'),420),t2=setTimeout(()=>setPh('live'),2200);return()=>{clearTimeout(t1);clearTimeout(t2)}}if(!L&&ph!=='cd')setPh('cd')},[!!L]);
  const LV=L&&(ph==='in'||ph==='live');
- return html`<div class=${'rounded-2xl p-4 h-full flex flex-col '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ return html`<div class=${'rounded-2xl p-4 flex flex-col '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
  ${LV?html`<${LiveCard} L=${L} g=${g} intro=${ph==='in'}/>`:html`<div class=${'flex-1 flex flex-col'+(ph==='out'?' cd-out':'')}>
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
@@ -477,7 +477,7 @@ function GameCard({kind,g,now,L}){
   <div class=${'text-center text-sm '+(red?'opacity-90':'')}>${fdLong(g)}</div>
   <div class=${'text-center text-sm mb-3 flex items-center justify-center gap-1 '+op}><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div>
   ${res?html`<div class="flex-1 flex items-center justify-center py-2"><span class=${'text-3xl leading-[31px] font-extrabold tracking-tight '+(w?'text-green-700':'text-[#D21919]')}>${w?'ניצחון':'הפסד'}</span></div>`
-  :html`<div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class=${box+' rounded-xl py-2'}><div class="text-2xl font-semibold sb tabular-nums"><span key=${v} class="tick">${String(v).padStart(2,'0')}</span></div><div class=${'text-[11px] '+(red?'opacity-70':'mu')}>${l}</div></div>`)}</div>
+  :html`<div class="grid grid-cols-4 gap-2 text-center mt-auto" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class=${box+' rounded-xl py-2'}><div class="text-2xl font-semibold sb tabular-nums"><span key=${v} class="tick">${String(v).padStart(2,'0')}</span></div><div class=${'text-[11px] '+(red?'opacity-70':'mu')}>${l}</div></div>`)}</div>
   <button onClick=${()=>A.togRem(g)} class=${'mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[g.id]?(red?'bg-white text-[#D21919]':'bg-[#D21919] text-white'):btn)}><${I} n="bell" s=${16}/>${A.rem[g.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
   ${vid?html`<${VideoPop} g=${g} onClose=${()=>setVid(false)}/>`:null}
   ${res?html`<button onClick=${()=>ytId(g)?setVid(true):openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 red-glass text-white"><${I} n="play" s=${16}/>לתקציר המשחק</button>`:null}
