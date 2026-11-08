@@ -146,17 +146,16 @@ public class LiveScoreService extends Service {
             finish(null);
             return;
         }
-        String comp = LiveScheduler.game(this, tipOff).optString("c", "");
-        // Winner League / Winner Cup: the game itself (score, quarter, clock, status, play-by-play) from the
-        // official live stats, basket.co.il/livestats; 365scores only for names and crests, every 30 seconds
+        JSONObject meta = LiveScheduler.game(this, tipOff);
+        String comp = meta.optString("c", "");
+        // Winner League / Winner Cup: everything (names, score, quarter, clock, status, play-by-play) from the
+        // official live stats, basket.co.il/livestats; from 365scores only the crests (fetched once)
         boolean official = "league".equals(comp) || "wcup".equals(comp);
-        if (g365 == null || !official || now - at365 >= 30_000L) {
+        if (!official || (g365 == null && now - at365 >= 30_000L)) {
+            at365 = now;
             try {
                 JSONObject g = pick(new JSONObject(LivePlay.get(API)).optJSONArray("games"));
-                if (g != null) {
-                    g365 = g;
-                    at365 = now;
-                }
+                if (g != null) g365 = g;
             } catch (Exception ignored) {
             }
         }
@@ -167,8 +166,18 @@ public class LiveScoreService extends Service {
                 int id = LivePlay.segevId(tipOff);
                 if (id > 0) {
                     JSONObject d = LivePlay.segevData(id);
-                    x = g365 != null ? LiveGame.from365(g365) : LivePlay.baseGame(d);
+                    x = LivePlay.baseGame(d);
                     if (x != null) {
+                        // Crests: the only thing from 365scores
+                        LiveGame c365 = g365 != null ? LiveGame.from365(g365) : null;
+                        if (c365 != null) {
+                            boolean same = c365.meHome == x.meHome;
+                            x.homeImg = same ? c365.homeImg : c365.awayImg;
+                            x.awayImg = same ? c365.awayImg : c365.homeImg;
+                        }
+                        // Competition and round: as in the app (its own data), e.g. "ליגת ווינר סל, מחזור 5"
+                        String label = meta.optString("l", "");
+                        x.comp = !label.isEmpty() ? label : "league".equals(comp) ? "ליגת ווינר סל" : "גביע ווינר סל";
                         state = LivePlay.applyLive(d, x);
                         String play = LivePlay.segevLine(d, x);
                         if (play != null && !play.isEmpty()) lastPlay = play;

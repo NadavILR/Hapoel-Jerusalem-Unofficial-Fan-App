@@ -761,6 +761,20 @@ function applyLs(L,d){const gi=d.gameInfo||{},bg=(d.boxscore&&d.boxscore.gameInf
  L.status='live';if(brk){L.st=q===2?'מחצית':'הפסקה';L.clock=''}else{L.st=q<=4?'רבע '+q:'הארכה'+(q>5?' '+(q-4):'');const la=acts[acts.length-1],t=gi.currentQuarterTime||{};/* השעון העדכני ביותר: הפעולה האחרונה ברבע (currentQuarterTime מתעדכן לעיתים רחוקות יותר) */
   L.clock=la&&(+la.quarter||q)===q&&la.quarterTime?la.quarterTime:String(t.m||0).padStart(2,'0')+':'+String(t.s||0).padStart(2,'0')}
  return L}
+/* סטטיסטיקת המשחק (טבלת השחקנים, נתוני הקבוצות והתוצאה לפי רבעים) מה-boxscore של livestats, באותו מבנה של gs365. הפועל תמיד ראשונה */
+function gsLs(d){const gi=d.gameInfo||{},bx=d.boxscore||{},bg=bx.gameInfo||{},jh=isJls(gi.homeTeam),J=jh?bx.homeTeam:bx.awayTeam,O=jh?bx.awayTeam:bx.homeTeam,JI=jh?gi.homeTeam:gi.awayTeam,OI=jh?gi.awayTeam:gi.homeTeam,n=x=>+x||0;
+ const names=t=>{const m={};((t&&t.players)||[]).forEach(p=>{const v=((p.firstNameLocal||'')+' '+(p.lastNameLocal||'')).trim()||titleCase((p.firstName||'')+' '+(p.lastName||''));m[String(p.id)]=v;m['#'+p.jerseyNumber]=v});return m};
+ const rows=(t,ti)=>{const nm=names(ti);return((t&&t.players)||[]).map(p=>{const f2=n(p.fg_2m),f2a=f2+n(p.fg_2mis),f3=n(p.fg_3m),f3a=f3+n(p.fg_3mis),ft=n(p.ft_m),fta=ft+n(p.ft_mis);
+   return[(nm[String(p.playerId)]||nm['#'+p.jerseyNumber]||'').replace(/'/g,'׳'),p.jerseyNumber!=null?p.jerseyNumber:'',p.starter?1:0,String(p.minutes||'0:00').replace(/^0(\d)/,'$1'),n(p.points),n(p.reb_d)+n(p.reb_o),n(p.ast),n(p.stl),n(p.blk),f2+f3,f2a+f3a,f3,f3a,ft,fta,n(p.reb_o),n(p.reb_d),n(p.to),n(p.f),0]})};
+ const TJ=(J&&J.teamActionsTotal)||{},TO=(O&&O.teamActionsTotal)||{},pair=fn=>[fn(TJ),fn(TO)];
+ const hq=bg.homeQuarterScores||[],aq=bg.awayQuarterScores||[],cq=+gi.currentQuarter||0;
+ const q=hq.map((h,i)=>jh?[n(h),n(aq[i])]:[n(aq[i]),n(h)]).filter((x,i)=>i<Math.max(cq,1)&&(i<4||x[0]||x[1]));
+ return{q,fg:pair(t=>[n(t.fg_2m)+n(t.fg_3m),n(t.fg_2m)+n(t.fg_2mis)+n(t.fg_3m)+n(t.fg_3mis)]),p3:pair(t=>[n(t.fg_3m),n(t.fg_3m)+n(t.fg_3mis)]),ft:pair(t=>[n(t.ft_m),n(t.ft_m)+n(t.ft_mis)]),
+  t:{ast:pair(t=>n(t.ast)),reb:pair(t=>n(t.reb_d)+n(t.reb_o)),or:pair(t=>n(t.reb_o)),dr:pair(t=>n(t.reb_d)),stl:pair(t=>n(t.stl)),blk:pair(t=>n(t.blk)),to:pair(t=>n(t.to)),pf:pair(t=>n(t.f))},pl:[rows(J,JI),rows(O,OI)],live:1}}
+/* מובילי המשחק (בית / חוץ) מה-boxscore של livestats */
+function topLs(d){const gi=d.gameInfo||{},bx=d.boxscore||{};
+ const best=(t,ti,k)=>{const nm={};((ti&&ti.players)||[]).forEach(p=>{nm[String(p.id)]=((p.firstNameLocal||'')+' '+(p.lastNameLocal||'')).trim()});let b=null;((t&&t.players)||[]).forEach(p=>{const v=k(p);if(v>0&&(!b||v>b.v))b={p:nm[String(p.playerId)]||'',v}});return b};
+ return[['נקודות',p=>+p.points||0],['ריבאונדים',p=>(+p.reb_d||0)+(+p.reb_o||0)],['אסיסטים',p=>+p.ast||0]].map(([n,k])=>({n,h:best(bx.homeTeam,gi.homeTeam,k),a:best(bx.awayTeam,gi.awayTeam,k)})).filter(c=>c.h||c.a)}
 function pbpSegevData(d,f){const isJ=isJls;
  const gi=d.gameInfo||{},jh=isJ(gi.homeTeam),names={};
  [gi.homeTeam,gi.awayTeam].forEach((t,i)=>((t&&t.players)||[]).forEach(p=>{names[(i+1)+':'+p.jerseyNumber]=((p.firstNameLocal||'')+' '+(p.lastNameLocal||'')).trim()||titleCase((p.firstName||'')+' '+(p.lastName||''))}));
@@ -1096,17 +1110,19 @@ function App(){
   const tick=async()=>{let wait=60000;
    try{const n=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
     if(n&&Date.now()>=n.t-10*6e4&&Date.now()<n.t+5*H&&document.visibilityState!=='hidden'){wait=20000;
-     const cur=await getJSON(S365+'games/current/?'+Q365+'&competitors=634'),want=id365(n),gl=cur.games||[];
-     const g=gl.find(x=>String(x.id)===want)||gl.find(x=>Math.abs(Date.parse(x.startTime)-n.t)<3*H);
-     if(g&&!stop){const prev=lgRef.current,same=prev&&prev.app===n.id,lsd=NATIVE&&['league','wcup'].includes(n.c)?await lsGame(n).catch(()=>null):null,
-       det=g.statusGroup>=3||lsd?((await getJSON(S365+'game/?'+Q365+'&gameId='+g.id+'&withExpanded=true')).game||g):g,L=mkLive(det,n);
-      if(lsd)applyLs(L,lsd);
-      const on=L.status!=='pre',moved=!same||prev.r[0]!==L.r[0]||prev.r[1]!==L.r[1],heavy=on&&(moved||L.status==='end'||Date.now()-full>=1e4);
-      if(L.status==='live')wait=3000;
-      if(heavy){full=Date.now();const ts=await getJSON(S365+'game/stats/?'+Q365+'&games='+g.id).catch(()=>null);try{L.gs=gs365(det,ts)}catch(e){}}else if(same)L.gs=prev.gs;
-      /* מהלך המשחק: בליגת ווינר ובגביע ווינר מאותו קובץ livestats (בכל עדכון), אחרת כל 10 שניות או כשהתוצאה משתנה */
-      if(lsd&&on){const pb=pbpSegevData(lsd,n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}
-      else if(heavy){const pb=await livePbp(n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}else if(same)L.pbp=prev.pbp;
+     const prev=lgRef.current,same=prev&&prev.app===n.id;let L=null;
+     /* ליגת ווינר וגביע ווינר: כל נתוני המשחק בלייב מאתר ה-Live Stats הרשמי של המפעל – תוצאה, רבע, שעון, תוצאה לפי רבעים, מהלך המשחק,
+        טבלת השחקנים ונתוני הקבוצות (בלי 365scores). אם האתר לא עונה – 365scores כמו בשאר המפעלים */
+     const lsd=NATIVE&&['league','wcup'].includes(n.c)?await lsGame(n).catch(()=>null):null;
+     if(lsd){L={app:n.id,id:0,jh:!!n.h,hs:0,as:0,r:[0,0],status:'pre',st:'',clock:'',q:[],top:[],url:url365(n),at:Date.now()};applyLs(L,lsd);
+      if(L.status!=='pre'){try{L.gs=gsLs(lsd);L.top=topLs(lsd)}catch(e){}const pb=pbpSegevData(lsd,n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}}
+     else{const cur=await getJSON(S365+'games/current/?'+Q365+'&competitors=634'),want=id365(n),gl=cur.games||[];
+      const g=gl.find(x=>String(x.id)===want)||gl.find(x=>Math.abs(Date.parse(x.startTime)-n.t)<3*H);
+      if(g){const det=g.statusGroup>=3?((await getJSON(S365+'game/?'+Q365+'&gameId='+g.id+'&withExpanded=true')).game||g):g;L=mkLive(det,n);
+       const on=L.status!=='pre',moved=!same||prev.r[0]!==L.r[0]||prev.r[1]!==L.r[1],heavy=on&&(moved||L.status==='end'||Date.now()-full>=1e4);
+       if(heavy){full=Date.now();const ts=await getJSON(S365+'game/stats/?'+Q365+'&games='+g.id).catch(()=>null);try{L.gs=gs365(det,ts)}catch(e){}const pb=await livePbp(n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}
+       else if(same){L.gs=prev.gs;L.pbp=prev.pbp}}}
+     if(L&&!stop){if(L.status==='live')wait=3000;
       lgRef.current=L;setLg(L);
       if(L.status==='live'&&(!prev||prev.app!==n.id||prev.status!=='live'))nf.current('המשחק התחיל: '+(L.jh?ME+' – '+n.o:n.o+' – '+ME),n.c,'quarter');
       if(L.status==='end'){const fired=LS.get('hpj-final',{});if(!fired[n.id]){fired[n.id]=1;LS.set('hpj-final',fired);nf.current('סיום המשחק: '+ME+' '+L.r[0]+' – '+L.r[1]+' '+n.o+(L.r[0]>L.r[1]?' · ניצחון':''),n.c,'quarter')}if(L.gs){const lg=liveGS();lg[n.id]=L.gs;LS.set('hpj-livegs',lg)}S.markResult(n.id,L.r);return}}}
@@ -1118,7 +1134,7 @@ function App(){
     ואת שמות השחקנים של הפועל, והוא מפעיל בשריקת הפתיחה כרטיס שמתעדכן עד הסיום (תוצאה ומהלך המשחק) – גם כשהאפליקציה סגורה.
     רק כשההתראות מאושרות במכשיר ופעילות באפליקציה */
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
-  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0})),jer={};
+  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f)})),jer={};
    (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
    P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{}}).then(()=>P.group&&P.group()).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);

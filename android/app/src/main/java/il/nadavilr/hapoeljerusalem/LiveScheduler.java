@@ -72,11 +72,28 @@ final class LiveScheduler {
      * keeps only the competitions that are on in the app's settings, and re-arms the tip-off alarms.
      */
     static void saveFetched(Context c, org.json.JSONArray games) {
+        // Keep the app's own competition / round text ("l") of games it already sent
+        java.util.Map<Long, String> labels = new java.util.HashMap<>();
+        try {
+            org.json.JSONArray old = new org.json.JSONArray(prefs(c).getString("games", "[]"));
+            for (int i = 0; i < old.length(); i++) {
+                org.json.JSONObject o = old.optJSONObject(i);
+                if (o != null && !o.optString("l", "").isEmpty()) labels.put(o.optLong("t", 0), o.optString("l"));
+            }
+        } catch (Exception ignored) {
+        }
         org.json.JSONArray keep = new org.json.JSONArray();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < games.length() && keep.length() < 8; i++) {
             org.json.JSONObject g = games.optJSONObject(i);
             if (g == null || !compOn(c, g.optString("c", ""))) continue;
+            String l = labels.get(g.optLong("t", 0));
+            if (l != null) {
+                try {
+                    g.put("l", l);
+                } catch (Exception ignored) {
+                }
+            }
             keep.put(g);
             if (sb.length() > 0) sb.append(',');
             sb.append(g.optLong("t", 0));

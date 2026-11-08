@@ -251,15 +251,15 @@ final class LivePlay {
 
     static final int PRE = 2, LIVE = 3, FINAL = 4;
 
-    /** Names from a livestats file, when 365scores is not available (no crest for the opponent then). */
+    /** The game's teams from a livestats file (Hapoel as "הפועל ירושלים", the opponent by its official name). */
     static LiveGame baseGame(JSONObject d) {
         JSONObject gi = d.optJSONObject("gameInfo");
         if (gi == null) return null;
         JSONObject h = gi.optJSONObject("homeTeam"), a = gi.optJSONObject("awayTeam");
         LiveGame x = new LiveGame();
         x.meHome = isJ(h);
-        x.homeName = x.meHome ? LiveGame.TEAM : (h != null ? h.optString("shortNameLocal", h.optString("nameLocal", "")) : "");
-        x.awayName = !x.meHome ? LiveGame.TEAM : (a != null ? a.optString("shortNameLocal", a.optString("nameLocal", "")) : "");
+        x.homeName = x.meHome ? LiveGame.TEAM : (h != null ? h.optString("nameLocal", h.optString("shortNameLocal", "")) : "");
+        x.awayName = !x.meHome ? LiveGame.TEAM : (a != null ? a.optString("nameLocal", a.optString("shortNameLocal", "")) : "");
         return x;
     }
 
