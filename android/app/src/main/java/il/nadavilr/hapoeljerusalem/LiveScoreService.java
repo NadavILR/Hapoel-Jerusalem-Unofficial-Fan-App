@@ -80,7 +80,8 @@ public class LiveScoreService extends Service {
         if (t > 0) tipOff = t;
         if (tipOff == 0) tipOff = System.currentTimeMillis();
         ensureChannel(this);
-        Notification first = build(TEAM, "שריקת הפתיחה בקרוב", null, null, false);
+        Notification first = base(this, TEAM, "\u200Fשריקת הפתיחה בקרוב").setOngoing(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE).build();
         try {
             ServiceCompat.startForeground(this, NOTIF_ID, first,
                 Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0);
@@ -168,41 +169,21 @@ public class LiveScoreService extends Service {
         }
     }
 
-    /** Hapoel's score first: [title, status line, short chip text] */
-    private static String[] texts(JSONObject g) {
-        JSONObject h = g.optJSONObject("homeCompetitor"), a = g.optJSONObject("awayCompetitor");
-        if (h == null || a == null) return null;
-        boolean home = h.optInt("id") == HAPOEL;
-        JSONObject me = home ? h : a, op = home ? a : h;
-        int ms = (int) Math.max(0, Math.round(me.optDouble("score", 0))), os = (int) Math.max(0, Math.round(op.optDouble("score", 0)));
-        String opName = op.optString("shortName", "");
-        if (opName.isEmpty()) opName = op.optString("name", "");
-        String status = g.optString("statusText", g.optString("shortStatusText", "")).trim();
-        String clock = g.optString("gameTimeDisplay", "").trim();
-        String line = status + (clock.isEmpty() ? "" : " · " + clock);
-        return new String[]{TEAM + " " + ms + " – " + os + " " + opName, line, ms + "-" + os, opName};
-    }
-
     private void show(JSONObject g) {
-        String[] t = texts(g);
-        if (t == null) return;
-        String key = t[0] + "|" + t[1];
-        if (key.equals(lastKey)) return;
-        lastKey = key;
-        notify(build(t[0], t[1], t[2], t[3], true));
+        LiveGame x = LiveGame.from365(g);
+        if (x == null) return;
+        if (x.key().equals(lastKey)) return;
+        lastKey = x.key();
+        Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
+        PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        notify(LiveGame.notification(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), del));
     }
 
     /** Ends following the game; with a final game, leaves a regular "final score" notification for 30 minutes. */
     private void finish(JSONObject finalGame) {
-        String[] t = finalGame != null ? texts(finalGame) : null;
+        LiveGame x = finalGame != null ? LiveGame.from365(finalGame) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
-        if (t != null && LiveScheduler.allowed(this)) {
-            NotificationCompat.Builder b = base(this, "סיום: " + t[0], "התוצאה הסופית")
-                .setOngoing(false)
-                .setAutoCancel(true)
-                .setTimeoutAfter(30 * MIN);
-            notify(b.build());
-        }
+        if (x != null && LiveScheduler.allowed(this)) notify(LiveGame.finalNotification(this, x));
         LiveScheduler.done(this, tipOff);
         stopSelf();
     }
@@ -228,78 +209,6 @@ public class LiveScoreService extends Service {
             .setShowWhen(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-    }
-
-    private Notification build(String title, String text, String chip, String opponent, boolean live) {
-        Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
-        PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        return build(this, title, text, chip, opponent, live, del);
-    }
-
-    /** The live notification itself (also used by the app's test mode, with no service behind it). */
-    static Notification build(Context c, String title, String text, String chip, String opponent, boolean live, PendingIntent del) {
-        NotificationCompat.Builder b = base(c, title, text)
-            .setOngoing(true)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
-        if (del != null) b.setDeleteIntent(del);
-        String nowSecondary = live && opponent != null ? opponent + " · " + text : text;
-        Bundle x = new Bundle();
-        // Samsung (One UI): colour of the status-bar chip / Now Bar pill
-        x.putInt("android.ongoingActivityNoti.chipBgColor", CHIP_COLOR);
-        if (Build.VERSION.SDK_INT < 36) {
-            // One UI 7 (Android 15): Samsung's own Live Notifications card in the Now Bar. Shown for apps Samsung
-            // allows (manifest meta-data com.samsung.android.support.ongoing_activity) or when the phone's
-            // Developer options > "Live notifications for all apps" is on.
-            x.putInt("android.ongoingActivityNoti.style", 1);
-            x.putString("android.ongoingActivityNoti.primaryInfo", title);
-            x.putString("android.ongoingActivityNoti.secondaryInfo", text);
-            x.putInt("android.ongoingActivityNoti.actionType", 1);
-            x.putInt("android.ongoingActivityNoti.actionPrimarySet", 0);
-            x.putString("android.ongoingActivityNoti.nowbarPrimaryInfo", chip != null ? chip : title);
-            x.putString("android.ongoingActivityNoti.nowbarSecondaryInfo", chip != null ? nowSecondary : text);
-            if (chip != null) x.putString("android.ongoingActivityNoti.chipExpandedText", chip);
-        }
-        // One UI 8+ (Android 16+): no "style" extra – it sends the notification down Samsung's private card path
-        // instead of the standard Live Update, which is what the Now Bar shows there.
-        b.addExtras(x);
-        return promote(c, b.build(), chip);
-    }
-
-    private static final int CHIP_COLOR = 0xFFD21919;
-
-    /**
-     * Android 16+ "Live Updates": Notification.Builder#setRequestPromotedOngoing(true) and #setShortCriticalText(chip)
-     * (status-bar chip, lock screen, Samsung Now Bar). The app is built against an older SDK, so they are called by
-     * reflection on the device's own Notification.Builder; on older Android nothing changes.
-     */
-    static Notification promote(Context c, Notification n, String chip) {
-        if (Build.VERSION.SDK_INT < 36) return n;
-        Notification.Builder fb;
-        try {
-            fb = Notification.Builder.recoverBuilder(c, n);
-        } catch (Throwable e) {
-            n.extras.putBoolean("android.requestPromotedOngoing", true);
-            if (chip != null) n.extras.putString("android.shortCriticalText", chip);
-            return n;
-        }
-        try {
-            Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class).invoke(fb, true);
-        } catch (Throwable e) {
-            fb.getExtras().putBoolean("android.requestPromotedOngoing", true);
-        }
-        if (chip != null) {
-            boolean set = false;
-            for (Class<?> t : new Class<?>[]{String.class, CharSequence.class}) {
-                try {
-                    Notification.Builder.class.getMethod("setShortCriticalText", t).invoke(fb, chip);
-                    set = true;
-                    break;
-                } catch (Throwable ignored) {
-                }
-            }
-            if (!set) fb.getExtras().putString("android.shortCriticalText", chip);
-        }
-        return fb.build();
     }
 
     /** Android 16+: whether the user allows this app's Live Updates (Settings > Notifications > the app > Live updates). */

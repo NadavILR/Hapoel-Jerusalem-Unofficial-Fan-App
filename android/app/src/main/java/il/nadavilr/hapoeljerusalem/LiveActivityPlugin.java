@@ -46,16 +46,17 @@ public class LiveActivityPlugin extends Plugin {
     }
 
     /**
-     * Test mode (three taps under the home screen): shows the same live notification with the simulated score.
-     * demo({title, text, chip, opponent}) shows / updates it, demo({}) without a title removes it.
+     * Test mode (three taps under the home screen): shows the same live notification with the simulated game.
+     * demo({comp, status, clock, home:{name, score, img}, away:{name, score, img}}) shows / updates it;
+     * demo({}) without teams removes it. Runs on Capacitor's plugin thread, so the crests can be downloaded here.
      */
     @PluginMethod
     public void demo(PluginCall call) {
         android.content.Context c = getContext();
         JSObject r = new JSObject();
-        String title = call.getString("title");
+        JSObject home = call.getObject("home"), away = call.getObject("away");
         androidx.core.app.NotificationManagerCompat nm = androidx.core.app.NotificationManagerCompat.from(c);
-        if (title == null || title.isEmpty()) {
+        if (home == null || away == null) {
             nm.cancel(LiveScoreService.NOTIF_ID);
             r.put("shown", false);
             call.resolve(r);
@@ -67,10 +68,19 @@ public class LiveActivityPlugin extends Plugin {
             call.resolve(r);
             return;
         }
+        LiveGame g = new LiveGame();
+        g.comp = call.getString("comp", "");
+        g.status = call.getString("status", "");
+        g.clock = call.getString("clock", "");
+        g.homeName = home.optString("name", "");
+        g.awayName = away.optString("name", "");
+        g.hs = home.optInt("score", 0);
+        g.as = away.optInt("score", 0);
+        g.homeImg = home.optString("img", null);
+        g.awayImg = away.optString("img", null);
         LiveScoreService.ensureChannel(c);
         try {
-            nm.notify(LiveScoreService.NOTIF_ID, LiveScoreService.build(c, title, call.getString("text", ""),
-                call.getString("chip"), call.getString("opponent"), true, null));
+            nm.notify(LiveScoreService.NOTIF_ID, LiveGame.notification(c, g, LiveGame.crest(g.homeImg), LiveGame.crest(g.awayImg), null));
             r.put("shown", true);
         } catch (SecurityException e) {
             r.put("shown", false);
