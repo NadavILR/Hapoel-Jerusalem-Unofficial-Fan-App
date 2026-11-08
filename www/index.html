@@ -41,9 +41,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .on-glass{display:inline-flex;align-items:center;gap:6px;background:rgb(var(--sf-rgb)/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid var(--gl-bd);border-radius:999px;padding:3px 10px;max-width:100%}
 .on-glass.box{border-radius:12px;padding:6px 10px}.on-glass.txt{display:inline-block;border-radius:12px;padding:4px 12px;line-height:1.6}
 .fbar{position:sticky;top:var(--hdh,64px);z-index:18;margin:0 -12px;padding:4px 12px 0;border-bottom:1px solid transparent;transition:background-color .2s var(--ease),border-color .2s var(--ease),padding .2s var(--ease),box-shadow .2s var(--ease)}
-.fbar.stuck{background:var(--bar);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border-bottom-color:var(--gl-bd);box-shadow:0 8px 20px rgb(0 0 0/.08);padding-top:8px}
+/* כשהסרגל נצמד, הכותרת עצמה גדלה מתחתיו: הכותרת והמסננים יושבים על אותה שכבת זכוכית, והסרגל עצמו שקוף */
+.fbar.stuck{z-index:21}#app-hd{transition:padding-bottom .2s var(--ease)}html.bar-stuck #app-hd{padding-bottom:var(--fbh,0px)}
 .fbar>*{transition:transform .2s var(--ease)}.fbar.stuck>*{transform:scale(.97)}
-html.bar-stuck #app-hd{border-bottom-color:transparent!important}
 .back-stick{position:sticky;top:calc(var(--hdh,64px) + 8px);z-index:18;display:flex;width:max-content}
 .solid-card{background:var(--sf)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
@@ -467,7 +467,7 @@ function useDir(i){const r=useRef({i,c:''});if(r.current.i!==i)r.current={i,c:i>
 /* סרגל הסינון: בגלילה הוא נצמד לכותרת ומקבל את הזכוכית שלה, כך ששניהם נראים כחלק אחד */
 function StickyBar({children}){
  const r=useRef(null),[stuck,setStuck]=useState(false);
- useEffect(()=>{const on=()=>{const el=r.current;if(!el)return;const h=document.getElementById('app-hd'),top=h?h.getBoundingClientRect().bottom:0,st=window.scrollY>4&&el.getBoundingClientRect().top<=top+1;setStuck(st);document.documentElement.classList.toggle('bar-stuck',st)};
+ useEffect(()=>{const on=()=>{const el=r.current;if(!el)return;const top=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hdh'))||0,st=window.scrollY>4&&el.getBoundingClientRect().top<=top+1;if(st)document.documentElement.style.setProperty('--fbh',el.offsetHeight+'px');setStuck(st);document.documentElement.classList.toggle('bar-stuck',st)};
   on();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',on);
   return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',on);document.documentElement.classList.remove('bar-stuck')}},[]);
  return html`<div ref=${r} class=${'fbar'+(stuck?' stuck':'')}>${children}</div>`;
@@ -969,7 +969,7 @@ function App(){
  const navOn=mo||EXT[pg]?'more':pg,Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  /* גובה הכותרת (כולל פס הסטטוס), בשביל סרגלי הסינון וכפתורי החזרה שנצמדים מתחתיה */
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const set=()=>document.documentElement.style.setProperty('--navh',n.getBoundingClientRect().height+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(n)}catch(e){}return()=>{ro&&ro.disconnect()}},[]);
- useEffect(()=>{const h=document.getElementById('app-hd');if(!h)return;const set=()=>document.documentElement.style.setProperty('--hdh',h.getBoundingClientRect().height+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(h)}catch(e){}return()=>{ro&&ro.disconnect()}},[pg]);
+ useEffect(()=>{const h=document.getElementById('app-hd');if(!h)return;const set=()=>document.documentElement.style.setProperty('--hdh',(h.getBoundingClientRect().height-(parseFloat(getComputedStyle(h).paddingBottom)||0))+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(h)}catch(e){}return()=>{ro&&ro.disconnect()}},[pg]);
  return html`<${Ctx.Provider} value=${A}>
  <${PullRefresh} onRefresh=${S.refresh} off=${!!(EXT[pg]||dr||st||mo||upd)}/>
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 glass-bar" style=${{top:0,paddingTop:'var(--sat)',borderBottom:'1px solid var(--gl-bd)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
