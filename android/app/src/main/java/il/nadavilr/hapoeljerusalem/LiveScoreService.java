@@ -40,11 +40,9 @@ public class LiveScoreService extends Service {
     private HandlerThread thread;
     private Handler handler;
     private long tipOff;
-    private boolean wasLive, finalShown;
+    private boolean wasLive, finalShown, finished;
     private String lastKey = "", lastPlay = "";
     private int lastHs = -1, lastAs = -1;
-    private final Runnable clearPop = this::clearPop;
-    private LiveGame shown;
 
     /** Starts (or keeps) following the game that tips off at {@code tipOff} (ms). */
     static void start(Context c, long tipOff) {
@@ -72,6 +70,14 @@ public class LiveScoreService extends Service {
         }
         long t = intent != null ? intent.getLongExtra("t", 0) : 0;
         if (t > 0) tipOff = t;
+        if (intent == null && tipOff == 0) {
+            // Restarted by Android after being stopped (background mode): continue with the game that is on now
+            tipOff = LiveScheduler.current(this);
+            if (tipOff == 0) {
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+        }
         if (tipOff == 0) tipOff = System.currentTimeMillis();
         ensureChannel(this);
         Notification first = base(this, LiveGame.TEAM, "\u200Fשריקת הפתיחה בקרוב").setOngoing(true)
@@ -94,7 +100,19 @@ public class LiveScoreService extends Service {
             handler = new Handler(thread.getLooper());
             handler.post(this::poll);
         }
+        // Background mode: Android restarts the service if it is stopped, and a watchdog alarm checks every 5 minutes
+        if (LiveScheduler.background(this)) {
+            LiveScheduler.armWatchdog(this);
+            return START_STICKY;
+        }
         return START_NOT_STICKY;
+    }
+
+    /** The app was swiped away from the recent apps: in background mode, come back right away. */
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        if (LiveScheduler.background(this) && !finished) LiveScheduler.armWatchdog(this, 2_000L);
     }
 
     @Override
@@ -107,8 +125,12 @@ public class LiveScoreService extends Service {
         super.onDestroy();
     }
 
+    /** How often to check 365scores: every 2 seconds while the game is live, so the card follows the score within
+     *  a few seconds of 365scores; every 10 seconds around tip-off; every minute before that. */
+    private static final long LIVE_POLL = 2_000L, NEAR_POLL = 10_000L, PRE_POLL = 60_000L;
+
     private void poll() {
-        long wait = 20_000L, now = System.currentTimeMillis();
+        long wait = LIVE_POLL, now = System.currentTimeMillis();
         if (!LiveScheduler.allowed(this)) {
             finish(null);
             return;
@@ -126,7 +148,7 @@ public class LiveScoreService extends Service {
                     wasLive = true;
                     show(g);
                 } else {
-                    wait = 60_000L; // not started yet
+                    wait = now > tipOff - 5 * MIN ? NEAR_POLL : PRE_POLL; // not started yet
                 }
             }
         } catch (Exception ignored) {
@@ -166,61 +188,71 @@ public class LiveScoreService extends Service {
     }
 
     /** The game from 365scores, with the latest play-by-play line and the tip-off that identifies it. */
-    private LiveGame game(JSONObject g) {
+    private long lastPlayAt;
+
+    /** The game from 365scores, with the latest play-by-play line (fetched every 6 seconds, or right away when the
+     *  score changed – those files are bigger than the score) and the tip-off that identifies it. */
+    private LiveGame game(JSONObject g, boolean scoreChanged) {
         LiveGame x = LiveGame.from365(g);
         if (x == null) return null;
         x.t = tipOff;
-        JSONObject meta = LiveScheduler.game(this, tipOff);
-        String play = LivePlay.latest(meta.optString("c", ""), meta.optInt("eg", 0), tipOff, x, LiveScheduler.roster(this));
-        if (play != null && !play.isEmpty()) lastPlay = play;
+        long now = System.currentTimeMillis();
+        if (scoreChanged || now - lastPlayAt >= 6_000L) {
+            lastPlayAt = now;
+            JSONObject meta = LiveScheduler.game(this, tipOff);
+            String play = LivePlay.latest(meta.optString("c", ""), meta.optInt("eg", 0), tipOff, x, LiveScheduler.roster(this));
+            if (play != null && !play.isEmpty()) lastPlay = play;
+        }
         x.play = lastPlay;
         return x;
     }
 
+    private long popUntil;
+
     private void show(JSONObject g) {
-        LiveGame x = game(g);
+        JSONObject h = g.optJSONObject("homeCompetitor"), a = g.optJSONObject("awayCompetitor");
+        int hs = h != null ? (int) Math.max(0, Math.round(h.optDouble("score", 0))) : 0;
+        int as = a != null ? (int) Math.max(0, Math.round(a.optDouble("score", 0))) : 0;
+        boolean scored = lastHs >= 0 && (hs != lastHs || as != lastAs);
+        LiveGame x = game(g, scored);
         if (x == null) return;
+        long now = System.currentTimeMillis();
         // +1 / +2 / +3 next to the score that just changed (not on the first update)
-        if (lastHs >= 0) {
+        if (scored) {
             x.popHome = LiveGame.delta(x.hs, lastHs);
             x.popAway = LiveGame.delta(x.as, lastAs);
         }
         lastHs = x.hs;
         lastAs = x.as;
-        post(x);
-        if ((x.popHome > 0 || x.popAway > 0) && handler != null) {
-            handler.removeCallbacks(clearPop);
-            handler.postDelayed(clearPop, 3_500L); // after the badge has faded, before the flipper would show it again
+        if (x.popHome > 0 || x.popAway > 0) {
+            popUntil = now + 2_600L;
+            post(x);
+            return;
         }
+        // While a +N is on screen (it fades by itself after 2.2 s), clock-only updates wait, so they don't restart it
+        if (!scored && now < popUntil) return;
+        post(x);
     }
 
     private void post(LiveGame x) {
         if (x.key().equals(lastKey)) return;
         lastKey = x.key();
-        shown = x;
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), false, del));
     }
 
-    /** Removes the +N badge once it has faded. */
-    private void clearPop() {
-        LiveGame x = shown;
-        if (x == null || (x.popHome == 0 && x.popAway == 0)) return;
-        x.popHome = 0;
-        x.popAway = 0;
-        post(x);
-    }
-
     /** Ends following the game; with a final game, the card stays for 30 minutes with the final score. */
     private void finish(JSONObject finalGame) {
-        LiveGame x = finalGame != null ? game(finalGame) : null;
+        LiveGame x = finalGame != null ? game(finalGame, true) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         if (x != null && LiveScheduler.allowed(this)) {
             notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), true, null));
             finalShown = true;
         }
         LiveScheduler.done(this, tipOff);
+        LiveScheduler.cancelWatchdog(this);
+        finished = true;
         stopSelf();
     }
 

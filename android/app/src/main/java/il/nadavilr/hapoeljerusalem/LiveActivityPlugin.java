@@ -49,6 +49,8 @@ public class LiveActivityPlugin extends Plugin {
         boolean on = Boolean.TRUE.equals(call.getBoolean("on", false));
         JSArray games = call.getArray("games");
         JSObject jer = call.getObject("jer");
+        Boolean bg = call.getBoolean("bg");
+        if (bg != null) LiveScheduler.setBackground(getContext(), bg);
         LiveScheduler.save(getContext(), on, games, jer);
         JSObject r = new JSObject();
         long now = LiveScheduler.current(getContext());
@@ -62,6 +64,36 @@ public class LiveActivityPlugin extends Plugin {
         } else if (!LiveScheduler.allowed(getContext())) {
             LiveScoreService.stop(getContext());
         }
+        call.resolve(r);
+    }
+
+    /**
+     * Background mode on: asks Android to let the app run without battery optimization (the system dialog), so the
+     * live card keeps going when the app is closed. Returns {ignoring: whether the app is already exempt}.
+     */
+    @PluginMethod
+    public void background(PluginCall call) {
+        Context c = getContext();
+        JSObject r = new JSObject();
+        boolean ignoring = true;
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            android.os.PowerManager pm = (android.os.PowerManager) c.getSystemService(Context.POWER_SERVICE);
+            ignoring = pm != null && pm.isIgnoringBatteryOptimizations(c.getPackageName());
+            if (!ignoring && Boolean.TRUE.equals(call.getBoolean("ask", true))) {
+                try {
+                    Intent i = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        android.net.Uri.parse("package:" + c.getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    c.startActivity(i);
+                } catch (Exception e) {
+                    try {
+                        c.startActivity(new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+        r.put("ignoring", ignoring);
         call.resolve(r);
     }
 

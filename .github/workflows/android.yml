@@ -1,15 +1,17 @@
 name: Build Android app (APK)
 # Builds the Capacitor Android app and publishes the APK as the "android-latest" release,
 # so it can be downloaded and installed straight from the phone.
+# From main: a regular release (the app offers it as an update). From any other branch: a pre-release
+# (tag vX.Y.0-beta, not "latest") that the app never offers – it is only downloadable from GitHub.
 on:
   push:
-    branches: [main]
+    branches: [main, ccr-14a15d85-izwe4r]
     paths: ['www/**', 'android/**', 'VERSION', 'capacitor.config.json', 'package.json', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: android
+  group: android-${{ github.ref_name }}
   cancel-in-progress: true
 jobs:
   build:
@@ -33,7 +35,14 @@ jobs:
           v=$(tr -d '[:space:]' < VERSION)
           echo "version=$v" >> "$GITHUB_OUTPUT"
           # Release tag is always X.Y.Z (1.19 -> v1.19.0): app versions up to 1.1.8 only recognize such tags
-          if [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then echo "tag=v$v.0" >> "$GITHUB_OUTPUT"; else echo "tag=v$v" >> "$GITHUB_OUTPUT"; fi
+          if [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then t="v$v.0"; else t="v$v"; fi
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "tag=$t" >> "$GITHUB_OUTPUT"; echo "pre=false" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v" >> "$GITHUB_OUTPUT"
+          else
+            # Pre-release: the "-beta" tag is never offered as an update (releases/latest skips pre-releases, and the
+            # app's releases.atom fallback only accepts tags like v1.2.3)
+            echo "tag=$t-beta" >> "$GITHUB_OUTPUT"; echo "pre=true" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v (ניסיונית)" >> "$GITHUB_OUTPUT"
+          fi
       - name: Restore the signing key from GitHub secrets
         env:
           KS: ${{ secrets.HPJ_KEYSTORE_BASE64 }}
@@ -68,11 +77,13 @@ jobs:
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: גרסה ${{ steps.ver.outputs.version }}
+          name: ${{ steps.ver.outputs.title }}
           body_path: release-notes.md
           files: hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk
-          make_latest: true
+          prerelease: ${{ steps.ver.outputs.pre == 'true' }}
+          make_latest: ${{ steps.ver.outputs.pre != 'true' }}
       - name: Remove the old unversioned release
+        if: steps.ver.outputs.pre != 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

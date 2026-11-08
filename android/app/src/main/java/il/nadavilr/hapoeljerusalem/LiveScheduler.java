@@ -53,6 +53,54 @@ final class LiveScheduler {
         reschedule(c);
     }
 
+    /** "Keep following in the background even when the app is closed" (the app's setting). */
+    static boolean background(Context c) {
+        return prefs(c).getBoolean("bg", false);
+    }
+
+    static void setBackground(Context c, boolean on) {
+        prefs(c).edit().putBoolean("bg", on).apply();
+        if (!on) cancelWatchdog(c);
+    }
+
+    private static final long WATCHDOG_EVERY = 5 * 60_000L;
+
+    private static PendingIntent watchdog(Context c, int flags) {
+        Intent i = new Intent(c, LiveAlarmReceiver.class).setAction(LiveAlarmReceiver.ACTION_WATCHDOG);
+        return PendingIntent.getBroadcast(c, 899, i, flags | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /**
+     * Background mode: an alarm {@code delay} ms from now that makes sure the live card is running while a game is on
+     * (it restarts the service if Android or the phone's battery saver stopped it). Re-arms itself every 5 minutes
+     * until the game's window ends.
+     */
+    static void armWatchdog(Context c, long delay) {
+        if (!background(c)) return;
+        AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+        long at = System.currentTimeMillis() + Math.max(1_000L, delay);
+        PendingIntent pi = watchdog(c, PendingIntent.FLAG_UPDATE_CURRENT);
+        try {
+            if (Build.VERSION.SDK_INT >= 23) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            else am.setExact(AlarmManager.RTC_WAKEUP, at, pi);
+        } catch (Exception ignored) {
+        }
+    }
+
+    static void armWatchdog(Context c) {
+        armWatchdog(c, WATCHDOG_EVERY);
+    }
+
+    static void cancelWatchdog(Context c) {
+        AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent pi = watchdog(c, PendingIntent.FLAG_NO_CREATE);
+        if (am != null && pi != null) {
+            am.cancel(pi);
+            pi.cancel();
+        }
+    }
+
     /** The app's details of the game at {@code t}: {t, c, eg} (empty if unknown). */
     static org.json.JSONObject game(Context c, long t) {
         try {

@@ -8,10 +8,23 @@ import android.content.Intent;
 public class LiveAlarmReceiver extends BroadcastReceiver {
 
     static final String ACTION_TIPOFF = "il.nadavilr.hapoeljerusalem.LIVE_TIPOFF";
+    static final String ACTION_WATCHDOG = "il.nadavilr.hapoeljerusalem.LIVE_WATCHDOG";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String a = intent != null ? intent.getAction() : null;
+        if (ACTION_WATCHDOG.equals(a)) {
+            // Background mode: while a game is on, make sure the live card is running
+            long t = LiveScheduler.current(context);
+            if (t > 0 && LiveScheduler.allowed(context) && LiveScheduler.background(context)) {
+                try {
+                    LiveScoreService.start(context, t);
+                } catch (Exception ignored) {
+                }
+                LiveScheduler.armWatchdog(context);
+            }
+            return;
+        }
         if (ACTION_TIPOFF.equals(a)) {
             long t = intent.getLongExtra("t", 0);
             if (t > 0 && LiveScheduler.allowed(context)) {
