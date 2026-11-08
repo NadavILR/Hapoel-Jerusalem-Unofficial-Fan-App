@@ -24,7 +24,11 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        # --ignore-scripts: skips native downloads the APK build does not need (e.g. sharp for @capacitor/assets,
+        # whose download from GitHub can time out and fail the whole build)
+        run: |
+          for i in 1 2 3; do npm install --no-audit --no-fund --ignore-scripts && break; echo "npm install failed, retrying ($i)"; sleep 10; done
+          test -d node_modules/@capacitor/cli
       - name: Copy the web app into the Android project
         run: npx cap sync android
       - name: Read the app version
