@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- +1 / +2 / +3 next to a score in the live score card: floats up and fades -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="380"
+    android:interpolator="@android:anim/accelerate_interpolator">
+    <translate
+        android:fromYDelta="0"
+        android:toYDelta="-40%" />
+    <alpha
+        android:fromAlpha="1"
+        android:toAlpha="0" />
+</set>

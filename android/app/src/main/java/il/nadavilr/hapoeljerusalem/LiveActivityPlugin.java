@@ -21,6 +21,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class LiveActivityPlugin extends Plugin {
 
     private static long pendingOpen;
+    /** Test mode: the previous simulated score, for the +1 / +2 / +3 badge. */
+    private static int demoHs = -1, demoAs = -1;
+    private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
+    private static Runnable demoClear;
 
     /** From MainActivity: the app was opened from the live score card. */
     static void fromIntent(Intent i) {
@@ -73,6 +77,10 @@ public class LiveActivityPlugin extends Plugin {
         JSObject home = call.getObject("home"), away = call.getObject("away");
         NotificationManagerCompat nm = NotificationManagerCompat.from(c);
         if (home == null || away == null) {
+            demoHs = -1;
+            demoAs = -1;
+            if (demoClear != null) MAIN.removeCallbacks(demoClear);
+            demoClear = null;
             nm.cancel(LiveScoreService.NOTIF_ID);
             r.put("shown", false);
             call.resolve(r);
@@ -98,10 +106,31 @@ public class LiveActivityPlugin extends Plugin {
         g.as = away.optInt("score", 0);
         g.homeImg = home.optString("img", null);
         g.awayImg = away.optString("img", null);
+        if (demoHs >= 0) {
+            g.popHome = LiveGame.delta(g.hs, demoHs);
+            g.popAway = LiveGame.delta(g.as, demoAs);
+        }
+        demoHs = g.hs;
+        demoAs = g.as;
         LiveScoreService.ensureChannel(c);
         try {
-            nm.notify(LiveScoreService.NOTIF_ID, LiveGame.card(c, g, LiveGame.crest(g.homeImg), LiveGame.crest(g.awayImg), false, null));
+            android.graphics.Bitmap hc = LiveGame.crest(g.homeImg), ac = LiveGame.crest(g.awayImg);
+            nm.notify(LiveScoreService.NOTIF_ID, LiveGame.card(c, g, hc, ac, false, null));
             r.put("shown", true);
+            // Remove the +N badge once it has faded (in case the next simulated update is late)
+            if (demoClear != null) MAIN.removeCallbacks(demoClear);
+            demoClear = null;
+            if (g.popHome > 0 || g.popAway > 0) {
+                demoClear = () -> {
+                    g.popHome = 0;
+                    g.popAway = 0;
+                    try {
+                        if (demoHs >= 0) nm.notify(LiveScoreService.NOTIF_ID, LiveGame.card(c, g, hc, ac, false, null));
+                    } catch (SecurityException ignored) {
+                    }
+                };
+                MAIN.postDelayed(demoClear, 3_500L);
+            }
         } catch (SecurityException e) {
             r.put("shown", false);
             r.put("reason", "notifications-off");

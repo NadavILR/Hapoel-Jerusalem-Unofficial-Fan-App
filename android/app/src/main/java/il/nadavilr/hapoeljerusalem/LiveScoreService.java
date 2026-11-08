@@ -42,6 +42,9 @@ public class LiveScoreService extends Service {
     private long tipOff;
     private boolean wasLive, finalShown;
     private String lastKey = "", lastPlay = "";
+    private int lastHs = -1, lastAs = -1;
+    private final Runnable clearPop = this::clearPop;
+    private LiveGame shown;
 
     /** Starts (or keeps) following the game that tips off at {@code tipOff} (ms). */
     static void start(Context c, long tipOff) {
@@ -177,11 +180,36 @@ public class LiveScoreService extends Service {
     private void show(JSONObject g) {
         LiveGame x = game(g);
         if (x == null) return;
+        // +1 / +2 / +3 next to the score that just changed (not on the first update)
+        if (lastHs >= 0) {
+            x.popHome = LiveGame.delta(x.hs, lastHs);
+            x.popAway = LiveGame.delta(x.as, lastAs);
+        }
+        lastHs = x.hs;
+        lastAs = x.as;
+        post(x);
+        if ((x.popHome > 0 || x.popAway > 0) && handler != null) {
+            handler.removeCallbacks(clearPop);
+            handler.postDelayed(clearPop, 3_500L); // after the badge has faded, before the flipper would show it again
+        }
+    }
+
+    private void post(LiveGame x) {
         if (x.key().equals(lastKey)) return;
         lastKey = x.key();
+        shown = x;
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), false, del));
+    }
+
+    /** Removes the +N badge once it has faded. */
+    private void clearPop() {
+        LiveGame x = shown;
+        if (x == null || (x.popHome == 0 && x.popAway == 0)) return;
+        x.popHome = 0;
+        x.popAway = 0;
+        post(x);
     }
 
     /** Ends following the game; with a final game, the card stays for 30 minutes with the final score. */

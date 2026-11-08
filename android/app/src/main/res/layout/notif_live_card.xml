@@ -1,57 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Live score card: the whole notification is this layout (the app targets SDK 30, so Android does not wrap it
-     in its template: no app name, icon or expand arrow, and it never expands). Fits the 64dp of a collapsed
-     notification:
-       [home crest]  home score  (quarter • clock)  away score  [away crest]
-       **competition – stage / round** · arena
-       the latest line of the play-by-play
-     Home team on the right, right-to-left whatever the phone's language. -->
+     in its template: no app name, icon or expand arrow, and it never expands). Home team on the right,
+     right-to-left whatever the phone's language:
+
+     [home crest] home score (+2)   quarter • clock                  (+3) away score [away crest]
+                                    **competition – stage** · arena
+                                    the latest play-by-play line
+
+     The +1 / +2 / +3 badge is a ViewFlipper: it pops in when the score changes and fades out on its own. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:layoutDirection="rtl"
-    android:orientation="vertical"
-    android:paddingStart="16dp"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
     android:paddingTop="8dp"
-    android:paddingEnd="16dp"
+    android:paddingEnd="12dp"
     android:paddingBottom="8dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:layoutDirection="rtl"
-        android:orientation="horizontal">
+    <ImageView
+        android:id="@+id/home_crest"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:scaleType="fitCenter" />
 
-        <ImageView
-            android:id="@+id/home_crest"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:scaleType="fitCenter" />
+    <TextView
+        android:id="@+id/home_score"
+        style="@style/TextAppearance.Compat.Notification.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:includeFontPadding="false"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <ViewFlipper
+        android:id="@+id/home_pop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="3dp"
+        android:animateFirstView="true"
+        android:autoStart="true"
+        android:flipInterval="2200"
+        android:inAnimation="@anim/notif_pop_in"
+        android:outAnimation="@anim/notif_pop_out"
+        android:visibility="gone">
 
         <TextView
-            android:id="@+id/home_score"
-            style="@style/TextAppearance.Compat.Notification.Title"
+            android:id="@+id/home_pop_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
             android:includeFontPadding="false"
-            android:textSize="17sp"
+            android:textDirection="ltr"
+            android:textColor="#D21919"
+            android:textSize="14sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp" />
+    </ViewFlipper>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
             android:background="@drawable/notif_pill"
             android:includeFontPadding="false"
             android:paddingStart="8dp"
-            android:paddingTop="1dp"
+            android:paddingTop="2dp"
             android:paddingEnd="8dp"
-            android:paddingBottom="1dp"
+            android:paddingBottom="2dp"
             android:singleLine="true"
             android:textColor="#FFFFFF"
             android:textDirection="rtl"
@@ -59,45 +89,73 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/away_score"
-            style="@style/TextAppearance.Compat.Notification.Title"
-            android:layout_width="wrap_content"
+            android:id="@+id/info"
+            style="@style/TextAppearance.Compat.Notification"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:gravity="center"
             android:includeFontPadding="false"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            android:singleLine="true"
+            android:textDirection="rtl"
+            android:textSize="11sp" />
 
-        <ImageView
-            android:id="@+id/away_crest"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:scaleType="fitCenter" />
+        <TextView
+            android:id="@+id/play"
+            style="@style/TextAppearance.Compat.Notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textDirection="rtl"
+            android:textSize="11sp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/info"
-        style="@style/TextAppearance.Compat.Notification"
-        android:layout_width="match_parent"
+    <ViewFlipper
+        android:id="@+id/away_pop"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:includeFontPadding="false"
-        android:singleLine="true"
-        android:textDirection="rtl"
-        android:textSize="10.5sp" />
+        android:layout_marginEnd="3dp"
+        android:animateFirstView="true"
+        android:autoStart="true"
+        android:flipInterval="2200"
+        android:inAnimation="@anim/notif_pop_in"
+        android:outAnimation="@anim/notif_pop_out"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/away_pop_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textDirection="ltr"
+            android:textColor="#D21919"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp" />
+    </ViewFlipper>
 
     <TextView
-        android:id="@+id/play"
-        style="@style/TextAppearance.Compat.Notification"
-        android:layout_width="match_parent"
+        android:id="@+id/away_score"
+        style="@style/TextAppearance.Compat.Notification.Title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:ellipsize="end"
-        android:gravity="center"
+        android:layout_marginEnd="6dp"
         android:includeFontPadding="false"
-        android:singleLine="true"
-        android:textDirection="rtl"
-        android:textSize="10.5sp" />
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/away_crest"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:scaleType="fitCenter" />
 </LinearLayout>

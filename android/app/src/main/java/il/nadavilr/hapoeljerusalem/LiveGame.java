@@ -45,6 +45,8 @@ final class LiveGame {
 
     String comp = "", homeName = "", awayName = "", venue = "", status = "", clock = "", play = "", homeImg, awayImg;
     int hs, as;
+    /** Points just scored (1–3), shown as +1 / +2 / +3 next to the score; 0 = none. */
+    int popHome, popAway;
     boolean meHome = true;
     /** Scheduled tip-off (ms): identifies the game when the card is tapped. */
     long t;
@@ -96,7 +98,7 @@ final class LiveGame {
     }
 
     String key() {
-        return comp + "|" + hs + "|" + as + "|" + status + "|" + clock + "|" + play;
+        return comp + "|" + hs + "|" + as + "|" + status + "|" + clock + "|" + play + "|" + popHome + "|" + popAway;
     }
 
     // ---------- crests ----------
@@ -153,6 +155,8 @@ final class LiveGame {
         else v.setViewVisibility(R.id.away_crest, View.GONE);
         v.setContentDescription(R.id.home_crest, g.homeName);
         v.setContentDescription(R.id.away_crest, g.awayName);
+        pop(v, R.id.home_pop, R.id.home_pop_text, fin ? 0 : g.popHome);
+        pop(v, R.id.away_pop, R.id.away_pop_text, fin ? 0 : g.popAway);
         // **competition – stage / round** · arena  (one line)
         SpannableStringBuilder info = new SpannableStringBuilder(RLM);
         if (!g.comp.isEmpty()) {
@@ -167,6 +171,26 @@ final class LiveGame {
         v.setViewVisibility(R.id.info, hasInfo ? View.VISIBLE : View.GONE);
         v.setTextViewText(R.id.play, g.play.isEmpty() ? "" : RLM + g.play + RLM);
         v.setViewVisibility(R.id.play, g.play.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    /**
+     * +1 / +2 / +3 next to a score, like in the app: the ViewFlipper shows the badge (pop-in animation) and flips to
+     * its empty side after 2.2 seconds (fade-out). Showing it again restarts it from the badge.
+     */
+    private static void pop(RemoteViews v, int flipper, int text, int pts) {
+        if (pts >= 1 && pts <= 3) {
+            v.setTextViewText(text, "+" + pts);
+            v.setDisplayedChild(flipper, 0);
+            v.setViewVisibility(flipper, View.VISIBLE);
+        } else {
+            v.setViewVisibility(flipper, View.GONE);
+        }
+    }
+
+    /** Points scored since the previous update (for the +N badge): 1–3, otherwise 0. */
+    static int delta(int now, int before) {
+        int d = now - before;
+        return d >= 1 && d <= 3 ? d : 0;
     }
 
     /** Opens the app on the page of the game that tips off at {@code t}. */
