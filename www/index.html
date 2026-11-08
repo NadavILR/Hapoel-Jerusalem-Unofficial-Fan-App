@@ -41,6 +41,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
 .score-dock{position:fixed;left:0;right:0;top:var(--hdh,64px);z-index:21;opacity:0;transform:translateY(-10px) scale(1.06);pointer-events:none;transition:opacity .2s var(--ease),transform .25s var(--ease)}.score-dock.on{opacity:1;transform:none;pointer-events:auto}
 .back-stick{transition:top .25s var(--ease)}html.dock-on .back-stick{top:calc(var(--hdh,64px) + var(--dockh,0px) + 8px)}
+.pts-pop{transform:translateX(-50%);animation:hpjPts 2s var(--ease) both}@keyframes hpjPts{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}12%{opacity:1;transform:translate(-50%,0) scale(1.1)}22%{transform:translate(-50%,0) scale(1)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
 .pbp-hd{border-bottom:1px solid var(--gl-bd)}
 .chips>.sf{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(var(--sf-rgb)/.78)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
@@ -671,11 +672,17 @@ function SplitTable({nameHead,heads,rows,endHead,size}){
  <tbody>${rows.map(r=>html`<tr key=${r.key} style=${r.style} class=${r.cls}><td class="px-2 py-1.5 whitespace-nowrap">${r.end}</td></tr>`)}</tbody></table>`:null}</div>`;
 }
 /* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
+/* תוצאה בלייב: כשקבוצה קולעת, מעל התוצאה שלה מופיע לכ-2 שניות כמה נקודות נוספו (+1 / +2 / +3) */
+function Pts({v,k}){
+ const p=useRef({v,k}),[d,setD]=useState(null);
+ useEffect(()=>{const o=p.current;p.current={v,k};if(o.k!==k)return;const n=v-o.v;if(n>0){setD({n,id:Date.now()});const t=setTimeout(()=>setD(null),2000);return()=>clearTimeout(t)}},[v,k]);
+ return html`<span class="relative inline-block">${v}${d?html`<span key=${d.id} class="pts-pop absolute left-1/2 bottom-full mb-1 px-2 py-0.5 rounded-full bg-white text-[#D21919] text-sm font-extrabold leading-none shadow-md whitespace-nowrap" dir="ltr">+${d.n}</span>`:null}</span>`;
+}
 function LiveScore({L,g,big}){
  const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 break-words '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  return html`<div class="flex items-center justify-between text-sm mb-2"><span class="flex items-center gap-2 font-medium">${L.status==='live'?html`<span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>LIVE`:L.status==='end'?'סיום':'ממתינים לשריקת הפתיחה'}</span><span class="font-medium">${qLbl(L.st)}${L.clock&&L.status==='live'?' · ':''}${L.status==='live'?html`<span dir="ltr">${L.clock}</span>`:null}</span></div>
  <div class="grid items-center gap-2" style=${{gridTemplateColumns:'minmax(0,1fr) auto minmax(0,1fr)'}}><div class="min-w-0 text-center"><div class="flex justify-center"><${Cr} n=${hm} s=${big?64:48}/></div>${nm(hm)}</div>
- <div class=${'flex justify-center items-center font-semibold sb tabular-nums '+(big?'gap-3 text-5xl':'gap-2 text-4xl')} dir="ltr"><span>${L.as}</span><span class=${'opacity-60 '+(big?'text-3xl':'text-2xl')}>–</span><span>${L.hs}</span></div>
+ <div class=${'flex justify-center items-center font-semibold sb tabular-nums '+(big?'gap-3 text-5xl':'gap-2 text-4xl')} dir="ltr"><${Pts} v=${L.as} k=${L.app}/><span class=${'opacity-60 '+(big?'text-3xl':'text-2xl')}>–</span><${Pts} v=${L.hs} k=${L.app}/></div>
  <div class="min-w-0 text-center"><div class="flex justify-center"><${Cr} n=${aw} s=${big?64:48}/></div>${nm(aw)}</div></div>
  ${L.q.length?html`<div class="mt-3 rounded-xl bg-[rgb(var(--blk-rgb)/0.35)] p-2 text-xs"><div class="grid gap-1 text-center items-center" style=${{gridTemplateColumns:'1.75rem repeat('+L.q.length+',1fr)'}}>
   <span></span>${L.q.map(x=>html`<span key=${x.n} class="opacity-70">${qLbl(x.n)}</span>`)}
