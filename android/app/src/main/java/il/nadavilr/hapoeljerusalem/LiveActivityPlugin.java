@@ -78,4 +78,37 @@ public class LiveActivityPlugin extends Plugin {
         }
         call.resolve(r);
     }
+
+    /** For the settings screen: are notifications allowed, and (Android 16+) are this app's Live Updates allowed. */
+    @PluginMethod
+    public void status(PluginCall call) {
+        android.content.Context c = getContext();
+        JSObject r = new JSObject();
+        r.put("notifications", androidx.core.app.NotificationManagerCompat.from(c).areNotificationsEnabled());
+        r.put("liveUpdates", android.os.Build.VERSION.SDK_INT >= 36);
+        r.put("promoted", LiveScoreService.canPromote(c));
+        r.put("samsung", "samsung".equalsIgnoreCase(android.os.Build.MANUFACTURER));
+        r.put("sdk", android.os.Build.VERSION.SDK_INT);
+        call.resolve(r);
+    }
+
+    /** Opens the app's notification settings (where Android 16 has the "Live updates" switch). */
+    @PluginMethod
+    public void openSettings(PluginCall call) {
+        android.content.Context c = getContext();
+        try {
+            android.content.Intent i = new android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, c.getPackageName())
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            c.startActivity(i);
+        } catch (Exception e) {
+            try {
+                android.content.Intent i = new android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:" + c.getPackageName())).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                c.startActivity(i);
+            } catch (Exception ignored) {
+            }
+        }
+        call.resolve();
+    }
 }

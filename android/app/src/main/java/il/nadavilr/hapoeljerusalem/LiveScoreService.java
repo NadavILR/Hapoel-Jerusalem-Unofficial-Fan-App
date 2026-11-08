@@ -242,25 +242,75 @@ public class LiveScoreService extends Service {
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
         if (del != null) b.setDeleteIntent(del);
+        String nowSecondary = live && opponent != null ? opponent + " · " + text : text;
         Bundle x = new Bundle();
-        // Android 16 "Live Updates": ask to be promoted (status bar chip, lock screen, Samsung Now Bar on One UI 8)
-        x.putBoolean("android.requestPromotedOngoing", true);
-        if (chip != null) x.putCharSequence("android.shortCriticalText", chip);
-        // Samsung One UI 7 Now Bar / Live Notifications
-        x.putInt("android.ongoingActivityNoti.style", 1);
-        x.putCharSequence("android.ongoingActivityNoti.primaryInfo", title);
-        x.putCharSequence("android.ongoingActivityNoti.secondaryInfo", text);
-        x.putInt("android.ongoingActivityNoti.chipBgColor", Color.parseColor("#D21919"));
-        if (chip != null) {
-            x.putCharSequence("android.ongoingActivityNoti.chipExpandedText", chip);
-            x.putCharSequence("android.ongoingActivityNoti.nowbarPrimaryInfo", chip);
-            x.putCharSequence("android.ongoingActivityNoti.nowbarSecondaryInfo", live && opponent != null ? opponent + " · " + text : text);
-        } else {
-            x.putCharSequence("android.ongoingActivityNoti.nowbarPrimaryInfo", title);
-            x.putCharSequence("android.ongoingActivityNoti.nowbarSecondaryInfo", text);
+        // Samsung (One UI): colour of the status-bar chip / Now Bar pill
+        x.putInt("android.ongoingActivityNoti.chipBgColor", CHIP_COLOR);
+        if (Build.VERSION.SDK_INT < 36) {
+            // One UI 7 (Android 15): Samsung's own Live Notifications card in the Now Bar. Shown for apps Samsung
+            // allows (manifest meta-data com.samsung.android.support.ongoing_activity) or when the phone's
+            // Developer options > "Live notifications for all apps" is on.
+            x.putInt("android.ongoingActivityNoti.style", 1);
+            x.putString("android.ongoingActivityNoti.primaryInfo", title);
+            x.putString("android.ongoingActivityNoti.secondaryInfo", text);
+            x.putInt("android.ongoingActivityNoti.actionType", 1);
+            x.putInt("android.ongoingActivityNoti.actionPrimarySet", 0);
+            x.putString("android.ongoingActivityNoti.nowbarPrimaryInfo", chip != null ? chip : title);
+            x.putString("android.ongoingActivityNoti.nowbarSecondaryInfo", chip != null ? nowSecondary : text);
+            if (chip != null) x.putString("android.ongoingActivityNoti.chipExpandedText", chip);
         }
+        // One UI 8+ (Android 16+): no "style" extra – it sends the notification down Samsung's private card path
+        // instead of the standard Live Update, which is what the Now Bar shows there.
         b.addExtras(x);
-        return b.build();
+        return promote(c, b.build(), chip);
+    }
+
+    private static final int CHIP_COLOR = 0xFFD21919;
+
+    /**
+     * Android 16+ "Live Updates": Notification.Builder#setRequestPromotedOngoing(true) and #setShortCriticalText(chip)
+     * (status-bar chip, lock screen, Samsung Now Bar). The app is built against an older SDK, so they are called by
+     * reflection on the device's own Notification.Builder; on older Android nothing changes.
+     */
+    static Notification promote(Context c, Notification n, String chip) {
+        if (Build.VERSION.SDK_INT < 36) return n;
+        Notification.Builder fb;
+        try {
+            fb = Notification.Builder.recoverBuilder(c, n);
+        } catch (Throwable e) {
+            n.extras.putBoolean("android.requestPromotedOngoing", true);
+            if (chip != null) n.extras.putString("android.shortCriticalText", chip);
+            return n;
+        }
+        try {
+            Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class).invoke(fb, true);
+        } catch (Throwable e) {
+            fb.getExtras().putBoolean("android.requestPromotedOngoing", true);
+        }
+        if (chip != null) {
+            boolean set = false;
+            for (Class<?> t : new Class<?>[]{String.class, CharSequence.class}) {
+                try {
+                    Notification.Builder.class.getMethod("setShortCriticalText", t).invoke(fb, chip);
+                    set = true;
+                    break;
+                } catch (Throwable ignored) {
+                }
+            }
+            if (!set) fb.getExtras().putString("android.shortCriticalText", chip);
+        }
+        return fb.build();
+    }
+
+    /** Android 16+: whether the user allows this app's Live Updates (Settings > Notifications > the app > Live updates). */
+    static boolean canPromote(Context c) {
+        if (Build.VERSION.SDK_INT < 36) return false;
+        try {
+            NotificationManager nm = c.getSystemService(NotificationManager.class);
+            return Boolean.TRUE.equals(NotificationManager.class.getMethod("canPostPromotedNotifications").invoke(nm));
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
     static void ensureChannel(Context c) {
