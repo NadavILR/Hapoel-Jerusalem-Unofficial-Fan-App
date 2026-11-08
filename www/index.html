@@ -36,6 +36,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .red-glass{border:1px solid rgb(255 255 255/.28);background:rgb(210 25 25/.72);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255/.18)}
 .sf.p-1.rounded-xl>button{border-radius:11px}
 .glass-sheet button:active,.glass-sheet a:active{transform:none}
+.bscroll{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.bscroll .sf{box-shadow:var(--gl-hi)}
 .chips{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.chips>*{box-shadow:none!important}
 .upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.jpg) center/cover no-repeat}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
@@ -467,15 +468,15 @@ function GameCard({kind,g,now,L}){
  const [ph,setPh]=useState(L?'live':'cd');
  useEffect(()=>{if(L&&ph==='cd'){setPh('out');const t1=setTimeout(()=>setPh('in'),420),t2=setTimeout(()=>setPh('live'),2200);return()=>{clearTimeout(t1);clearTimeout(t2)}}if(!L&&ph!=='cd')setPh('cd')},[!!L]);
  const LV=L&&(ph==='in'||ph==='live');
- return html`<div class=${'rounded-2xl p-4 '+(LV?'h-full flex flex-col ':'')+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
- ${LV?html`<${LiveCard} L=${L} g=${g} intro=${ph==='in'}/>`:html`<div class=${ph==='out'?'cd-out':''}>
+ return html`<div class=${'rounded-2xl p-4 h-full flex flex-col '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ ${LV?html`<${LiveCard} L=${L} g=${g} intro=${ph==='in'}/>`:html`<div class=${'flex-1 flex flex-col'+(ph==='out'?' cd-out':'')}>
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
   <div class="flex-1 min-w-0 text-center">${nm(hm)}${res?html`<div dir="rtl" class="text-3xl font-semibold sb tabular-nums my-1 flex gap-2 justify-center"><span>${g.h?g.r[0]:g.r[1]}</span><span>–</span><span>${g.h?g.r[1]:g.r[0]}</span></div>`:html`<div class=${'text-sm my-0.5 '+op} dir="ltr">VS</div>`}${nm(aw)}</div>
   <div class="shrink-0"><${Cr} n=${aw} s=${60}/></div></div>
   <div class=${'text-center text-sm '+(red?'opacity-90':'')}>${fdLong(g)}</div>
   <div class=${'text-center text-sm mb-3 flex items-center justify-center gap-1 '+op}><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div>
-  ${res?html`<div class="text-center mb-1"><span class=${'inline-block px-3 py-1 rounded-full text-sm font-medium '+(w?'text-green-700 bg-green-600/10':'text-[#D21919] bg-[#D21919]/10')}>${(w?'ניצחון':'הפסד')+' · הפרש '+Math.abs(g.r[0]-g.r[1])}</span></div>`
+  ${res?html`<div class="flex-1 flex items-center justify-center py-2"><span class=${'text-4xl font-extrabold tracking-tight '+(w?'text-green-700':'text-[#D21919]')}>${w?'ניצחון':'הפסד'}</span></div>`
   :html`<div class="grid grid-cols-4 gap-2 text-center" dir="ltr">${u.map(([l,v])=>html`<div key=${l} class=${box+' rounded-xl py-2'}><div class="text-2xl font-semibold sb tabular-nums"><span key=${v} class="tick">${String(v).padStart(2,'0')}</span></div><div class=${'text-[11px] '+(red?'opacity-70':'mu')}>${l}</div></div>`)}</div>
   <button onClick=${()=>A.togRem(g)} class=${'mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 '+(A.rem[g.id]?(red?'bg-white text-[#D21919]':'bg-[#D21919] text-white'):btn)}><${I} n="bell" s=${16}/>${A.rem[g.id]?'תזכורת פעילה – לחצו לביטול':'הגדר תזכורת למשחק'}</button>`}
   ${vid?html`<${VideoPop} g=${g} onClose=${()=>setVid(false)}/>`:null}
@@ -596,20 +597,23 @@ const BRT={
  cup:{t:'גביע המדינה',f:'נוקאאוט במשחק אחד: רבע גמר, חצי גמר וגמר',u:B365+'state-cup-51/brackets',r:[['רבע גמר',1,4],['חצי גמר',1,2],['גמר',1,1]]},
  wcup:{t:'שלב הנוקאאוט',f:'נוקאאוט במשחק אחד: רבע גמר, חצי גמר וגמר',u:B365+'winner-cup-609/brackets',r:[['רבע גמר',1,4],['חצי גמר',1,2],['גמר',1,1]]}};
 const brData=k=>{const src=k==='wcup'?(WC.KO?[WC.KO.qf,WC.KO.sf,WC.KO.f]:[]):((BR&&BR[k])||[]);return BRT[k].r.map((_,i)=>Array.isArray(src[i])?src[i]:[])};
-const Bk=({m,bo=1})=>{
+const Bk=({m,bo=1,w=148})=>{
  m=m||{};
  const need=Math.ceil(bo/2),pl=m.as!=null&&m.bs!=null,dn=pl&&m.as!==m.bs&&Math.max(m.as,m.bs)>=need,aw=dn&&m.as>m.bs,bw=dn&&m.bs>m.as,T=m.m?'a':'div';
  const x=[m.t?fdf(m):null,m.v].filter(Boolean).join(' · ');
  const row=(n,sc,win)=>html`<div class=${'flex items-center gap-2 px-2 py-1 '+(win?'font-medium':(dn?'opacity-60':''))+(n===ME?' text-[#D21919]':'')}>${n?html`<${Cr} n=${n} s=${18}/>`:html`<span class="shrink-0 rounded-full border bd" style=${{width:18,height:18}}></span>`}<span class=${'flex-1 truncate text-xs'+(n?'':' mu')}>${n||'טרם נקבע'}</span><span class="text-xs tabular-nums" dir="ltr">${sc??''}</span></div>`;
- return html`<${T} href=${m.m?'https://www.365scores.com/he/basketball/match/'+m.m:undefined} target=${m.m?'_blank':undefined} rel=${m.m?'noopener noreferrer':undefined} class="sf rounded-lg w-[148px] shrink-0 overflow-hidden block">${row(m.a,m.as,aw)}<div class="border-t bd"></div>${row(m.b,m.bs,bw)}${x?html`<div class="border-t bd px-2 py-1 text-[11px] mu">${x}</div>`:null}<//>`;
+ return html`<${T} href=${m.m?'https://www.365scores.com/he/basketball/match/'+m.m:undefined} target=${m.m?'_blank':undefined} rel=${m.m?'noopener noreferrer':undefined} class="sf rounded-lg shrink-0 overflow-hidden block" style=${{width:w}}>${row(m.a,m.as,aw)}<div class="border-t bd"></div>${row(m.b,m.bs,bw)}${x?html`<div class="border-t bd px-2 py-1 text-[11px] mu">${x}</div>`:null}<//>`;
 };
 const Cn=()=>html`<div class="relative w-5 self-stretch shrink-0"><div class="absolute top-[24%] bottom-[24%] right-0 w-1/2 border-y border-l" style=${{borderColor:'var(--mu)'}}></div><div class="absolute top-1/2 left-0 w-1/2 border-t" style=${{borderColor:'var(--mu)'}}></div></div>`;
 function Bracket({k}){
+ /* רוחב הכרטיסים: לפחות 148px; במסך רחב (טאבלט) הבראקט נמתח לרוחב הטבלאות */
+ const sr=useRef(null),[bw,setBw]=useState(148);
+ React.useLayoutEffect(()=>{const el=sr.current;if(!el)return;const n=BRT[k].r.length,f=()=>{const cs=getComputedStyle(el),w=el.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);setBw(Math.max(148,Math.floor((w-(n-1)*20)/n)))};f();let ro=null;try{ro=new ResizeObserver(f);ro.observe(el)}catch(e){}return()=>{ro&&ro.disconnect()}},[k]);
  const T=BRT[k],raw=brData(k),rs=T.r.map(([n,bo,c],i)=>({n,bo,ms:Array.from({length:c},(_,j)=>raw[i][j]||null)}));
  if(T.r.some(([,,c],i)=>raw[i].length>c))return html`<div class="space-y-3">${T.r.map(([n,bo],i)=>raw[i].length?html`<div key=${n}><div class="font-bold text-sm mb-1">${n}</div><div class="flex flex-wrap gap-2">${raw[i].map((m,j)=>html`<${Bk} key=${j} m=${m} bo=${bo}/>`)}</div></div>`:null)}</div>`;
- const nd=(r,i)=>r===0?html`<${Bk} key=${i} m=${rs[0].ms[i]} bo=${rs[0].bo}/>`:html`<div key=${i} class="flex items-center"><div class=${'flex flex-col '+(r===1?'gap-2':r===2?'gap-4':'gap-8')}>${nd(r-1,2*i)}${nd(r-1,2*i+1)}</div><${Cn}/><${Bk} m=${rs[r].ms[i]} bo=${rs[r].bo}/></div>`;
- return html`<div class="overflow-x-auto pb-2"><div class="w-max min-w-full">
-  <div class="flex text-[11px] mu font-medium mb-1">${rs.map((r,i)=>html`<div key=${i} class=${'text-center shrink-0 '+(i?'ms-5':'')} style=${{width:148}}>${r.n}${r.bo>1?html`<div class="font-normal opacity-80">הטוב מ-${r.bo}</div>`:null}</div>`)}</div>
+ const nd=(r,i)=>r===0?html`<${Bk} key=${i} m=${rs[0].ms[i]} bo=${rs[0].bo} w=${bw}/>`:html`<div key=${i} class="flex items-center"><div class=${'flex flex-col '+(r===1?'gap-2':r===2?'gap-4':'gap-8')}>${nd(r-1,2*i)}${nd(r-1,2*i+1)}</div><${Cn}/><${Bk} m=${rs[r].ms[i]} bo=${rs[r].bo} w=${bw}/></div>`;
+ return html`<div ref=${sr} class="bscroll overflow-x-auto no-sb -mx-3 px-3"><div class="w-max min-w-full">
+  <div class="flex text-[11px] mu font-medium mb-1">${rs.map((r,i)=>html`<div key=${i} class=${'text-center shrink-0 '+(i?'ms-5':'')} style=${{width:bw}}>${r.n}${r.bo>1?html`<div class="font-normal opacity-80">הטוב מ-${r.bo}</div>`:null}</div>`)}</div>
   ${nd(rs.length-1,0)}</div></div>`;
 }
 function BrSec({k}){
