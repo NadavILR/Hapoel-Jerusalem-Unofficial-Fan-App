@@ -58,6 +58,7 @@ public class LiveActivityPlugin extends Plugin {
         androidx.core.app.NotificationManagerCompat nm = androidx.core.app.NotificationManagerCompat.from(c);
         if (home == null || away == null) {
             nm.cancel(LiveScoreService.NOTIF_ID);
+            nm.cancel(LiveGame.CARD_ID);
             r.put("shown", false);
             call.resolve(r);
             return;
@@ -78,9 +79,14 @@ public class LiveActivityPlugin extends Plugin {
         g.as = away.optInt("score", 0);
         g.homeImg = home.optString("img", null);
         g.awayImg = away.optString("img", null);
+        g.homeShort = home.optString("short", "");
+        g.awayShort = away.optString("short", "");
+        g.venue = call.getString("venue", "");
         LiveScoreService.ensureChannel(c);
         try {
-            nm.notify(LiveScoreService.NOTIF_ID, LiveGame.notification(c, g, LiveGame.crest(g.homeImg), LiveGame.crest(g.awayImg), null));
+            android.graphics.Bitmap hc = LiveGame.crest(g.homeImg), ac = LiveGame.crest(g.awayImg);
+            nm.notify(LiveScoreService.NOTIF_ID, LiveGame.notification(c, g, hc, ac, null));
+            nm.notify(LiveGame.CARD_ID, LiveGame.card(c, g, hc, ac, false, null));
             r.put("shown", true);
         } catch (SecurityException e) {
             r.put("shown", false);

@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,7 +51,7 @@ public class LiveScoreService extends Service {
     private HandlerThread thread;
     private Handler handler;
     private long tipOff;
-    private boolean wasLive;
+    private boolean wasLive, finalShown;
     private String lastKey = "";
 
     /** Starts (or keeps) following the game that tips off at {@code tipOff} (ms). */
@@ -73,6 +74,8 @@ public class LiveScoreService extends Service {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
             // The user swiped the live notification away: stop following this game
             LiveScheduler.dismissed(this, tipOff);
+            cancelCard();
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -104,6 +107,7 @@ public class LiveScoreService extends Service {
 
     @Override
     public void onDestroy() {
+        if (!finalShown) cancelCard(); // never leave a stale "live" card behind
         if (handler != null) handler.removeCallbacksAndMessages(null);
         if (thread != null) thread.quitSafely();
         handler = null;
@@ -176,22 +180,37 @@ public class LiveScoreService extends Service {
         lastKey = x.key();
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        notify(LiveGame.notification(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), del));
+        Bitmap hc = LiveGame.crest(x.homeImg), ac = LiveGame.crest(x.awayImg);
+        notify(NOTIF_ID, LiveGame.notification(this, x, hc, ac, del));
+        notify(LiveGame.CARD_ID, LiveGame.card(this, x, hc, ac, false, del));
     }
 
     /** Ends following the game; with a final game, leaves a regular "final score" notification for 30 minutes. */
     private void finish(JSONObject finalGame) {
         LiveGame x = finalGame != null ? LiveGame.from365(finalGame) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
-        if (x != null && LiveScheduler.allowed(this)) notify(LiveGame.finalNotification(this, x));
+        if (x != null && LiveScheduler.allowed(this)) {
+            // The card stays for 30 minutes with the final score; the Live Update goes away with the service
+            notify(LiveGame.CARD_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), true, null));
+            finalShown = true;
+        } else {
+            cancelCard();
+        }
         LiveScheduler.done(this, tipOff);
         stopSelf();
     }
 
-    @SuppressWarnings("MissingPermission")
-    private void notify(Notification n) {
+    private void cancelCard() {
         try {
-            NotificationManagerCompat.from(this).notify(NOTIF_ID, n);
+            NotificationManagerCompat.from(this).cancel(LiveGame.CARD_ID);
+        } catch (Exception ignored) {
+        }
+    }
+
+    @SuppressWarnings("MissingPermission")
+    private void notify(int id, Notification n) {
+        try {
+            NotificationManagerCompat.from(this).notify(id, n);
         } catch (Exception ignored) {
         }
     }

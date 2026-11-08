@@ -43,7 +43,7 @@ final class LiveGame {
     private static final String IMG = "https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,"
         + "d_Competitors:default1.png/v%d/Competitors/%d";
 
-    String comp = "", homeName = "", awayName = "", status = "", clock = "", homeImg, awayImg;
+    String comp = "", homeName = "", awayName = "", homeShort = "", awayShort = "", venue = "", status = "", clock = "", homeImg, awayImg;
     int hs, as;
     boolean meHome = true;
 
@@ -55,6 +55,10 @@ final class LiveGame {
         x.meHome = h.optInt("id") == HAPOEL;
         x.homeName = name(h);
         x.awayName = name(a);
+        x.homeShort = shortName(h);
+        x.awayShort = shortName(a);
+        JSONObject v = g.optJSONObject("venue");
+        if (v != null) x.venue = v.optString("name", "").trim();
         x.hs = (int) Math.max(0, Math.round(h.optDouble("score", 0)));
         x.as = (int) Math.max(0, Math.round(a.optDouble("score", 0)));
         x.homeImg = img(h);
@@ -74,6 +78,11 @@ final class LiveGame {
     private static String name(JSONObject c) {
         String n = c.optString("name", "");
         return n.isEmpty() ? c.optString("shortName", "") : n;
+    }
+
+    private static String shortName(JSONObject c) {
+        String n = c.optString("shortName", "");
+        return n.isEmpty() || "null".equals(n) ? name(c) : n;
     }
 
     private static String img(JSONObject c) {
@@ -256,6 +265,54 @@ final class LiveGame {
         } catch (Throwable e) {
             return n;
         }
+    }
+
+    // ---------- the score card (Google-style, the app's colours) ----------
+
+    /** The card's notification id, next to the Live Update (LiveScoreService.NOTIF_ID). */
+    static final int CARD_ID = 63402;
+
+    private static void fill(android.widget.RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, boolean names) {
+        v.setTextViewText(R.id.home_score, String.valueOf(g.hs));
+        v.setTextViewText(R.id.away_score, String.valueOf(g.as));
+        String st = fin ? "סיום" : g.status + (g.clock.isEmpty() ? "" : (g.status.isEmpty() ? "" : " • ") + g.clock);
+        v.setTextViewText(R.id.status, RLM + (st.isEmpty() ? "לייב" : st) + RLM);
+        v.setInt(R.id.status, "setBackgroundResource", fin ? R.drawable.notif_pill_final : R.drawable.notif_pill);
+        if (homeCrest != null) v.setImageViewBitmap(R.id.home_crest, homeCrest);
+        else v.setViewVisibility(R.id.home_crest, View.GONE);
+        if (awayCrest != null) v.setImageViewBitmap(R.id.away_crest, awayCrest);
+        else v.setViewVisibility(R.id.away_crest, View.GONE);
+        if (names) {
+            String hn = g.homeShort.isEmpty() ? g.homeName : g.homeShort, an = g.awayShort.isEmpty() ? g.awayName : g.awayShort;
+            v.setTextViewText(R.id.home_name, RLM + hn + RLM);
+            v.setTextViewText(R.id.away_name, RLM + an + RLM);
+            v.setContentDescription(R.id.home_crest, hn);
+            v.setContentDescription(R.id.away_crest, an);
+            v.setTextViewText(R.id.comp, g.comp.isEmpty() ? "" : RLM + g.comp + RLM);
+            v.setViewVisibility(R.id.comp, g.comp.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setTextViewText(R.id.venue, g.venue.isEmpty() ? "" : RLM + g.venue + RLM);
+            v.setViewVisibility(R.id.venue, g.venue.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    /**
+     * The score card in the notification shade, laid out like Google's sports card: crests and team names on the sides,
+     * the scores, a pill with quarter • clock between them, and the competition and arena below. Home team on the
+     * right. A custom layout can't be a Live Update, so the Live Update (Now Bar, status-bar chip) is a separate notification.
+     */
+    static Notification card(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, PendingIntent del) {
+        android.widget.RemoteViews big = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_card);
+        android.widget.RemoteViews small = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_small);
+        fill(big, g, homeCrest, awayCrest, fin, true);
+        fill(small, g, homeCrest, awayCrest, fin, false);
+        NotificationCompat.Builder b = LiveScoreService.base(c, (fin ? RLM + "סיום: " : "") + g.scoreWithNames(), g.statusLine())
+            .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(small)
+            .setCustomBigContentView(big)
+            .setOngoing(!fin);
+        if (fin) b.setAutoCancel(true).setTimeoutAfter(30 * 60_000L);
+        if (del != null) b.setDeleteIntent(del);
+        return b.build();
     }
 
     /** "Final" notification (not ongoing), home on the right. */
