@@ -35,6 +35,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tint-glass{background:rgb(0 0 0/.4)}}:root[data-theme="dark"] .tint-glass{background:rgb(0 0 0/.4)}
 .red-glass{border:1px solid rgb(255 255 255/.28);background:rgb(210 25 25/.72);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255/.18)}
 .sf.p-1.rounded-xl>button{border-radius:11px}
+.glass-sheet button:active,.glass-sheet a:active{transform:none}
+.chips{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.chips>*{box-shadow:none!important}
 .chips>.sf{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(var(--sf-rgb)/.78)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg{background:rgb(0 0 0/.45)}}:root[data-theme="dark"] .seg{background:rgb(0 0 0/.45)}
@@ -344,8 +346,15 @@ function Cr({n,s=40}){
  if(src)return html`<img src=${src} alt=${n} width=${s} height=${s} class="shrink-0 object-contain" style=${{width:s,height:s}} referrerPolicy="no-referrer" onError=${()=>i<ss.length?setI(x=>x+1):setD('')}/>`;
  const k=[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%6;return html`<div class="rounded-full flex items-center justify-center font-medium text-white shrink-0" style=${{width:s,height:s,background:['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2','#be185d'][k],fontSize:s/2.3}}>${n[0]}</div>`;
 }
-const Chips=({o,v,set})=>html`<div class="chips flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 no-sb">${o.map(([k,l])=>html`<button key=${k} onClick=${()=>set(k)} class=${'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border shrink-0 '+(v===k?'bg-[#D21919] border-[#D21919] text-white':'sf mu')}>${l}</button>`)}</div>`;
-const Tg=({on,f,l})=>html`<button onClick=${f} class="flex items-center justify-between w-full py-2 text-sm"><span>${l}</span><span class=${'w-11 h-6 rounded-full p-0.5 transition '+(on?'bg-[#D21919]':'bg-zinc-400')}><span class=${'block w-5 h-5 bg-white rounded-full transition '+(on?'-translate-x-5':'')}></span></span></button>`;
+const Chips=({o,v,set})=>html`<div class="chips flex gap-2 overflow-x-auto -mx-3 px-3 no-sb">${o.map(([k,l])=>html`<button key=${k} onClick=${()=>set(k)} class=${'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border shrink-0 '+(v===k?'bg-[#D21919] border-[#D21919] text-white':'sf mu')}>${l}</button>`)}</div>`;
+/* מתג: העיגול עובר לצד השני באותה תנועה נמתחת של סימון הכפתורים – הקצה הקדמי יוצא ראשון, ואז האחורי משיג אותו */
+function Tg({on,f,l}){
+ const r=useRef(null),was=useRef(on);
+ React.useLayoutEffect(()=>{const k=r.current;if(was.current===on||!k)return;was.current=on;if(!k.animate)return;
+  const t=(x,w)=>({transform:'translateX('+x+'px)',width:w+'px'});
+  k.animate(on?[t(0,20),{...t(0,28),offset:.45},t(-20,20)]:[t(-20,20),{...t(-12,28),offset:.45},t(0,20)],{duration:340,easing:'cubic-bezier(.4,0,.2,1)'})},[on]);
+ return html`<button onClick=${f} class="tg flex items-center justify-between w-full py-2 text-sm"><span>${l}</span><span class=${'w-11 h-6 rounded-full p-0.5 shrink-0 '+(on?'bg-[#D21919]':'bg-zinc-400')} style=${{transition:'background-color .3s var(--ease)'}}><span ref=${r} class="block h-5 bg-white rounded-full shadow-sm" style=${{width:'20px',transform:'translateX('+(on?-20:0)+'px)'}}></span></span></button>`;
+}
 const Sk=()=>html`<div class="space-y-2 animate-pulse">${[1,2,3,4,5].map(i=>html`<div key=${i} class="h-12 rounded-xl sf"></div>`)}</div>`;
 /* שם המסך מופיע עכשיו ככותרת בראש המסך (ראו PGT), ולכן הכותרת בתוך הדף לא מוצגת */
 const Ttl=()=>null;
