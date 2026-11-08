@@ -63,8 +63,9 @@ final class LiveGame {
         x.as = (int) Math.max(0, Math.round(a.optDouble("score", 0)));
         x.homeImg = img(h);
         x.awayImg = img(a);
-        x.status = g.optString("statusText", g.optString("shortStatusText", "")).trim();
-        x.clock = g.optString("gameTimeDisplay", "").trim();
+        x.status = str(g, "statusText");
+        if (x.status.isEmpty()) x.status = str(g, "shortStatusText");
+        x.clock = str(g, "gameTimeDisplay"); // 365scores sends null between plays / at a break
         // 365scores puts the stage in the competition name ("ליגת ווינר - חצי גמר", "יורוקאפ - בית א'");
         // the round is "מחזור N", or "משחק N" in a playoff series; a one-game knockout has no round number.
         String comp = g.optString("competitionDisplayName", "").trim().replace(" - ", " – ");
@@ -73,6 +74,13 @@ final class LiveGame {
         if (roundName.isEmpty() || "null".equals(roundName)) roundName = "מחזור";
         x.comp = comp + (round > 0 ? (comp.isEmpty() ? "" : " – ") + roundName + " " + round : "");
         return x;
+    }
+
+    /** A text field, "" for a missing or JSON-null value (org.json would turn null into the text "null"). */
+    static String str(JSONObject o, String key) {
+        if (o == null || o.isNull(key)) return "";
+        String v = o.optString(key, "").trim();
+        return "null".equals(v) ? "" : v;
     }
 
     private static String name(JSONObject c) {

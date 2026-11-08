@@ -36,8 +36,11 @@ public class LiveAlarmReceiver extends BroadcastReceiver {
             }
             return;
         }
-        // BOOT_COMPLETED / MY_PACKAGE_REPLACED: alarms are cleared by a restart
+        // BOOT_COMPLETED / MY_PACKAGE_REPLACED: alarms are cleared by a restart; the phone also fetches the next
+        // games by itself (every 6 hours from now on), so nothing depends on opening the app
         LiveScheduler.reschedule(context);
+        LiveFixtures.schedule(context);
+        LiveFixtures.runNow(context);
         long t = LiveScheduler.current(context);
         if (t > 0 && LiveScheduler.allowed(context)) {
             try {

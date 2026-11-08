@@ -27,9 +27,62 @@ final class LiveScheduler {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    /** Live score is on in the app's settings and the device allows the app's notifications. */
+    /**
+     * Live score is on in the app's settings and the device allows the app's notifications. On by default (like the
+     * app's own defaults), so it works even if the app has not been opened since it was installed or updated.
+     */
     static boolean allowed(Context c) {
-        return prefs(c).getBoolean("on", false) && NotificationManagerCompat.from(c).areNotificationsEnabled();
+        return prefs(c).getBoolean("on", true) && NotificationManagerCompat.from(c).areNotificationsEnabled();
+    }
+
+    /** The app's setting "score updates at the end of each quarter and at the end of the game" (on by default). */
+    static boolean quarterAlerts(Context c) {
+        return prefs(c).getBoolean("quarter", true);
+    }
+
+    /** The app's per-competition notification setting (league / euro / wcup / cup / super / prep), on by default. */
+    static boolean compOn(Context c, String comp) {
+        if (comp == null || comp.isEmpty()) return true;
+        try {
+            return new org.json.JSONObject(prefs(c).getString("comps", "{}")).optInt(comp, 1) != 0;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** True the first time it is called for this game and key (start / q1..q8 / end): each alert is sent once. */
+    static synchronized boolean alertOnce(Context c, long t, String key) {
+        SharedPreferences p = prefs(c);
+        String state = p.getLong("alertsFor", 0) == t ? p.getString("alerts", "") : "";
+        if (("," + state + ",").contains("," + key + ",")) return false;
+        p.edit().putLong("alertsFor", t).putString("alerts", state.isEmpty() ? key : state + "," + key).apply();
+        return true;
+    }
+
+    /** Settings from the app (sync): quarter alerts and competitions. */
+    static void saveSettings(Context c, Boolean quarter, org.json.JSONObject comps) {
+        SharedPreferences.Editor e = prefs(c).edit();
+        if (quarter != null) e.putBoolean("quarter", quarter);
+        if (comps != null) e.putString("comps", comps.toString());
+        e.apply();
+    }
+
+    /**
+     * The next games as the phone fetched them itself (LiveFixtures – no need to open the app): replaces the list,
+     * keeps only the competitions that are on in the app's settings, and re-arms the tip-off alarms.
+     */
+    static void saveFetched(Context c, org.json.JSONArray games) {
+        org.json.JSONArray keep = new org.json.JSONArray();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < games.length() && keep.length() < 8; i++) {
+            org.json.JSONObject g = games.optJSONObject(i);
+            if (g == null || !compOn(c, g.optString("c", ""))) continue;
+            keep.put(g);
+            if (sb.length() > 0) sb.append(',');
+            sb.append(g.optLong("t", 0));
+        }
+        prefs(c).edit().putString("games", keep.toString()).putString("times", sb.toString()).apply();
+        reschedule(c);
     }
 
     /**
@@ -183,7 +236,7 @@ final class LiveScheduler {
                 old.cancel();
             }
         }
-        if (!prefs(c).getBoolean("on", false)) return;
+        if (!prefs(c).getBoolean("on", true)) return;
         long now = System.currentTimeMillis();
         int slot = 0;
         for (long t : times(c)) {

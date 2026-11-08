@@ -1063,7 +1063,8 @@ function App(){
   if(p==='default'&&!LS.get('hpj-asked',0)){LS.set('hpj-asked',1);setTimeout(()=>askNotify().then(q=>{setPerm(q);if(q==='granted')setPf(x=>({...x,on:1}))}),800)}}).catch(()=>{})},[]);
  const toast=t=>{const id=Math.random();setToasts(x=>[...x,{id,t}]);setTimeout(()=>setToasts(x=>x.filter(y=>y.id!==id)),3500)};
  const nf=useRef();
- nf.current=(t,c,k)=>{if(pf.on===0)return;if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);devNotify(t)};
+ /* עדכוני משחק (פתיחה / סיום) במגש ההתראות: באפליקציית האנדרואיד החלק ה-native שולח אותם בעצמו (גם כשהאפליקציה סגורה), ולכן כאן הם רק נכנסים לרשימת ההתראות שבאפליקציה */
+ nf.current=(t,c,k)=>{if(pf.on===0)return;if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);if(!(k==='quarter'&&pf.live!==0&&plug('LiveActivity')))devNotify(t)};
  /* תזכורות למשחקים: שעה לפני שריקת הפתיחה (נבדק כל 30 שניות כשהאפליקציה פתוחה) */
  useEffect(()=>{if(LN())return;const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;nf.current('תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד '+Math.max(1,Math.round((f.t-now)/6e4))+' דקות',f.c,'hour')}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
  const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour&&pf.on!==0)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919'}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
@@ -1096,7 +1097,7 @@ function App(){
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
   const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0})),jer={};
    (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
-   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1}).catch(()=>{})};
+   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{}}).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
  /* מצב בדיקה: אותה התראה בלייב (Live Update / Now Bar) מוצגת עם התוצאה המדומה, ומתעדכנת עם כל עדכון של ההדמיה. כשמצב הבדיקה נכבה היא נעלמת */
  const demoKey=useRef('');

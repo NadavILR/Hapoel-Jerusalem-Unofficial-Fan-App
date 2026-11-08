@@ -147,6 +147,7 @@ public class LiveScoreService extends Service {
                 if (sg == 3) {
                     wasLive = true;
                     show(g);
+                    alerts(g);
                 } else {
                     wait = now > tipOff - 5 * MIN ? NEAR_POLL : PRE_POLL; // not started yet
                 }
@@ -247,6 +248,7 @@ public class LiveScoreService extends Service {
         LiveGame x = finalGame != null ? game(finalGame, true) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         if (x != null && LiveScheduler.allowed(this)) {
+            finalAlert(x);
             notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), true, null));
             finalShown = true;
         }
@@ -254,6 +256,82 @@ public class LiveScoreService extends Service {
         LiveScheduler.cancelWatchdog(this);
         finished = true;
         stopSelf();
+    }
+
+    // ---------- in-game notifications: tip-off, end of each quarter, final ----------
+
+    static final String GAME_CHANNEL = "hpj-game";
+    private static final int ALERT_START = 63420, ALERT_QUARTER = 63421, ALERT_FINAL = 63430;
+    private int lastQuarter;
+
+    /** Quarter in progress from 365scores' status ("רבע 3" → 3, overtime → 5+), 0 during a break. */
+    private static int quarter(String status) {
+        if (status == null) return 0;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("רבע\\s*(\\d)").matcher(status);
+        if (m.find()) return Integer.parseInt(m.group(1));
+        m = java.util.regex.Pattern.compile("(?i)^Q(\\d)").matcher(status.trim());
+        if (m.find()) return Integer.parseInt(m.group(1));
+        if (status.contains("הארכה") || status.toUpperCase(java.util.Locale.ROOT).startsWith("OT")) {
+            m = java.util.regex.Pattern.compile("(\\d)").matcher(status);
+            return 4 + (m.find() ? Integer.parseInt(m.group(1)) : 1);
+        }
+        return 0;
+    }
+
+    private boolean alertsOn() {
+        return LiveScheduler.allowed(this) && LiveScheduler.quarterAlerts(this)
+            && LiveScheduler.compOn(this, LiveScheduler.game(this, tipOff).optString("c", ""));
+    }
+
+    private static String mine(LiveGame x) {
+        int me = x.meHome ? x.hs : x.as, op = x.meHome ? x.as : x.hs;
+        String opName = x.meHome ? x.awayName : x.homeName;
+        return LiveGame.TEAM + " " + me + " – " + op + " " + opName;
+    }
+
+    private void alerts(JSONObject g) {
+        LiveGame x = LiveGame.from365(g);
+        if (x == null || !alertsOn()) return;
+        if (LiveScheduler.alertOnce(this, tipOff, "start")) {
+            alert(ALERT_START, "המשחק התחיל: " + x.homeName + " – " + x.awayName);
+        }
+        int q = quarter(x.status);
+        // The quarter that just ended: a break after it, or the next quarter already started
+        int ended = q == 0 ? lastQuarter : (lastQuarter > 0 && q > lastQuarter ? lastQuarter : 0);
+        if (ended > 0 && LiveScheduler.alertOnce(this, tipOff, "q" + ended)) {
+            String name = ended <= 4 ? "סיום רבע " + ended : "סיום הארכה" + (ended > 5 ? " " + (ended - 4) : "");
+            alert(ALERT_QUARTER + ended, name + ": " + mine(x));
+        }
+        if (q > 0) lastQuarter = q;
+    }
+
+    private void finalAlert(LiveGame x) {
+        if (!alertsOn() || !LiveScheduler.alertOnce(this, tipOff, "end")) return;
+        int me = x.meHome ? x.hs : x.as, op = x.meHome ? x.as : x.hs;
+        alert(ALERT_FINAL, "סיום המשחק: " + mine(x) + (me > op ? " · ניצחון" : ""));
+    }
+
+    private void alert(int id, String text) {
+        ensureGameChannel(this);
+        NotificationCompat.Builder b = new NotificationCompat.Builder(this, GAME_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_hpj)
+            .setColor(Color.parseColor("#D21919"))
+            .setContentTitle(LiveGame.TEAM)
+            .setContentText("\u200F" + text)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText("\u200F" + text))
+            .setContentIntent(LiveGame.open(this, tipOff))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        notify(id, b.build());
+    }
+
+    static void ensureGameChannel(Context c) {
+        if (Build.VERSION.SDK_INT < 26) return;
+        NotificationManager nm = c.getSystemService(NotificationManager.class);
+        if (nm == null || nm.getNotificationChannel(GAME_CHANNEL) != null) return;
+        NotificationChannel ch = new NotificationChannel(GAME_CHANNEL, "עדכוני משחק", NotificationManager.IMPORTANCE_DEFAULT);
+        ch.setDescription("שריקת הפתיחה, סיום כל רבע וסיום המשחק");
+        nm.createNotificationChannel(ch);
     }
 
     private void cancel() {

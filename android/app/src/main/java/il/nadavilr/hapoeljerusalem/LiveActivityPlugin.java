@@ -51,6 +51,7 @@ public class LiveActivityPlugin extends Plugin {
         JSObject jer = call.getObject("jer");
         Boolean bg = call.getBoolean("bg");
         if (bg != null) LiveScheduler.setBackground(getContext(), bg);
+        LiveScheduler.saveSettings(getContext(), call.getBoolean("quarter"), call.getObject("comps"));
         LiveScheduler.save(getContext(), on, games, jer);
         JSObject r = new JSObject();
         long now = LiveScheduler.current(getContext());

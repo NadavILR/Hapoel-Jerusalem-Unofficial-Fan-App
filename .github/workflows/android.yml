@@ -71,6 +71,10 @@ jobs:
       - name: Write the release notes (what's new, from CHANGELOG.md)
         run: |
           node scripts/release-notes.js "${{ steps.ver.outputs.version }}" > release-notes.md || printf 'אפליקציית האנדרואיד של הפועל ירושלים – גרסה %s.\n' "${{ steps.ver.outputs.version }}" > release-notes.md
+          if [ "${{ steps.ver.outputs.pre }}" = "true" ]; then
+            # A pre-release is not offered inside the app
+            sed -i 's/ מי שהאפליקציה כבר מותקנת אצלו יקבל את העדכון גם מתוך האפליקציה\./ זו גרסה ניסיונית: היא לא מוצעת כעדכון בתוך האפליקציה, ואפשר להתקין אותה רק מכאן./' release-notes.md
+          fi
           cat release-notes.md
       - name: Publish the release for this version
         uses: softprops/action-gh-release@v2

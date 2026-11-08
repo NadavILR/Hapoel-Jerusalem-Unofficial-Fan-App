@@ -45,6 +45,9 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         // Opened from the live score card: the app opens that game's page (LiveActivity.takeOpen)
         LiveActivityPlugin.fromIntent(getIntent());
+        // The phone fetches the next games by itself every 6 hours (live score card and in-game notifications
+        // without opening the app)
+        LiveFixtures.schedule(this);
         // Ask for the screen's highest refresh rate (e.g. 120Hz), so scrolling and animations are not held at 60Hz
         preferHighRefreshRate();
         // Transparent status bar: the app's frosted header continues underneath it (the page gets its height as --sat)
