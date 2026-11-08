@@ -132,8 +132,8 @@ public class LiveActivityPlugin extends Plugin {
     }
 
     /**
-     * Test mode: demo({t, comp, status, clock, play, home:{name, score, img}, away:{name, score, img}})
-     * shows / updates the card; demo({}) without teams removes it. Runs on Capacitor's plugin thread, so the crests
+     * Test mode: demo({t, comp, status, clock, play, home:{name, score, img}, away:{name, score, img}, check})
+     * shows / updates the card; demo({}) without teams removes it. Returns {shown, sdk, nowbar, promoted (with check)}. Runs on Capacitor's plugin thread, so the crests
      * can be downloaded here.
      */
     @PluginMethod
@@ -184,6 +184,17 @@ public class LiveActivityPlugin extends Plugin {
             nm.notify(LiveScoreService.NOTIF_ID, LiveGame.card(c, g, hc, ac, false, null));
             NotifGroup.refresh(c);
             r.put("shown", true);
+            // Android 17: whether the card is a Live Update (Now Bar). With check:true, waits a moment for Android to
+            // process it and reports whether it was actually promoted
+            r.put("sdk", android.os.Build.VERSION.SDK_INT);
+            r.put("nowbar", NowBar.available(c));
+            if (Boolean.TRUE.equals(call.getBoolean("check", false))) {
+                try {
+                    Thread.sleep(800);
+                } catch (InterruptedException ignored) {
+                }
+                r.put("promoted", NowBar.promoted(c, LiveScoreService.NOTIF_ID));
+            }
             // Remove the +N badge once it has faded (in case the next simulated update is late)
             if (demoClear != null) MAIN.removeCallbacks(demoClear);
             demoClear = null;

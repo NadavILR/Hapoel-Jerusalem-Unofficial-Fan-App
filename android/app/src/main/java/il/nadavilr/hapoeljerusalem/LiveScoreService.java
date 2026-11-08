@@ -30,7 +30,9 @@ import org.json.JSONObject;
  */
 public class LiveScoreService extends Service {
 
-    static final String CHANNEL = "hpj-live";
+    /** The live score card's channel (IMPORTANCE_LOW). "hpj-live" was the old one, at IMPORTANCE_DEFAULT. */
+    static final String CHANNEL = "hpj-live-low";
+    private static final String OLD_CHANNEL = "hpj-live";
     static final int NOTIF_ID = 63401;
     static final String ACTION_STOP = "il.nadavilr.hapoeljerusalem.LIVE_STOP";
     private static final String API = "https://webws.365scores.com/web/games/current/?appTypeId=5&langId=2"
@@ -405,14 +407,19 @@ public class LiveScoreService extends Service {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            .setPriority(NotificationCompat.PRIORITY_LOW);
     }
 
     static void ensureChannel(Context c) {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager nm = c.getSystemService(NotificationManager.class);
         if (nm == null || nm.getNotificationChannel(CHANNEL) != null) return;
-        NotificationChannel ch = new NotificationChannel(CHANNEL, "תוצאה בלייב", NotificationManager.IMPORTANCE_DEFAULT);
+        try {
+            if (nm.getNotificationChannel(OLD_CHANNEL) != null) nm.deleteNotificationChannel(OLD_CHANNEL);
+        } catch (Exception ignored) {
+        }
+        // Low: no sound, no pop-up – the score just updates (still allowed as a Live Update, which only rules out MIN)
+        NotificationChannel ch = new NotificationChannel(CHANNEL, "תוצאה בלייב", NotificationManager.IMPORTANCE_LOW);
         ch.setDescription("התוצאה של המשחק בזמן אמת, בזמן שהפועל ירושלים משחקת");
         ch.setSound(null, null);
         ch.enableVibration(false);

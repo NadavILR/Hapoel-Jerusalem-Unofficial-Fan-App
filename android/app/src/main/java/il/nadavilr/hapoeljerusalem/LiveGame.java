@@ -230,6 +230,9 @@ final class LiveGame {
      * expand arrow (Notification.Builder: fullyCustomViewRequiresDecoration / expandedContentViewRequired).
      */
     static Notification card(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, PendingIntent del) {
+        // Android 17+: the same card as a Live Update (Now Bar), when Live Updates are allowed for the app
+        Notification live = NowBar.card(c, g, fin, del);
+        if (live != null) return live;
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.notif_live_card);
         fill(v, g, homeCrest, awayCrest, fin);
         NotificationCompat.Builder b = LiveScoreService.base(c, (fin ? RLM + "סיום: " : "") + g.scoreWithNames(), g.statusLine())

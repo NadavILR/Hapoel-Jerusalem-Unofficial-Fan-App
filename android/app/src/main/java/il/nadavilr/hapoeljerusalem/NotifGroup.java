@@ -42,10 +42,10 @@ final class NotifGroup {
             nmc.cancel(SUMMARY_ID);
             return;
         }
-        LiveScoreService.ensureChannel(c);
+        LiveScoreService.ensureGameChannel(c);
         Intent open = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pi = PendingIntent.getActivity(c, 2, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder b = new NotificationCompat.Builder(c, LiveScoreService.CHANNEL)
+        NotificationCompat.Builder b = new NotificationCompat.Builder(c, LiveScoreService.GAME_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_hpj)
             .setColor(Color.parseColor("#D21919"))
             .setContentTitle(LiveGame.TEAM)

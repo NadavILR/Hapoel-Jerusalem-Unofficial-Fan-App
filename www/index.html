@@ -1047,7 +1047,7 @@ function NotifTest({onClose}){
   [null,game(NT.fin(f,[101,97],true),'final',[101,97],{ot:true}),'סיום המשחק (עם הארכה) – ניצחון'],
   [null,game(NT.fin(f,[97,101],true),'final',[97,101],{ot:true}),'סיום המשחק (עם הארכה) – הפסד'],
   [null,[{title:'כרטיס התוצאה בלייב',l2:'הסמלים, התוצאה, הרבע והשעון ומהלך המשחק (נעלם אחרי 20 שניות)'},()=>{if(!P||!P.demo)return A.toast('כרטיס התוצאה בלייב קיים רק באפליקציית האנדרואיד');
-    P.demo({t:f.t||0,comp:cmp(f),status:'רבע 3',clock:'04:12',play:'04:12 · '+ME+' – שלשה',home:{name:NT.home(f),score:66,img:f.h?ME365:crestSrcs(f.o)[0]||null},away:{name:NT.away(f),score:61,img:f.h?crestSrcs(f.o)[0]||null:ME365}}).catch(()=>{});setTimeout(()=>P.demo({}).catch(()=>{}),2e4)}],'כרטיס התוצאה בלייב'],
+    P.demo({t:f.t||0,comp:cmp(f),status:'רבע 3',clock:'04:12',play:'04:12 · '+ME+' – שלשה',home:{name:NT.home(f),score:66,img:f.h?ME365:crestSrcs(f.o)[0]||null},away:{name:NT.away(f),score:61,img:f.h?crestSrcs(f.o)[0]||null:ME365},check:true}).then(x=>{if(nbMsg(x))A.toast(nbMsg(x))}).catch(()=>{});setTimeout(()=>P.demo({}).catch(()=>{}),2e4)}],'כרטיס התוצאה בלייב'],
   ['כללי',[{title:ME,l2:'ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר'},()=>devNotify('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר')],'הפעלת ההתראות'],
   [null,[{title:ME,l2:'התראת בדיקה: ההתראות של הפועל ירושלים פועלות'},()=>devNotify('התראת בדיקה: ההתראות של הפועל ירושלים פועלות')],'התראת בדיקה']];
  const send=(go,l)=>{const run=()=>{try{const x=go();if(x&&x.catch)x.catch(()=>{})}catch(e){}A.toast('נשלחה: '+l)};if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);run()});else run()};
@@ -1170,6 +1170,8 @@ async function latestRelease(){try{const r=await relApi();if(r)return r}catch(e)
 /* כל ההתראות של האפליקציה בקבוצה אחת במגש ההתראות (יחד עם כרטיס התוצאה בלייב ועדכוני המשחק של החלק ה-native) */
 const NGROUP='hpj-all';
 /* נוסח ההתראות (חוץ מכרטיס התוצאה בלייב): כותרת, ושורות הטקסט – l1 (מפעל, מחזור/שלב) מעל l2 (הקבוצות / התוצאה). זהה לנוסח בחלק ה-native (GameAlerts) */
+/* אנדרואיד 17: האם כרטיס התוצאה מוצג גם ב-Now Bar (כ-Live Update) – הודעה אחרי ההצגה הראשונה במצב בדיקה / במסך בדיקת ההתראות */
+const nbMsg=x=>!x||!(x.sdk>=37)||x.shown===false?'':x.promoted?'התוצאה מוצגת עכשיו גם ב-Now Bar':x.nowbar?'אנדרואיד לא הציג את התוצאה ב-Now Bar':'כדי לראות את התוצאה ב-Now Bar יש להפעיל "עדכונים חיים" לאפליקציה בהגדרות ההתראות של המכשיר';
 const NT={home:f=>f.h?ME:f.o,away:f=>f.h?f.o:ME,match:f=>NT.home(f)+' מול '+NT.away(f),
  score:(f,r)=>NT.home(f)+' '+(f.h?r[0]:r[1])+' - '+(f.h?r[1]:r[0])+' '+NT.away(f),
  qt:q=>q===1?'סיום רבע ראשון':q===2?'מחצית':q===3?'סיום רבע שלישי':q===4?'סיום רבע רביעי':'סיום הארכה '+(q-4),
@@ -1261,7 +1263,7 @@ function App(){
    p0=(demo.pbp||[])[0],
    o={t:n?n.t:0,comp:(n&&COMPS[n.c])||'',play:p0?(p0.clock?p0.clock+' · ':'')+p0.text:'',status:st,clock:demo.clock||'',home:n&&!n.h?them:me,away:n&&!n.h?me:them},k=JSON.stringify(o),first=!demoKey.current;
   if(k===demoKey.current)return;demoKey.current=k;
-  P.demo(o).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר')}).catch(()=>{})},[demo]);
+  P.demo({...o,check:first}).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר');else if(first&&nbMsg(x))toast(nbMsg(x))}).catch(()=>{})},[demo]);
  /* לחיצה על כרטיס התוצאה בלייב במגש ההתראות: האפליקציה נפתחת ישר בעמוד של אותו משחק */
  const openRef=useRef();openRef.current=t=>{const f=S.F.slice().sort((a,b)=>Math.abs(a.t-t)-Math.abs(b.t-t))[0];if(!f||Math.abs(f.t-t)>6*H)return;
   const T=TK();if(T)T.hide().catch(()=>{});setSt(false);setMo0(false);setDr(false);setPl(null);setPg('home');openGame({setGm},f)};
