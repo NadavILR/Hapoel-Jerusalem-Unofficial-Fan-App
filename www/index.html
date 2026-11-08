@@ -824,11 +824,14 @@ function NoteRow({n,i,out,onGone}){
 function Drawer(){
  const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v}),[clr,setClr]=useState('');
  /* "סמן הכל כנקרא": ההתראות יוצאות אחת אחרי השנייה, נמחקות, ומופיעה הודעה קצרה. בפתיחה הבאה המסך ריק */
- const list=A.notes.slice(0,8);
+ const list=A.notes.slice(0,8),taps=useRef([]);
+ /* 3 לחיצות מהירות על הכותרת שולחות התראת בדיקה */
+ const tapTitle=()=>{const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];
+  const go=()=>A.nf.current('התראת בדיקה: ההתראות של הפועל ירושלים פועלות');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()};
  const clearAll=()=>{if(!A.notes.length||clr)return;setClr('out');setTimeout(()=>{A.setNotes([]);setClr('done')},Math.min(list.length,8)*40+270)};
  return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-start justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-b-2xl sheet-down glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'16px'}} onClick=${e=>e.stopPropagation()}>
- <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
- <div class="flex gap-2 mb-3">${A.notes.length&&clr!=='done'?html`<button onClick=${clearAll} class="flex-1 py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button>`:null}<button onClick=${()=>{const go=()=>A.nf.current('התראת בדיקה: ההתראות של הפועל ירושלים פועלות');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()}} class="flex-1 py-2 rounded-lg bg-[#D21919] text-white text-sm font-bold">שלח התראת בדיקה</button></div>
+ <div class="flex items-center justify-between mb-3"><div onClick=${tapTitle} class="text-lg font-bold select-none">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
+ ${A.notes.length&&clr!=='done'?html`<div class="mb-3"><button onClick=${clearAll} class="w-full py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button></div>`:null}
  ${list.length&&!clr?html`<div class="text-[11px] mu mb-2">החליקו התראה הצידה כדי למחוק אותה</div>`:null}
  ${clr==='done'?html`<div class="note-done flex items-center justify-center gap-2 py-6 mb-4 text-sm mu"><span class="w-8 h-8 rounded-full bg-green-600/10 text-green-700 flex items-center justify-center"><${I} n="check" s=${18}/></span>כל ההתראות נקראו</div>`:null}
  <div class=${list.length?'space-y-2 mb-4':''}>${list.map((n,i)=>html`<${NoteRow} key=${n.id} n=${n} i=${i} out=${clr==='out'} onGone=${()=>A.setNotes(x=>x.filter(y=>y.id!==n.id))}/>`)}</div>
@@ -939,7 +942,9 @@ function App(){
  const [pf,setPf]=useState(()=>LS.get('hpj-pf',{hour:1,quarter:1,sales:1,comps:{league:1,euro:1,wcup:1,cup:1,super:1,prep:1}}));
  useEffect(()=>LS.set('hpj-notes',notes.slice(0,30)),[notes]);useEffect(()=>LS.set('hpj-pf',pf),[pf]);useEffect(()=>LS.set('hpj-rem',rem),[rem]);
  const [perm,setPerm]=useState(NATIVE?'default':typeof Notification!=='undefined'?Notification.permission:'denied');
- useEffect(()=>{const L=LN();if(L)L.checkPermissions().then(r=>setPerm(lnPerm(r))).catch(()=>{})},[]);
+ useEffect(()=>{const L=LN();if(!L)return;L.checkPermissions().then(r=>{const p=lnPerm(r);setPerm(p);
+  /* בפתיחה הראשונה: חלון ההרשאה של אנדרואיד (פעם אחת בלבד). אישור מפעיל את ההתראות באפליקציה */
+  if(p==='default'&&!LS.get('hpj-asked',0)){LS.set('hpj-asked',1);setTimeout(()=>askNotify().then(q=>{setPerm(q);if(q==='granted')setPf(x=>({...x,on:1}))}),800)}}).catch(()=>{})},[]);
  const toast=t=>{const id=Math.random();setToasts(x=>[...x,{id,t}]);setTimeout(()=>setToasts(x=>x.filter(y=>y.id!==id)),3500)};
  const nf=useRef();
  nf.current=(t,c,k)=>{if(pf.on===0)return;if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);devNotify(t)};
