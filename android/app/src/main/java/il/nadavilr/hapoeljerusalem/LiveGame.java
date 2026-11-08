@@ -234,7 +234,12 @@ final class LiveGame {
         NotificationCompat.Builder b = LiveScoreService.base(c, (fin ? RLM + "סיום: " : "") + g.scoreWithNames(), g.statusLine())
             .setContentIntent(open(c, g.t))
             .setCustomContentView(v)
-            .setOngoing(!fin);
+            .setOngoing(!fin)
+            // In the app's one notification group, on top (sort key "0"); a fixed time (the tip-off) so updating
+            // the score every few seconds does not move it around in the notification shade
+            .setGroup(NotifGroup.KEY)
+            .setSortKey("0")
+            .setWhen(g.t > 0 ? g.t : System.currentTimeMillis());
         if (fin) b.setAutoCancel(true).setTimeoutAfter(30 * 60_000L);
         else b.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
         if (del != null) b.setDeleteIntent(del);

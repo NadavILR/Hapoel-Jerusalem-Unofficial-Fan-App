@@ -36,6 +36,13 @@ public class LiveActivityPlugin extends Plugin {
         }
     }
 
+    /** After the app posted a notification (with the group key "hpj-all"): keep the app's notifications one group. */
+    @PluginMethod
+    public void group(PluginCall call) {
+        NotifGroup.refresh(getContext());
+        call.resolve();
+    }
+
     @PluginMethod
     public void takeOpen(PluginCall call) {
         JSObject r = new JSObject();
@@ -115,6 +122,7 @@ public class LiveActivityPlugin extends Plugin {
             if (demoClear != null) MAIN.removeCallbacks(demoClear);
             demoClear = null;
             nm.cancel(LiveScoreService.NOTIF_ID);
+            NotifGroup.refresh(c);
             r.put("shown", false);
             call.resolve(r);
             return;
@@ -148,6 +156,7 @@ public class LiveActivityPlugin extends Plugin {
         try {
             android.graphics.Bitmap hc = LiveGame.crestFor(c, g.homeName, g.homeImg), ac = LiveGame.crestFor(c, g.awayName, g.awayImg);
             nm.notify(LiveScoreService.NOTIF_ID, LiveGame.card(c, g, hc, ac, false, null));
+            NotifGroup.refresh(c);
             r.put("shown", true);
             // Remove the +N badge once it has faded (in case the next simulated update is late)
             if (demoClear != null) MAIN.removeCallbacks(demoClear);

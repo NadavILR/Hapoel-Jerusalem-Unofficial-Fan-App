@@ -41,6 +41,8 @@ public class LiveScoreService extends Service {
     private Handler handler;
     private long tipOff;
     private boolean wasLive, finalShown, finished;
+    /** The live card as last posted (kept when the service is started again). */
+    private Notification current;
     private String lastKey = "", lastPlay = "";
     private int lastHs = -1, lastAs = -1;
 
@@ -80,12 +82,16 @@ public class LiveScoreService extends Service {
         }
         if (tipOff == 0) tipOff = System.currentTimeMillis();
         ensureChannel(this);
-        Notification first = base(this, LiveGame.TEAM, "\u200Fשריקת הפתיחה בקרוב").setOngoing(true)
+        // Already showing the live card (another start from the app, the watchdog or the fixtures check): keep it as
+        // it is – replacing it with the "starting soon" notification made the card jump
+        Notification first = current != null ? current : base(this, LiveGame.TEAM, "\u200Fשריקת הפתיחה בקרוב").setOngoing(true)
             .setContentIntent(LiveGame.open(this, tipOff))
+            .setGroup(NotifGroup.KEY).setSortKey("0").setWhen(tipOff)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE).build();
         try {
             ServiceCompat.startForeground(this, NOTIF_ID, first,
                 Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0);
+            NotifGroup.refresh(this);
         } catch (Exception e) {
             stopSelf();
             return START_NOT_STICKY;
@@ -118,6 +124,7 @@ public class LiveScoreService extends Service {
     @Override
     public void onDestroy() {
         if (!finalShown) cancel(); // never leave a stale "live" card behind
+        NotifGroup.refresh(this);
         if (handler != null) handler.removeCallbacksAndMessages(null);
         if (thread != null) thread.quitSafely();
         handler = null;
@@ -240,7 +247,8 @@ public class LiveScoreService extends Service {
         lastKey = x.key();
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), false, del));
+        current = LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), false, del);
+        notify(NOTIF_ID, current);
     }
 
     /** Ends following the game; with a final game, the card stays for 30 minutes with the final score. */
@@ -255,6 +263,7 @@ public class LiveScoreService extends Service {
         LiveScheduler.done(this, tipOff);
         LiveScheduler.cancelWatchdog(this);
         finished = true;
+        NotifGroup.refresh(this);
         stopSelf();
     }
 
@@ -321,8 +330,11 @@ public class LiveScoreService extends Service {
             .setStyle(new NotificationCompat.BigTextStyle().bigText("\u200F" + text))
             .setContentIntent(LiveGame.open(this, tipOff))
             .setAutoCancel(true)
+            .setGroup(NotifGroup.KEY)
+            .setSortKey("1")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT);
         notify(id, b.build());
+        NotifGroup.refresh(this);
     }
 
     static void ensureGameChannel(Context c) {
