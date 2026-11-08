@@ -112,7 +112,14 @@ setTimeout(()=>{try{if(!FRBLK)Object.keys(CR).forEach(n=>{const u=crestSrcs(n)[0
 const H=36e5,D=864e5,NOW=Date.now();
 const COMPS={league:'ליגת ווינר סל',euro:'יורוקאפ',wcup:'גביע ווינר סל',cup:'גביע המדינה',super:'הסופרקאפ הישראלי',prep:'משחקי הכנה'};
 const CN={league:'ליגת ווינר',euro:'יורוקאפ',wcup:'גביע ווינר'};
-const cmp=f=>f.cl||(CN[f.c]||COMPS[f.c])+(f.rd&&f.c!=='prep'?', '+f.rd:'');
+/* המפעל והמחזור / השלב של כל משחק לפי 365scores (למשל "ליגת ווינר, מחזור 5", "ליגת ווינר – חצי גמר, משחק 3"). נטען בפתיחת האפליקציה ונשמר;
+   משחק שאין לו התאמה ב-365scores – לפי הנתונים של האפליקציה */
+let L365=null;const l365=()=>L365||(L365=(LS.get('hpj-365lbl',{l:[]}).l)||[]);
+const lbl365=g=>{const c=String(g.competitionDisplayName||'').trim().replace(/ - /g,' – '),n=+g.roundNum||0,rn=String(g.roundName||'').trim()||'מחזור';return c?c+(n>0?', '+rn+' '+n:''):''};
+async function load365Labels(){const a=await Promise.all(['fixtures','results'].map(k=>getJSON(S365+'games/'+k+'/?'+Q365+'&competitors=634').catch(()=>null)));
+ const out=[];a.forEach(j=>((j&&j.games)||[]).forEach(g=>{const t=Date.parse(g.startTime),l=lbl365(g);if(t&&l)out.push([t,l])}));
+ if(out.length){L365=out;LS.set('hpj-365lbl',{at:Date.now(),l:out})}return out.length}
+const cmp=f=>{const m=f&&f.t&&l365().find(x=>Math.abs(x[0]-f.t)<3*H);return m?m[1]:f.cl||(CN[f.c]||COMPS[f.c])+(f.rd&&f.c!=='prep'?', '+f.rd:'')};
 const ME='הפועל ירושלים';
 const U=(m,d,h,i)=>Date.UTC(2026,m-1,d,h,i||0);
 const D_F=[
@@ -1089,6 +1096,8 @@ function App(){
  useEffect(()=>{const T=TK();if(!T)return;T.preload({url:LINKS.tickets}).catch(()=>{});let h;try{h=T.addListener('closed',()=>setPg(x=>x==='tix'?'home':x))}catch(e){}return()=>{try{h&&h.then?h.then(r=>r.remove()):h&&h.remove&&h.remove()}catch(e){}}},[]);
  const [notes,setNotes]=useState(()=>LS.get('hpj-notes',[]));
  const [pf,setPf]=useState(()=>LS.get('hpj-pf',{hour:1,quarter:1,sales:1,comps:{league:1,euro:1,wcup:1,cup:1,super:1,prep:1}}));
+ /* המפעל והשלב מ-365scores: נטען פעם אחת בפתיחה, ואז המסכים מתעדכנים */
+ const [,setLbl]=useState(0);useEffect(()=>{load365Labels().then(n=>{if(n)setLbl(x=>x+1)}).catch(()=>{})},[]);
  useEffect(()=>LS.set('hpj-notes',notes.slice(0,30)),[notes]);useEffect(()=>LS.set('hpj-pf',pf),[pf]);useEffect(()=>LS.set('hpj-rem',rem),[rem]);
  const [perm,setPerm]=useState(NATIVE?'default':typeof Notification!=='undefined'?Notification.permission:'denied');
  useEffect(()=>{const L=LN();if(!L)return;L.checkPermissions().then(r=>{const p=lnPerm(r);setPerm(p);

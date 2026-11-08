@@ -72,7 +72,8 @@ final class LiveGame {
         int round = g.optInt("roundNum", 0);
         String roundName = g.optString("roundName", "").trim();
         if (roundName.isEmpty() || "null".equals(roundName)) roundName = "מחזור";
-        x.comp = comp + (round > 0 ? (comp.isEmpty() ? "" : " – ") + roundName + " " + round : "");
+        // Same format as in the app: "ליגת ווינר, מחזור 5", "ליגת ווינר – חצי גמר, משחק 3"
+        x.comp = comp + (round > 0 ? (comp.isEmpty() ? "" : ", ") + roundName + " " + round : "");
         return x;
     }
 
