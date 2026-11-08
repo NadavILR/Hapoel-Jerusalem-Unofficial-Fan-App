@@ -565,21 +565,22 @@ function SplitTable({nameHead,heads,rows,endHead,size}){
 }
 /* ---------- לייב מ-365scores: כרטיס במסך הבית ופירוט בעמוד המשחק ---------- */
 function LiveScore({L,g,big}){
- const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
+ const hm=L.jh?ME:g.o,aw=L.jh?g.o:ME,nm=n=>html`<div class=${'text-sm leading-tight mt-1 break-words '+(n===ME?'font-extrabold':'font-normal')}>${n}</div>`;
  return html`<div class="flex items-center justify-between text-sm mb-2"><span class="flex items-center gap-2 font-medium">${L.status==='live'?html`<span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>LIVE`:L.status==='end'?'סיום':'ממתינים לשריקת הפתיחה'}</span><span class="font-medium">${L.st}${L.clock&&L.status==='live'?' · ':''}${L.status==='live'?html`<span dir="ltr">${L.clock}</span>`:null}</span></div>
- <div class="flex items-center justify-between gap-2"><div class="w-24 shrink-0 text-center"><div class="flex justify-center"><${Cr} n=${hm} s=${big?64:56}/></div>${nm(hm)}</div>
- <div class="flex-1 flex justify-center items-center gap-3 font-semibold sb tabular-nums text-5xl" dir="ltr"><span>${L.as}</span><span class="opacity-60 text-3xl">–</span><span>${L.hs}</span></div>
- <div class="w-24 shrink-0 text-center"><div class="flex justify-center"><${Cr} n=${aw} s=${big?64:56}/></div>${nm(aw)}</div></div>
- ${L.q.length?html`<div class="mt-3 rounded-xl bg-[rgb(var(--blk-rgb)/0.35)] p-2 text-xs"><div class="grid gap-1 text-center" style=${{gridTemplateColumns:'4.5rem repeat('+L.q.length+',1fr)'}}>
+ <div class="grid items-center gap-2" style=${{gridTemplateColumns:'minmax(0,1fr) auto minmax(0,1fr)'}}><div class="min-w-0 text-center"><div class="flex justify-center"><${Cr} n=${hm} s=${big?64:48}/></div>${nm(hm)}</div>
+ <div class=${'flex justify-center items-center font-semibold sb tabular-nums '+(big?'gap-3 text-5xl':'gap-2 text-4xl')} dir="ltr"><span>${L.as}</span><span class=${'opacity-60 '+(big?'text-3xl':'text-2xl')}>–</span><span>${L.hs}</span></div>
+ <div class="min-w-0 text-center"><div class="flex justify-center"><${Cr} n=${aw} s=${big?64:48}/></div>${nm(aw)}</div></div>
+ ${L.q.length?html`<div class="mt-3 rounded-xl bg-[rgb(var(--blk-rgb)/0.35)] p-2 text-xs"><div class="grid gap-1 text-center items-center" style=${{gridTemplateColumns:'1.75rem repeat('+L.q.length+',1fr)'}}>
   <span></span>${L.q.map(x=>html`<span key=${x.n} class="opacity-70">${x.n}</span>`)}
-  <span class="text-right truncate">${hm}</span>${L.q.map(x=>html`<b key=${x.n}>${x.h}</b>`)}
-  <span class="text-right truncate">${aw}</span>${L.q.map(x=>html`<b key=${x.n}>${x.a}</b>`)}</div></div>`:null}`;
+  <span class="flex justify-center"><${Cr} n=${hm} s=${18}/></span>${L.q.map(x=>html`<b key=${x.n} class="sb">${x.h}</b>`)}
+  <span class="flex justify-center"><${Cr} n=${aw} s=${18}/></span>${L.q.map(x=>html`<b key=${x.n} class="sb">${x.a}</b>`)}</div></div>`:null}`;
 }
 function LiveCard({L,g}){
  const A=useContext(Ctx);
- return html`<${LiveScore} L=${L} g=${g}/>
+ return html`<div class="flex items-center justify-center gap-2 mb-3" aria-label="הפועל לייב"><span class="text-[2rem] leading-none font-extrabold tracking-tight">הפועל</span><span class="text-[2rem] leading-none font-extrabold tracking-tight px-3 pt-1 pb-1.5 rounded-xl bg-white text-[#D21919] shadow-md">לייב</span></div>
+ <${LiveScore} L=${L} g=${g}/>
  <button onClick=${()=>{A.setGm(g);window.scrollTo(0,0)}} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>
- <div class="text-[11px] opacity-70 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div>`;
+ <div class="text-[11px] opacity-75 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div>`;
 }
 /* ---------- מהלך המשחק (Play by Play) בלייב ---------- */
 const PBQ=q=>q<=4?'רבע '+q:'הארכה'+(q>5?' '+(q-4):''),titleCase=x=>String(x||'').toLowerCase().replace(/(^|[\s'-])\S/g,c=>c.toUpperCase());
@@ -629,7 +630,7 @@ function Pbp({L}){
 function Game({g}){
  const A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),gs=LG&&LG.gs?LG.gs:(GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
  return html`<div><button onClick=${()=>A.setGm(null)} class="on-glass back-stick text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
- ${LG?html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,rgb(210 25 25/.86),rgb(var(--blk-rgb)/.72))',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="text-[11px] mu mt-2 text-center">${LG.status==='live'?'סטטיסטיקות בלייב מ-365scores · מתעדכן כל 20 שניות':'סטטיסטיקות סיום מ-365scores'}</div>`:html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,rgb(210 25 25/.86),rgb(var(--blk-rgb)/.72))',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
+ ${LG?html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,rgb(210 25 25/.86),rgb(var(--blk-rgb)/.72))',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="mt-2 text-center"><span class="on-glass text-[11px] mu">${LG.status==='live'?'סטטיסטיקות בלייב מ-365scores · מתעדכן כל 20 שניות':'סטטיסטיקות סיום מ-365scores'}</span></div>`:html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,rgb(210 25 25/.86),rgb(var(--blk-rgb)/.72))',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
  <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class="text-sm mt-1">${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl font-semibold sb" dir="rtl"><span>${sc[0]}</span><span class="opacity-60">–</span><span>${sc[1]}</span></div>`:html`<div class="text-2xl font-semibold sb opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class="text-sm mt-1">${aw}</div></div></div>
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
  ${g.r&&!LG?(ytId(g)?html`<div class="mt-3 rounded-xl overflow-hidden bg-black fade-in" style=${{aspectRatio:'16/9'}}><iframe key=${ytId(g)} src=${'https://www.youtube-nocookie.com/embed/'+ytId(g)+'?rel=0&playsinline=1'} title="תקציר המשחק" class="w-full h-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
