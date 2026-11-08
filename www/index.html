@@ -804,8 +804,15 @@ function pbpSegevData(d,f){const isJ=isJls;
  return out.reverse()}
 /* מהלך המשחק של משחק שהסתיים: יורוקאפ – מ-EuroLeague, ליגת ווינר והגביעים – לפי מספר המשחק ב-livestats של איגוד הכדורסל (PBP). נשמר בזיכרון */
 const PBPC={};
+/* משחק שהסתיים בליגת ווינר / גביע ווינר: הקובץ שלו באתר ה-Live Stats של המפעל (תוצאה, תוצאה לפי רבעים, סטטיסטיקה, מהלך המשחק). נשמר בזיכרון */
+const LSPAST={},OFFC=c=>c==='league'||c==='wcup';
+function pastLs(f){if(!OFFC(f.c))return Promise.resolve(null);if(LSPAST[f.id])return LSPAST[f.id];const id=PBP[f.id];
+ const p=(id?getJSON('https://basket.co.il/livestats/data/game-'+id+'.json'):NATIVE?lsGame(f):Promise.resolve(null)).then(d=>d&&d.gameInfo&&d.boxscore?d:null).catch(()=>null);
+ LSPAST[f.id]=p;p.then(x=>{if(!x)delete LSPAST[f.id]});return p}
+/* התוצאה הסופית מקובץ ה-livestats: הפועל ראשונה */
+const lsFinal=d=>{const gi=d.gameInfo||{},bg=(d.boxscore&&d.boxscore.gameInfo)||{},h=+bg.homeScore||0,a=+bg.awayScore||0;return isJls(gi.homeTeam)?[h,a]:[a,h]};
 function pastPbp(f){if(PBPC[f.id])return PBPC[f.id];const c=f.c==='euro'?egCode(f):null,id=PBP[f.id];
- const p=(c?pbpEuro(c,f):id?pbpSegevId(id,f):Promise.resolve(null)).then(x=>x&&x.length?x:null).catch(()=>null);
+ const p=(c?pbpEuro(c,f):OFFC(f.c)?pastLs(f).then(d=>d?pbpSegevData(d,f):null):id?pbpSegevId(id,f):Promise.resolve(null)).then(x=>x&&x.length?x:null).catch(()=>null);
  PBPC[f.id]=p;p.then(x=>{if(!x)delete PBPC[f.id]});return p}
 async function livePbp(f){try{if(f.c==='euro'){const c=egCode(f);return c?await pbpEuro(c,f):null}if(NATIVE&&['league','wcup','cup','super'].includes(f.c))return await pbpSegev(f)}catch(e){}return null}
 /* מהלך המשחק: חלון בגובה קבוע שהמהלכים נגללים בתוכו. למעלה – כותרת וסינון לפי רבע על זכוכית כמו הכותרת של האפליקציה, והמהלכים נחתכים בתחתית שלה.
@@ -852,7 +859,12 @@ function ScoreDock({cardR,g,L,sc}){
   ${side(aw,as)}</div></div>`;
 }
 function Game({g}){
- const cardR=useRef(null),A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),[pp,setPp]=useState(null),gs=LG&&LG.gs?LG.gs:(GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
+ const cardR=useRef(null),A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),[pp,setPp]=useState(null),[ld,setLd]=useState(null);
+ /* ליגת ווינר / גביע ווינר – משחק שהסתיים: התוצאה, התוצאה לפי רבעים והסטטיסטיקה מקובץ ה-Live Stats של המשחק */
+ useEffect(()=>{setLd(null);if(!LG&&g.r&&OFFC(g.c)){let on=true;pastLs(g).then(d=>{if(on&&d)setLd(d)});return()=>{on=false}}},[g.id,!!LG]);
+ const lsGs=ld?(()=>{try{return gsLs(ld)}catch(e){return null}})():null,lr=ld?lsFinal(ld):null;
+ g=lr&&(lr[0]||lr[1])?{...g,r:lr}:g;
+ const gs=LG&&LG.gs?LG.gs:(lsGs||GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
  useEffect(()=>{setPp(null);if(!LG&&g.r){let on=true;pastPbp(g).then(x=>{if(on)setPp(x)});return()=>{on=false}}},[g.id,!!LG]);
  const PB=LG&&LG.pbp?LG:pp?{pbp:pp}:null;
  return html`<div>${LG||sc?html`<${ScoreDock} cardR=${cardR} g=${g} L=${LG} sc=${sc}/>`:null}<button onClick=${()=>A.setGm(null)} class="on-glass back-stick text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
