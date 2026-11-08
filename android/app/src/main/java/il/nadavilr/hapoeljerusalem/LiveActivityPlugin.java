@@ -29,6 +29,8 @@ public class LiveActivityPlugin extends Plugin {
                 if (t > 0) times.add(t);
             }
         }
+        Integer route = call.getInt("route");
+        if (route != null) LiveScheduler.setRoute(getContext(), route);
         LiveScheduler.save(getContext(), on, times);
         JSObject r = new JSObject();
         long now = LiveScheduler.current(getContext());
@@ -80,6 +82,8 @@ public class LiveActivityPlugin extends Plugin {
         g.homeImg = home.optString("img", null);
         g.awayImg = away.optString("img", null);
         g.venue = call.getString("venue", "");
+        Integer route = call.getInt("route");
+        if (route != null) LiveScheduler.setRoute(c, route);
         LiveScoreService.ensureChannel(c);
         try {
             android.graphics.Bitmap hc = LiveGame.crest(g.homeImg), ac = LiveGame.crest(g.awayImg);

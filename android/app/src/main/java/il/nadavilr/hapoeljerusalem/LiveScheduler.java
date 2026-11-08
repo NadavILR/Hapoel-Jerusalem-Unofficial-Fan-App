@@ -32,6 +32,15 @@ final class LiveScheduler {
         return prefs(c).getBoolean("on", false) && NotificationManagerCompat.from(c).areNotificationsEnabled();
     }
 
+    /** How the Now Bar gets the score card's layout (see LiveGame.notification): 1 or 2. */
+    static int route(Context c) {
+        return prefs(c).getInt("route", 1);
+    }
+
+    static void setRoute(Context c, int route) {
+        prefs(c).edit().putInt("route", route == 2 ? 2 : 1).apply();
+    }
+
     /** Saves the settings and tip-off times from the app and re-arms the alarms. */
     static void save(Context c, boolean on, List<Long> times) {
         StringBuilder sb = new StringBuilder();

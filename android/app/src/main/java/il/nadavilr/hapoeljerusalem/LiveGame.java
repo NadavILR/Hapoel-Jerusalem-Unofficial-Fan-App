@@ -114,7 +114,7 @@ final class LiveGame {
             c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) HapoelJerusalemFanApp");
             try (InputStream in = c.getInputStream()) {
                 Bitmap raw = BitmapFactory.decodeStream(in);
-                if (raw != null) b = square(raw, 192);
+                if (raw != null) b = square(raw, 120);
             } finally {
                 c.disconnect();
             }
@@ -128,12 +128,12 @@ final class LiveGame {
 
     /** Both crests in one square image: the home team top right, the away team bottom left. */
     static Bitmap matchup(Bitmap home, Bitmap away) {
-        int size = 256, cs = 150;
+        int size = 160, cs = 94;
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(out);
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG | android.graphics.Paint.ANTI_ALIAS_FLAG);
-        cv.drawBitmap(Bitmap.createScaledBitmap(away, cs, cs, true), 4, size - cs - 4, p);
-        cv.drawBitmap(Bitmap.createScaledBitmap(home, cs, cs, true), size - cs - 4, 4, p);
+        cv.drawBitmap(Bitmap.createScaledBitmap(away, cs, cs, true), 3, size - cs - 3, p);
+        cv.drawBitmap(Bitmap.createScaledBitmap(home, cs, cs, true), size - cs - 3, 3, p);
         return out;
     }
 
@@ -154,33 +154,114 @@ final class LiveGame {
      * {@code del} runs when the user swipes it away (may be null).
      */
     static Notification notification(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, PendingIntent del) {
-        boolean crests = homeCrest != null && awayCrest != null && Build.VERSION.SDK_INT >= 36;
-        String title = crests ? g.score() : g.scoreWithNames();
+        return notification(c, g, homeCrest, awayCrest, del, LiveScheduler.route(c));
+    }
+
+    /**
+     * {@code route} – how the Now Bar gets the score card's layout (Samsung publishes no contract for this; the keys
+     * come from dumps of Google's sports card in the Now Bar and from Samsung's own apps):
+     * 1 = Android 16 Live Update, plus Samsung's custom-layout extras (nowbarRemoteView / expandedRemoteView);
+     * 2 = Samsung's own Now Bar path, like Google's card: the hidden Notification.OngoingActivityStyle with the score
+     *     row as the card's centre and the full card as its expanded view.
+     */
+    static Notification notification(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, PendingIntent del, int route) {
+        boolean crests = homeCrest != null && awayCrest != null;
+        String title = crests && Build.VERSION.SDK_INT >= 36 ? g.score() : g.scoreWithNames();
         String text = g.statusLine();
         NotificationCompat.Builder b = LiveScoreService.base(c, title, text)
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
-        // No competition line here: in the Now Bar only the score, the crests and quarter • clock (it is in the card)
         if (del != null) b.setDeleteIntent(del);
 
+        // The score card's own layouts: the row (the Now Bar) and the full card (expanded)
+        android.widget.RemoteViews row = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_small);
+        android.widget.RemoteViews big = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_card);
+        fill(row, g, homeCrest, awayCrest, false, false);
+        fill(big, g, homeCrest, awayCrest, false, true);
+
         Bundle x = new Bundle();
-        // Samsung (One UI): colour of the status-bar chip / Now Bar pill
         x.putInt("android.ongoingActivityNoti.chipBgColor", RED);
-        if (Build.VERSION.SDK_INT < 36) {
-            // One UI 7 (Android 15): Samsung's own Live Notifications card in the Now Bar
+        x.putBoolean("android.ongoingActivityNoti.show", true);
+        x.putString("android.ongoingActivityNoti.primaryInfo", g.score());
+        x.putString("android.ongoingActivityNoti.secondaryInfo", text);
+        x.putString("android.ongoingActivityNoti.nowbarPrimaryInfo", g.score());
+        x.putString("android.ongoingActivityNoti.nowbarSecondaryInfo", text);
+        x.putString("android.ongoingActivityNoti.chipExpandedText", g.score());
+        x.putParcelable("android.ongoingActivityNoti.nowbarRemoteView", row);
+        x.putParcelable("android.ongoingActivityNoti.expandedRemoteView", big);
+        x.putCharSequence("android.substName", "הפועל ירושלים");
+        boolean samsungPath = route == 2 || Build.VERSION.SDK_INT < 36;
+        if (samsungPath) {
+            // Samsung's private card path (One UI 7, and route 2 on One UI 8+)
             x.putInt("android.ongoingActivityNoti.style", 1);
-            x.putString("android.ongoingActivityNoti.primaryInfo", g.scoreWithNames());
-            x.putString("android.ongoingActivityNoti.secondaryInfo", text);
             x.putInt("android.ongoingActivityNoti.actionType", 1);
             x.putInt("android.ongoingActivityNoti.actionPrimarySet", 0);
-            x.putString("android.ongoingActivityNoti.nowbarPrimaryInfo", g.score());
-            x.putString("android.ongoingActivityNoti.nowbarSecondaryInfo", text);
-            x.putString("android.ongoingActivityNoti.chipExpandedText", g.score());
         }
         b.addExtras(x);
         Notification n = b.build();
-        if (Build.VERSION.SDK_INT < 36) return n;
+        if (samsungPath) return samsungStyle(c, n, g, row, big);
         return liveUpdate(c, n, g, crests ? homeCrest : null, crests ? awayCrest : null);
+    }
+
+    /**
+     * Route 2: Samsung's hidden Notification.OngoingActivityStyle (what Google's sports card uses in the Now Bar),
+     * with our score row as the card's centre and the full score card as its expanded view. Every method is optional:
+     * whatever this One UI build lacks is skipped, and the same layouts are also in the extras.
+     */
+    private static Notification samsungStyle(Context c, Notification n, LiveGame g, android.widget.RemoteViews row, android.widget.RemoteViews big) {
+        try {
+            Class<?> k = Class.forName("android.app.Notification$OngoingActivityStyle");
+            java.lang.reflect.Constructor<?> ctor = k.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            Object style = ctor.newInstance();
+            call(style, "setPrimaryInfo", g.score());
+            call(style, "setSecondaryInfo", g.statusLine());
+            call(style, "setChipBackground", RED);
+            call(style, "setCustomCardViewCenterUI", row);
+            call(style, "setCustomExpandedCardView", big);
+            Notification.Builder fb = Notification.Builder.recoverBuilder(c, n);
+            fb.setStyle((Notification.Style) style);
+            try {
+                Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class).invoke(fb, true);
+            } catch (Throwable ignored) {
+            }
+            Notification out = fb.build();
+            // Keep all the Samsung extras next to the style's own (without overwriting the style's keys)
+            for (String key : n.extras.keySet()) {
+                if (!out.extras.containsKey(key)) {
+                    Object v = n.extras.get(key);
+                    if (v instanceof android.os.Parcelable) out.extras.putParcelable(key, (android.os.Parcelable) v);
+                    else if (v instanceof CharSequence) out.extras.putCharSequence(key, (CharSequence) v);
+                    else if (v instanceof Integer) out.extras.putInt(key, (Integer) v);
+                    else if (v instanceof Boolean) out.extras.putBoolean(key, (Boolean) v);
+                }
+            }
+            return out;
+        } catch (Throwable e) {
+            // No hidden style on this phone: the extras alone (centre / expanded card layouts by key)
+            n.extras.putParcelable("android.ongoingActivityCustomCardViewCenterUI", row);
+            n.extras.putParcelable("android.ongoingActivityCustomExpandedCardView", big);
+            return n;
+        }
+    }
+
+    /** Calls a one-argument method by name if this build has it (any compatible parameter type). */
+    private static void call(Object target, String name, Object arg) {
+        for (Class<?> t = target.getClass(); t != null; t = t.getSuperclass()) {
+            for (java.lang.reflect.Method m : t.getDeclaredMethods()) {
+                if (!m.getName().equals(name) || m.getParameterTypes().length != 1) continue;
+                Class<?> p = m.getParameterTypes()[0];
+                boolean ok = p.isInstance(arg) || (p == int.class && arg instanceof Integer)
+                    || (p == CharSequence.class && arg instanceof CharSequence);
+                if (!ok) continue;
+                try {
+                    m.setAccessible(true);
+                    m.invoke(target, arg);
+                } catch (Throwable ignored) {
+                }
+                return;
+            }
+        }
     }
 
     /**
