@@ -42,6 +42,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TicketsPlugin.class);
         registerPlugin(UpdaterPlugin.class);
         super.onCreate(savedInstanceState);
+        // Ask for the screen's highest refresh rate (e.g. 120Hz), so scrolling and animations are not held at 60Hz
+        preferHighRefreshRate();
         // Transparent status bar: the app's frosted header continues underneath it (the page gets its height as --sat)
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
@@ -248,6 +250,22 @@ public class MainActivity extends BridgeActivity {
         if (extBack != null) {
             extBack.remove();
             extBack = null;
+        }
+    }
+
+    private void preferHighRefreshRate() {
+        if (android.os.Build.VERSION.SDK_INT < 23) return;
+        try {
+            android.view.Display d = getWindowManager().getDefaultDisplay();
+            android.view.Display.Mode cur = d.getMode(), best = cur;
+            for (android.view.Display.Mode m : d.getSupportedModes()) {
+                if (m.getPhysicalWidth() == cur.getPhysicalWidth() && m.getPhysicalHeight() == cur.getPhysicalHeight()
+                        && m.getRefreshRate() > best.getRefreshRate()) best = m;
+            }
+            android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.preferredDisplayModeId = best.getModeId();
+            getWindow().setAttributes(lp);
+        } catch (Exception ignored) {
         }
     }
 }
