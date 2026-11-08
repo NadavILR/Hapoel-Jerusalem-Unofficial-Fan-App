@@ -18,6 +18,7 @@ import android.text.Layout;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.AlignmentSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
@@ -32,7 +33,7 @@ import java.lang.reflect.Method;
  *
  *                          competition, round / stage (title, centred)            [both crests – the large icon]
  *     away team (full name)        quarter            home team (full name)       ← labels
- *              72 +2                04:40                     77                  ← values; +N next to a new score
+ *              72 ⁺²                04:40                     77                  ← values; +N next to a new score
  *
  *   The order follows the phone's layout direction, so the home team is on the right also on a phone set to English
  *   (there the row is laid out left to right). The template puts a column's label and value at the column's start
@@ -96,7 +97,15 @@ final class NowBar {
                 .setWhen(g.t > 0 ? g.t : System.currentTimeMillis())
                 .setVisibility(Notification.VISIBILITY_PUBLIC);
             Bitmap pair = pair(homeCrest, awayCrest);
-            if (pair != null) b.setLargeIcon(Icon.createWithBitmap(pair));
+            if (pair != null) {
+                Icon crests = Icon.createWithBitmap(pair);
+                b.setLargeIcon(crests);
+                // Samsung's Now Bar: the card's icon (in place of the app icon), a key seen in dumps of Samsung's own
+                // Now Bar cards – not a published contract, ignored elsewhere
+                Bundle ci = new Bundle();
+                ci.putParcelable("android.ongoingActivityCardIcon", crests);
+                b.addExtras(ci);
+            }
 
             Notification.Style metrics = Build.VERSION.SDK_INT >= 37 ? metrics(c, g, fin) : null;
             if (metrics != null) {
@@ -158,10 +167,15 @@ final class NowBar {
             String st = fin ? "סיום" : g.status, mid = fin || g.clock.isEmpty() ? (st.isEmpty() ? "לייב" : st) : g.clock;
             String midLabel = !fin && !g.clock.isEmpty() && !st.isEmpty() ? st : "מצב המשחק";
             Col cols = new Col(c);
-            String[] h = cols.pair(g.homeName, String.valueOf(g.hs)), m = cols.pair(midLabel, mid), a = cols.pair(g.awayName, String.valueOf(g.as));
-            Object home = metric.newInstance(fixedText.newInstance((rtl ? RLM : "") + h[2], pop(fin ? 0 : g.popHome)), label(h, rtl));
-            Object clock = metric.newInstance(fixedText.newInstance((rtl ? RLM : "") + m[2], null), label(m, rtl));
-            Object away = metric.newInstance(fixedText.newInstance((rtl ? RLM : "") + a[2], pop(fin ? 0 : g.popAway)), label(a, rtl));
+            // +1 / +2 / +3 next to the score, on its side facing the middle (as in the app): left of the home score
+            // (on the right), right of the away score (on the left). In a left-to-right row "left" is the start.
+            String[] h = cols.pair(g.homeName, String.valueOf(g.hs), badge(fin ? 0 : g.popHome), !rtl);
+            String[] m = cols.pair(midLabel, mid, "", false);
+            String[] a = cols.pair(g.awayName, String.valueOf(g.as), badge(fin ? 0 : g.popAway), rtl);
+            // Team names, the quarter and the clock in bold
+            Object home = metric.newInstance(fixedText.newInstance(value(h[2], rtl, false), null), label(h, rtl));
+            Object clock = metric.newInstance(fixedText.newInstance(value(m[2], rtl, true), null), label(m, rtl));
+            Object away = metric.newInstance(fixedText.newInstance(value(a[2], rtl, false), null), label(a, rtl));
             add.invoke(style, rtl ? home : away);
             add.invoke(style, clock);
             add.invoke(style, rtl ? away : home);
@@ -176,10 +190,27 @@ final class NowBar {
     /**
      * A label in the phone's direction. On a left-to-right phone it starts with a left-to-right mark, so it starts on
      * the left like the value under it, and the Hebrew itself is isolated so it still reads correctly ("רבע 4", not
-     * "4 רבע"). {@code s} is [padding, text].
+     * "4 רבע"). {@code s} is [padding, text]. Bold.
      */
-    static String label(String[] s, boolean rtl) {
-        return rtl ? RLM + s[0] + s[1] : LRM + s[0] + RLI + s[1] + PDI;
+    static CharSequence label(String[] s, boolean rtl) {
+        return bold(rtl ? RLM + s[0] + s[1] : LRM + s[0] + RLI + s[1] + PDI);
+    }
+
+    /** A value in the phone's direction (its padding first, at the column's start); the clock in bold. */
+    static CharSequence value(String v, boolean rtl, boolean bold) {
+        String t = (rtl ? RLM : "") + v;
+        return bold ? bold(t) : t;
+    }
+
+    static CharSequence bold(String t) {
+        SpannableString s = new SpannableString(t);
+        s.setSpan(new StyleSpan(Typeface.BOLD), 0, s.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        return s;
+    }
+
+    /** "⁺²" – the points just scored, small and raised like a badge; "" for none. */
+    static String badge(int pts) {
+        return pts == 1 ? "\u207A\u00B9" : pts == 2 ? "\u207A\u00B2" : pts == 3 ? "\u207A\u00B3" : "";
     }
 
     /** A whole text centred in its line (the title and the text of the card). */
@@ -202,18 +233,30 @@ final class NowBar {
         Col(Context c) {
             android.util.DisplayMetrics dm = c.getResources().getDisplayMetrics();
             lp.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, dm));
-            lp.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            lp.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
             vp.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 28, dm));
             vp.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
             // The card's width less the template's margins (about 104dp), in three columns with 4dp between them
             colW = Math.max(60 * dm.density, (Math.min(dm.widthPixels, dm.heightPixels) - 104 * dm.density) / 3f - 4 * dm.density);
         }
 
-        /** [label padding, label, value padding + value]. */
-        String[] pair(String label, String value) {
+        /**
+         * [label padding, label, value padding + value]. {@code badge} (may be "") goes next to the value – before it
+         * (at the column's start) or after it – without moving the value off the centre: a badge before it takes its
+         * width out of the padding.
+         */
+        String[] pair(String label, String value, String badge, boolean badgeFirst) {
             float wl = Math.min(lp.measureText(label), colW), wv = Math.min(vp.measureText(value), colW);
-            String pl = wv > wl ? pad((wv - wl) / 2f, lp) : "", pv = wl > wv ? pad((wl - wv) / 2f, vp) : "";
-            return new String[] {pl, label, pv + value};
+            String body = value;
+            float wb = 0;
+            if (!badge.isEmpty()) {
+                String iso = LRI + badge + PDI; // keeps "⁺²" as it is inside a right-to-left line
+                body = badgeFirst ? iso + "\u2009" + value : value + "\u2009" + iso;
+                if (badgeFirst) wb = vp.measureText(badge + "\u2009");
+            }
+            String pl = wv > wl ? pad((wv - wl) / 2f, lp) : "";
+            String pv = wl > wv ? pad(Math.max(0f, (wl - wv) / 2f - wb), vp) : "";
+            return new String[] {pl, label, pv + body};
         }
 
         /** Spaces (then hair spaces for the rest) about {@code w} pixels wide. */
@@ -223,10 +266,6 @@ final class NowBar {
             while (b.length() < 80 && p.measureText(b + "\u200A") <= w) b.append('\u200A');
             return b.toString();
         }
-    }
-
-    private static CharSequence pop(int pts) {
-        return pts >= 1 && pts <= 3 ? "+" + pts : null;
     }
 
     /**
