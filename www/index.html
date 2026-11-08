@@ -30,7 +30,7 @@ body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-
 body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:#fff url(bg/pattern-light.jpg) center/cover no-repeat}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
 .sf{background:rgb(var(--sf-rgb)/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid var(--gl-bd);box-shadow:var(--gl-hi),0 6px 20px rgb(0 0 0/.06)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
-.nav-pill{transition:background-color .15s var(--ease),transform .18s var(--ease)}button:active .nav-pill{transform:scale(.92)}.nav-pill.on{background:rgb(210 25 25/.12)}
+.nav-pill{transition:background-color .15s var(--ease),transform .18s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
 .me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.tint-glass{border:1px solid var(--gl-bd);background:rgb(0 0 0/.09);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tint-glass{background:rgb(0 0 0/.4)}}:root[data-theme="dark"] .tint-glass{background:rgb(0 0 0/.4)}
 .red-glass{border:1px solid rgb(255 255 255/.28);background:rgb(210 25 25/.72);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255/.18)}
@@ -69,6 +69,12 @@ button,a{-webkit-tap-highlight-color:transparent;transition:transform .18s var(-
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 .live-tag{position:relative;overflow:hidden;isolation:isolate}.live-tag.on{animation:hpjBeat 1.8s var(--ease) infinite}.live-tag.on::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(105deg,transparent 35%,rgb(210 25 25/.22) 50%,transparent 65%);transform:translateX(110%);animation:hpjShine 1.8s ease-in-out infinite}
 @keyframes hpjBeat{0%{box-shadow:0 0 0 0 rgb(255 255 255/.7),0 4px 12px rgb(0 0 0/.2);transform:scale(1)}12%{transform:scale(1.06)}24%{transform:scale(1)}70%{box-shadow:0 0 0 16px rgb(255 255 255/0),0 4px 12px rgb(0 0 0/.2)}100%{box-shadow:0 0 0 0 rgb(255 255 255/0),0 4px 12px rgb(0 0 0/.2)}}@keyframes hpjShine{from{transform:translateX(110%)}to{transform:translateX(-110%)}}
+/* מעבר בין לשוניות: הסימון האדום מחליק אל הלשונית שנבחרה, והתוכן נכנס מהכיוון שלה */
+.segc{position:relative}.segc>button{position:relative;z-index:1;transition:color .22s var(--ease)}.segc>button:active{transform:none}
+.seg-ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;border-radius:11px;background:#D21919;box-shadow:0 2px 8px rgb(210 25 25/.3);transition:transform .34s var(--ease),width .34s var(--ease),height .34s var(--ease),opacity .2s}.seg>.seg-ind{border-radius:8px}
+.nav-ind{border-radius:999px;background:rgb(210 25 25/.12);box-shadow:none}#app-nav button{position:relative;z-index:1}#app-nav button:active{transform:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-ind{background:rgb(210 25 25/.25)}}:root[data-theme="dark"] .nav-ind{background:rgb(210 25 25/.25)}
+.slide-l{animation:hpjSL .3s var(--ease) backwards}.slide-r{animation:hpjSR .3s var(--ease) backwards}@keyframes hpjSL{from{opacity:0;transform:translateX(-32px)}}@keyframes hpjSR{from{opacity:0;transform:translateX(32px)}}
 .car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;padding:6px 12px;margin:-6px 0;scroll-padding:0 12px}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}.car .sf{box-shadow:var(--gl-hi)}
 </style>
 </head>
@@ -445,6 +451,19 @@ const monthOf=t=>new Date(t).toLocaleDateString('he-IL',{...ILT,month:'long',yea
 const hm=t=>new Date(t).toLocaleTimeString('he-IL',{...ILT,hour:'2-digit',minute:'2-digit',hour12:false});
 /* משחק בית: אריח אדום. משחק חוץ: אריח בצבע הטקסט – שחור במצב בהיר, לבן במצב כהה */
 const DateTile=({t,home})=>{const d=new Date(t);return html`<div class=${'w-12 shrink-0 rounded-xl text-center py-2 leading-none '+(home?'dt-home':'dt-away')}><div class="text-[11px] opacity-75">${d.toLocaleDateString('he-IL',{...ILT,weekday:'short'})}</div><div class="text-xl font-semibold sb mt-1">${d.toLocaleDateString('he-IL',{...ILT,day:'numeric'})}</div></div>`};
+/* הסימון המחליק של לשונית פעילה (הכפתור הפעיל מסומן ב-data-on). sel – אלמנט בתוך הכפתור שאותו מסמנים */
+function SegInd({k,sel,cls}){
+ const r=useRef(null),first=useRef(true);
+ React.useLayoutEffect(()=>{const el=r.current,p=el&&el.parentElement;if(!p)return;
+  const place=anim=>{let b=p.querySelector(':scope>[data-on]');if(b&&sel)b=b.querySelector(sel);if(!b){el.style.opacity='0';return}
+   let x=b.offsetLeft,y=b.offsetTop;for(let e=b.offsetParent;e&&e!==p;e=e.offsetParent){x+=e.offsetLeft;y+=e.offsetTop}
+   el.style.transition=anim?'':'none';el.style.width=b.offsetWidth+'px';el.style.height=b.offsetHeight+'px';el.style.transform='translate('+x+'px,'+y+'px)';el.style.opacity='1'};
+  place(!first.current);first.current=false;
+  let ro=null;try{ro=new ResizeObserver(()=>place(false));ro.observe(p)}catch(e){}return()=>{ro&&ro.disconnect()}},[k]);
+ return html`<span ref=${r} aria-hidden="true" class=${'seg-ind '+(cls||'')}></span>`;
+}
+/* כיוון הכניסה של התוכן: לשונית שמאלה יותר (אינדקס גבוה יותר, מימין לשמאל) נכנסת משמאל */
+function useDir(i){const r=useRef({i,c:''});if(r.current.i!==i)r.current={i,c:i>r.current.i?'slide-l':'slide-r'};return r.current.c}
 /* סרגל הסינון: בגלילה הוא נצמד לכותרת ומקבל את הזכוכית שלה, כך ששניהם נראים כחלק אחד */
 function StickyBar({children}){
  const r=useRef(null),[stuck,setStuck]=useState(false);
@@ -455,15 +474,15 @@ function StickyBar({children}){
 }
 function Sched(){
  const A=useContext(Ctx),[tab,setTab0]=useState(SCH.tab),[fl,setFl0]=useState(SCH.fl);
- const setTab=k=>{SCH.tab=k;setTab0(k)},setFl=k=>{SCH.fl=k;setFl0(k)};
+ const sDir=useDir(tab==='up'?0:1),setTab=k=>{SCH.tab=k;setTab0(k)},setFl=k=>{SCH.fl=k;setFl0(k)};
  useEffect(()=>{if(SCH.y){window.scrollTo(0,SCH.y);SCH.y=0}},[]);
  const ls=A.F.filter(f=>(!f.r)===(tab==='up')&&(fl==='all'||f.c===fl)).sort((a,b)=>tab==='up'?a.t-b.t:b.t-a.t);
  if(!A.F.length)return html`<div><${Ttl}>משחקים ותוצאות · עונת ${SEASON}<//><${SeasonEmpty} msg=${'לוח המשחקים של עונת '+SEASON+' טרם נטען לאפליקציה.'} href=${LINKS.basket} cta="לוח המשחקים באתר הרשמי"/></div>`;
  return html`<div><${Ttl}>משחקים ותוצאות · עונת ${SEASON}<//>
- <${StickyBar}><div class="grid grid-cols-2 gap-1 p-1 rounded-xl sf mb-3">${[['up','המשחקים הבאים'],['past','המשחקים הקודמים']].map(([k,l])=>html`<button key=${k} onClick=${()=>setTab(k)} class=${'py-2 rounded-lg text-sm font-bold '+(tab===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
+ <${StickyBar}><div class="segc grid grid-cols-2 gap-1 p-1 rounded-xl sf mb-3"><${SegInd} k=${tab}/>${[['up','המשחקים הבאים'],['past','המשחקים הקודמים']].map(([k,l])=>html`<button key=${k} data-on=${tab===k?'':undefined} onClick=${()=>setTab(k)} class=${'py-2 rounded-lg text-sm font-bold '+(tab===k?'text-white':'mu')}>${l}</button>`)}</div>
  <${Chips} o=${[['all','הכל'],...Object.entries(COMPS).map(([k,v])=>[k,CN[k]||v])]} v=${fl} set=${setFl}/><//>
  <div class="mb-1"><div class="on-glass text-xs mu" style=${{gap:'16px'}}><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-home"></span>משחק בית</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-away"></span>משחק חוץ</span></div></div>
- <div key=${tab+fl} class="stg space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-2">${ls.length?ls.map((f,i)=>{const w=f.r&&f.r[0]>f.r[1],mo=monthOf(f.t),newMo=!i||monthOf(ls[i-1].t)!==mo;return html`<${React.Fragment} key=${f.id}>${newMo?html`<div class="md:col-span-2 pt-3 pb-1"><span class="on-glass text-sm font-bold">${mo}</span></div>`:null}<div onClick=${()=>{SCH.y=window.scrollY;A.setGm(f);window.scrollTo(0,0)}} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer">
+ <div key=${tab+fl} class=${'stg '+sDir+' space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-2'}>${ls.length?ls.map((f,i)=>{const w=f.r&&f.r[0]>f.r[1],mo=monthOf(f.t),newMo=!i||monthOf(ls[i-1].t)!==mo;return html`<${React.Fragment} key=${f.id}>${newMo?html`<div class="md:col-span-2 pt-3 pb-1"><span class="on-glass text-sm font-bold">${mo}</span></div>`:null}<div onClick=${()=>{SCH.y=window.scrollY;A.setGm(f);window.scrollTo(0,0)}} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer">
   <${DateTile} t=${f.t} home=${!!f.h}/>
   <${Cr} n=${f.o} s=${32}/>
   <div class="flex-1 min-w-0"><div class="font-bold truncate">${f.o}</div><div class="text-xs mu truncate">${f.tbd?'שעה טרם נקבעה':hm(f.t)} · ${cmp(f)}</div><div class="text-xs mu truncate">${f.v||(f.h?'משחק בית':'משחק חוץ')}</div></div>
@@ -573,7 +592,7 @@ function GmP({g,gs,pf}){
  const tn=[ME,g.o],ws=pl[si],sum=i=>ws.reduce((t,w)=>t+w[i],0),tot=[ '',sum(4),sum(5),sum(6),sum(7),sum(8),sum(9)+'/'+sum(10),sum(11)+'/'+sum(12),sum(13)+'/'+sum(14),sum(15),sum(16),sum(17),sum(18)],
  bgs={background:'rgb(var(--sf-rgb)/.4)',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'};
  return html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה אישית</div>
- <div class="grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg">${tn.map((n,i)=>html`<button key=${i} onClick=${()=>setSi(i)} class=${'flex items-center justify-center gap-2 py-2 px-1 rounded-lg text-[13px] font-bold '+(si===i?'bg-[#D21919] text-white':'mu')}><${Cr} n=${n} s=${18}/><span class="truncate">${n}</span></button>`)}</div>
+ <div class="segc grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg"><${SegInd} k=${si}/>${tn.map((n,i)=>html`<button key=${i} data-on=${si===i?'':undefined} onClick=${()=>setSi(i)} class=${'flex items-center justify-center gap-2 py-2 px-1 rounded-lg text-[13px] font-bold '+(si===i?'text-white':'mu')}><${Cr} n=${n} s=${18}/><span class="truncate">${n}</span></button>`)}</div>
  <${SplitTable} key=${si} nameHead="שחקן" heads=${PH} rows=${[...ws.map((w,i)=>({key:i,cls:'border-t bd'+(isDnp(w)?' mu':''),ncls:'font-medium whitespace-normal min-w-[112px] max-w-[132px]',
   name:html`${w[2]?html`<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>`:null}${w[1]!=null?html`<bdi class="inline-block mu font-normal text-[11px] ml-1">${w[1]}</bdi>`:null}<bdi>${w[0]}</bdi>`,
   cells:isDnp(w)?html`<td colSpan=13 class="text-right px-1.5 py-1.5 text-[11px]">לא שיחק</td>`:prw(w).map((v,j)=>html`<td key=${j} class=${'px-1.5 py-1.5 '+(j===1?'font-medium':'')}>${v}</td>`)})),
@@ -662,15 +681,15 @@ function Pbp({L}){
 }
 
 function Game({g}){
- const A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),gs=LG&&LG.gs?LG.gs:(GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
+ const A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),gDir=useDir('gspb'.indexOf(tb)),gs=LG&&LG.gs?LG.gs:(GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
  return html`<div><button onClick=${()=>A.setGm(null)} class="on-glass back-stick text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
  ${LG?html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="mt-2 text-center"><span class="on-glass text-[11px] mu">${LG.status==='live'?'סטטיסטיקות בלייב מ-365scores · מתעדכן כל 20 שניות':'סטטיסטיקות סיום מ-365scores'}</span></div>`:html`<div class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
  <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class="text-sm mt-1">${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl font-semibold sb" dir="rtl"><span>${sc[0]}</span><span class="opacity-60">–</span><span>${sc[1]}</span></div>`:html`<div class="text-2xl font-semibold sb opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class="text-sm mt-1">${aw}</div></div></div>
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
  ${g.r&&!LG?(ytId(g)?html`<div class="mt-3 rounded-xl overflow-hidden bg-black fade-in" style=${{aspectRatio:'16/9'}}><iframe key=${ytId(g)} src=${'https://www.youtube-nocookie.com/embed/'+ytId(g)+'?rel=0&playsinline=1'} title="תקציר המשחק" class="w-full h-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
   :html`<button onClick=${()=>openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white font-bold flex items-center justify-center gap-2"><${I} n="play" s=${18}/>לתקציר המשחק ביוטיוב</button>`):null}
- ${LG&&!gs?null:gs?html`<div><div class=${'grid gap-1 p-1 rounded-xl sf mt-3 '+(LG&&LG.pbp?'grid-cols-[1fr_1.2fr_1.1fr_1.25fr]':'grid-cols-[1fr_1fr_1.4fr]')}>${[['g','משחק'],['s','סטטיסטיקות'],['p','סטטיסטיקה אישית'],...(LG&&LG.pbp?[['b','מהלך המשחק']]:[])].map(([k,l])=>html`<button key=${k} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-[13px] font-bold whitespace-nowrap '+(tb===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
- ${tb==='b'&&LG&&LG.pbp?html`<${Pbp} L=${LG}/>`:tb==='g'?html`<${GmQ} g=${gg} gs=${gs}/>`:tb==='s'?html`<${GmT} g=${gg} gs=${gs}/>`:html`<${GmP} g=${gg} gs=${gs} pf=${pf}/>`}</div>`
+ ${LG&&!gs?null:gs?html`<div><div class=${'segc grid gap-1 p-1 rounded-xl sf mt-3 '+(LG&&LG.pbp?'grid-cols-[1fr_1.2fr_1.1fr_1.25fr]':'grid-cols-[1fr_1fr_1.4fr]')}>${[['g','משחק'],['s','סטטיסטיקות'],['p','סטטיסטיקה אישית'],...(LG&&LG.pbp?[['b','מהלך המשחק']]:[])].map(([k,l])=>html`<button key=${k} data-on=${tb===k?'':undefined} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-[13px] font-bold whitespace-nowrap '+(tb===k?'text-white':'mu')}>${l}</button>`)}<${SegInd} k=${tb+(LG&&LG.pbp?4:3)}/></div>
+ <div key=${tb} class=${gDir}>${tb==='b'&&LG&&LG.pbp?html`<${Pbp} L=${LG}/>`:tb==='g'?html`<${GmQ} g=${gg} gs=${gs}/>`:tb==='s'?html`<${GmT} g=${gg} gs=${gs}/>`:html`<${GmP} g=${gg} gs=${gs} pf=${pf}/>`}</div></div>`
  :!g.r&&!pf?html`<div class="mt-3"><span class="on-glass text-sm mu">הסטטיסטיקה תופיע כאן אחרי שריקת הסיום</span></div>`:html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">${g.r?'שחקנים בולטים':'סטטיסטיקת משחק'}</div>
  ${pf?pf.map(([n,v])=>html`<div key=${n} class="flex justify-between py-1.5 border-t bd text-sm first:border-0"><span>${n}</span><b>${v}</b></div>`):html`<div class="text-sm mu">הסטטיסטיקה המפורטת של המשחק לא נטענה לאפליקציה.</div>`}</div>`}
  <${LinkRows} items=${[[M365[g.id]?'https://www.365scores.com/en-us/basketball/match/'+M365[g.id]:LINKS.team365,'עמוד המשחק ב-365scores'],[ofUrl(g)||OFF[g.c]||OFF.league,ofUrl(g)?'עמוד המשחק באתר המפעל הרשמי':'אתר המפעל הרשמי']]}/>
@@ -708,7 +727,7 @@ function TeamPh(){
  return src?html`<div class="rounded-2xl overflow-hidden mb-3"><img src=${src} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${err} class="w-full h-44 object-cover object-center"/></div>`:null;
 }
 function Player({p}){
- const A=useContext(Ctx),[md,setMd]=useState('a'),{by,log}=pStats(p[7]),ks=Object.keys(COMPS).filter(k=>by[k]),
+ const A=useContext(Ctx),[md,setMd]=useState('a'),mDir=useDir(md==='a'?0:1),{by,log}=pStats(p[7]),ks=Object.keys(COMPS).filter(k=>by[k]),
  tt=ks.reduce((t,k)=>t.map((x,i)=>x+by[k][i]),new Array(17).fill(0)),fm=md==='a'?avgRow:totRow,ag=ageOf(p[5]),
  HD=['מש׳','דק׳','נק׳','ריב׳','אס׳','חט׳','חס׳',md==='a'?'FG%':'FG',md==='a'?'3P%':'3P',md==='a'?'FT%':'FT','ר״ה','ר״ג','איב׳','עב׳'];
  return html`<div class="stg"><button onClick=${()=>A.setPl(null)} class="on-glass back-stick text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה לסגל</button>
@@ -717,8 +736,8 @@ function Player({p}){
   <div class="p-4 flex-1 flex flex-col justify-center min-w-0 nm-in"><div class="text-5xl font-semibold sb opacity-90 leading-none num-in">${p[0]}</div><div class="text-xl font-bold leading-tight mt-1">${p[1]}</div><div class="text-sm opacity-80 mt-1">${p[2]}</div></div></div>
  <div class="stg grid grid-cols-2 gap-2 mt-3">${[['גובה',p[3]+' מ׳'],['אזרחות',p[4]],['תאריך לידה',p[5]+(ag!==''?' · גיל '+ag:'')],['עמדה',p[2]]].map(([l,v])=>html`<div key=${l} class="sf rounded-xl p-3"><div class="text-xs mu">${l}</div><div class="font-medium text-sm mt-0.5">${v}</div></div>`)}</div>
  <div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה אישית · עונת ${SEASON}</div>
- ${ks.length?html`<div><div class="grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg">${[['a','ממוצע למשחק'],['t','סה״כ']].map(([k,l])=>html`<button key=${k} onClick=${()=>setMd(k)} class=${'py-2 rounded-lg text-[13px] font-bold '+(md===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div>
- <div key=${md} class="fade-in"><${SplitTable} nameHead="מפעל" heads=${HD} rows=${[...ks.map((k,i)=>({key:k,style:{animationDelay:(80+i*30)+'ms'},cls:'row-in border-t bd',ncls:'font-medium whitespace-normal min-w-[84px]',name:CN[k]||COMPS[k],
+ ${ks.length?html`<div><div class="segc grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg"><${SegInd} k=${md}/>${[['a','ממוצע למשחק'],['t','סה״כ']].map(([k,l])=>html`<button key=${k} data-on=${md===k?'':undefined} onClick=${()=>setMd(k)} class=${'py-2 rounded-lg text-[13px] font-bold '+(md===k?'text-white':'mu')}>${l}</button>`)}</div>
+ <div key=${md} class=${mDir||'fade-in'}><${SplitTable} nameHead="מפעל" heads=${HD} rows=${[...ks.map((k,i)=>({key:k,style:{animationDelay:(80+i*30)+'ms'},cls:'row-in border-t bd',ncls:'font-medium whitespace-normal min-w-[84px]',name:CN[k]||COMPS[k],
   cells:fm(by[k]).map((v,j)=>html`<td key=${j} class=${TDC+(j===2?' font-medium':'')}>${v}</td>`)})),
   ...(ks.length>1?[{key:'all',cls:'border-t-2 bd font-medium',name:'כל המפעלים',cells:fm(tt).map((v,j)=>html`<td key=${j} class=${TDC}>${v}</td>`)}]:[])]}/></div>
  <div class="text-xs mu mt-2">מש׳ = משחקים שבהם נכלל בסגל · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · לא כולל משחקי הכנה · הנתונים מ-365scores · אפשר לגלול את הטבלה הצידה.</div></div>`
@@ -926,11 +945,11 @@ function App(){
    if(!stop)tm=setTimeout(tick,wait)};
   tick();const v=()=>{if(document.visibilityState==='visible'){clearTimeout(tm);tick()}};document.addEventListener('visibilitychange',v);
   return()=>{stop=true;clearTimeout(tm);document.removeEventListener('visibilitychange',v)}},[S.F]);
- const [mo,setMo0]=useState(false);
+ const [mo,setMo0]=useState(false),[pDir,setPDir]=useState('');
  /* תפריט "עוד": מסך הכרטיסים באנדרואיד הוא חלון נפרד מעל האפליקציה, ולכן הוא מוסתר בזמן שהתפריט פתוח ומוצג שוב אם סוגרים בלי לבחור */
  const tixShow=home=>{const T=TK(),n=document.getElementById('app-nav');if(T)return T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home})};
  const setMo=v=>{const T=TK();if(v&&pg==='tix'&&T)T.hide().catch(()=>{});if(!v&&mo&&pg==='tix'&&T)tixShow(false).catch(()=>{});setMo0(v)};
- const go=p=>{setMo0(false);/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}FR.n=0;FR.skip=0;setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{setMo0(false);{const a=NAV.findIndex(x=>x[0]===pg),b=NAV.findIndex(x=>x[0]===p);setPDir(a>=0&&b>=0&&a!==b?(b>a?'slide-l':'slide-r'):'')}/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}FR.n=0;FR.skip=0;setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
  const [st,setSt]=useState(false),[upd,setUpd]=useState(null);
  const checkUpd=useCallback(async()=>{if(!NATIVE)return 'none';try{const r=await latestRelease();if(r&&vcmp(r.v,window.APP_VERSION||'0.0.0')>0){setUpd(r);return 'new'}return 'none'}catch(e){return 'fail'}},[]);
@@ -945,8 +964,9 @@ function App(){
  useEffect(()=>{if(NATIVE)return;const marked=!!(history.state&&history.state.hpj);try{if(!atRoot&&!marked)history.pushState({hpj:1},'');else if(atRoot&&marked){skipPop.current=true;history.back()}}catch(e){}},[atRoot,st,dr,!!gm,!!pl,pg]);
  /* 3 לחיצות מהירות על השורה שבתחתית מסך הבית מפעילות / מכבות את מצב הבדיקה */
  const tapFoot=()=>{if(pg!=='home'||gm)return;const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];if(demo){setDemo(null);toast('מצב בדיקה כובה')}else if(nx){const n=nx;setDemo(mkDemo(n,S.F));toast('מצב בדיקה: המשחק הבא מוצג כמשחק בלייב');demoSquad(n).then(sq=>setDemo(d=>d&&d.app===n.id?demoNames(d,sq):d)).catch(()=>{})}};
+ useEffect(()=>{if(gm||pl)setPDir('')},[gm,pl]);
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg:demo||lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
- const Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
+ const navOn=mo||EXT[pg]?'more':pg,Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  /* גובה הכותרת (כולל פס הסטטוס), בשביל סרגלי הסינון וכפתורי החזרה שנצמדים מתחתיה */
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const set=()=>document.documentElement.style.setProperty('--navh',n.getBoundingClientRect().height+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(n)}catch(e){}return()=>{ro&&ro.disconnect()}},[]);
  useEffect(()=>{const h=document.getElementById('app-hd');if(!h)return;const set=()=>document.documentElement.style.setProperty('--hdh',h.getBoundingClientRect().height+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(h)}catch(e){}return()=>{ro&&ro.disconnect()}},[pg]);
@@ -957,12 +977,12 @@ function App(){
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
   ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-[11px] font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(var(--sat) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
- <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נתונים: 365scores, איגוד הכדורסל ו-EuroLeague · גרסה ${window.APP_VERSION||''} · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי</a></span></div></main>
+ <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':(!gm&&!pl&&pDir)||'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נתונים: 365scores, איגוד הכדורסל ו-EuroLeague · גרסה ${window.APP_VERSION||''} · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי</a></span></div></main>
  ${mo?html`<div class="fixed inset-0 z-[44]" onClick=${()=>setMo(false)}></div>
  <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass glass-menu" style=${{bottom:'calc(var(--navh,70px) + 10px)',transformOrigin:'bottom left'}}>
   ${MORE.map(([k,l,ic,sub])=>html`<button key=${k} onClick=${()=>go(k)} class=${'w-full flex items-center gap-3 px-4 py-3 text-right border-b bd last:border-0 '+(pg===k?'text-[#D21919]':'')}><span class="w-9 h-9 rounded-full flex items-center justify-center bg-[#D21919] text-white shrink-0"><${I} n=${ic} s=${18}/></span><span class="min-w-0"><span class="block font-medium">${l}</span><span class="block text-[11px] mu truncate">${sub}</span></span></button>`)}
  </div>`:null}
- <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t glass-bar" style=${{borderColor:'var(--gl-bd)',paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex">${NAV.map(([k,l,ic])=>{const on=k==='more'?(mo||!!EXT[pg]):pg===k&&!mo;return html`<button key=${k} onClick=${()=>k==='more'?setMo(!mo):go(k)} aria-expanded=${k==='more'?String(mo):undefined} class=${'flex-1 flex flex-col items-center gap-1 py-2 text-[11px] '+(on?'text-[#D21919] font-bold':'opacity-75')}><span class=${'nav-pill flex items-center justify-center h-8 w-14 rounded-full '+(on?'on':'')}><${I} n=${ic} s=${21}/></span>${l}</button>`})}</div></nav>
+ <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t glass-bar" style=${{borderColor:'var(--gl-bd)',paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="relative max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex"><${SegInd} k=${navOn} sel=".nav-pill" cls="nav-ind"/>${NAV.map(([k,l,ic])=>{const on=k===navOn;return html`<button key=${k} data-on=${on?'':undefined} onClick=${()=>k==='more'?setMo(!mo):go(k)} aria-expanded=${k==='more'?String(mo):undefined} class=${'flex-1 flex flex-col items-center gap-1 py-2 text-[11px] '+(on?'text-[#D21919] font-bold':'opacity-75')}><span class="nav-pill flex items-center justify-center h-8 w-14 rounded-full"><${I} n=${ic} s=${21}/></span>${l}</button>`})}</div></nav>
  ${dr&&html`<${Drawer}/>`}${st&&html`<${Settings}/>`}${upd&&html`<${UpdGate} u=${upd}/>`}<//>`;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
