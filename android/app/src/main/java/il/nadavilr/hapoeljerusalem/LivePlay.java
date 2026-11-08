@@ -146,6 +146,22 @@ final class LivePlay {
                 break;
             }
         }
+        if (id == 0) {
+            // The time on livestats can be wrong (e.g. the cup quarter-final of 25.9 is listed on 26.9): then the
+            // Hapoel game that is in progress right now (started, not finished), within two days of the tip-off
+            for (int i = 0; i < games.length(); i++) {
+                JSONObject x = games.optJSONObject(i);
+                if (x == null || !(isJ(x.optJSONObject("homeTeam")) || isJ(x.optJSONObject("awayTeam")))) continue;
+                if (x.optBoolean("gameFinished", false) || x.optInt("currentQuarter", 0) < 1) continue;
+                String time = x.optString("time", "");
+                if (time.length() < 16) continue;
+                long t = f.parse(time.substring(0, 16)).getTime();
+                if (Math.abs(t - tipOff) < 48 * HOUR) {
+                    id = x.optInt("id", 0);
+                    break;
+                }
+            }
+        }
         if (id > 0) {
             idFor = tipOff;
             cachedId = id;

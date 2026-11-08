@@ -753,7 +753,9 @@ const isJls=t=>/ירושלים/.test(t&&t.nameLocal||'')||/JERUSALEM/i.test(t&&t
 /* מספר המשחק ב-livestats (לפי השעה ברשימת המשחקים), נשמר בזיכרון */
 const LSID={};
 async function lsId(f){if(LSID[f.id])return LSID[f.id];const list=await getJSON('https://basket.co.il/livestats/data/games.json?w='+lsBucket()),isJ=isJls;
- const gm=(list.games||[]).find(x=>(isJ(x.homeTeam)||isJ(x.awayTeam))&&(()=>{const m=/(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(x.time||'');return m&&Math.abs(ilToUtc(+m[1],+m[2],+m[3],+m[4],+m[5])-f.t)<4*H})());
+ const tOf=x=>{const m=/(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(x.time||'');return m?ilToUtc(+m[1],+m[2],+m[3],+m[4],+m[5]):NaN},mine=(list.games||[]).filter(x=>isJ(x.homeTeam)||isJ(x.awayTeam));
+ /* לפי השעה; ואם השעה באתר שגויה (כמו רבע גמר הגביע של 25.9 שמופיע שם ב-26.9) – המשחק של הפועל שמתנהל עכשיו (התחיל ולא הסתיים), עד יומיים מהמועד */
+ const gm=mine.find(x=>Math.abs(tOf(x)-f.t)<4*H)||mine.find(x=>!x.gameFinished&&(+x.currentQuarter||0)>=1&&Math.abs(tOf(x)-f.t)<48*H);
  if(gm)LSID[f.id]=gm.id;return gm?gm.id:null}
 /* קובץ המשחק ב-livestats: תוצאה, רבע, שעון, מהלך המשחק */
 async function lsGame(f){const id=await lsId(f);return id?getJSON('https://basket.co.il/livestats/data/game-'+id+'.json?w='+lsBucket()):null}
