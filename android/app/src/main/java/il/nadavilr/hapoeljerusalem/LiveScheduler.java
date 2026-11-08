@@ -32,25 +32,60 @@ final class LiveScheduler {
         return prefs(c).getBoolean("on", false) && NotificationManagerCompat.from(c).areNotificationsEnabled();
     }
 
-    /** How the Now Bar gets the score card's layout (see LiveGame.notification): 1 or 2. */
-    static int route(Context c) {
-        return prefs(c).getInt("route", 1);
-    }
-
-    static void setRoute(Context c, int route) {
-        prefs(c).edit().putInt("route", route == 2 ? 2 : 1).apply();
-    }
-
-    /** Saves the settings and tip-off times from the app and re-arms the alarms. */
-    static void save(Context c, boolean on, List<Long> times) {
+    /**
+     * Saves the settings and the next games from the app and re-arms the alarms.
+     * {@code games}: [{t: tip-off ms, c: competition key, eg: EuroCup game code}], {@code jer}: Hapoel's players
+     * {shirt number: Hebrew name} (for the play-by-play line).
+     */
+    static void save(Context c, boolean on, org.json.JSONArray games, org.json.JSONObject jer) {
         StringBuilder sb = new StringBuilder();
-        for (Long t : times) {
-            if (t == null) continue;
+        for (int i = 0; games != null && i < games.length(); i++) {
+            org.json.JSONObject g = games.optJSONObject(i);
+            long t = g != null ? g.optLong("t", 0) : 0;
+            if (t <= 0) continue;
             if (sb.length() > 0) sb.append(',');
             sb.append(t);
         }
-        prefs(c).edit().putBoolean("on", on).putString("times", sb.toString()).apply();
+        SharedPreferences.Editor e = prefs(c).edit().putBoolean("on", on).putString("times", sb.toString());
+        if (games != null) e.putString("games", games.toString());
+        if (jer != null) e.putString("jer", jer.toString());
+        e.apply();
         reschedule(c);
+    }
+
+    /** The app's details of the game at {@code t}: {t, c, eg} (empty if unknown). */
+    static org.json.JSONObject game(Context c, long t) {
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(prefs(c).getString("games", "[]"));
+            org.json.JSONObject best = null;
+            long bd = 6 * 3_600_000L;
+            for (int i = 0; i < a.length(); i++) {
+                org.json.JSONObject g = a.optJSONObject(i);
+                if (g == null) continue;
+                long d = Math.abs(g.optLong("t", 0) - t);
+                if (d < bd) {
+                    bd = d;
+                    best = g;
+                }
+            }
+            if (best != null) return best;
+        } catch (Exception ignored) {
+        }
+        return new org.json.JSONObject();
+    }
+
+    /** Hapoel's players {shirt number: Hebrew name}. */
+    static java.util.Map<String, String> roster(Context c) {
+        java.util.Map<String, String> m = new java.util.HashMap<>();
+        try {
+            org.json.JSONObject o = new org.json.JSONObject(prefs(c).getString("jer", "{}"));
+            for (java.util.Iterator<String> it = o.keys(); it.hasNext(); ) {
+                String k = it.next();
+                m.put(k, o.optString(k, ""));
+            }
+        } catch (Exception ignored) {
+        }
+        return m;
     }
 
     static List<Long> times(Context c) {

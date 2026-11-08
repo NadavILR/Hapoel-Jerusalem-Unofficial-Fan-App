@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Live score card, expanded: the same score row (same sizes), plus
-     competition – stage · round / game   and   the arena -->
+<!-- Live score card, expanded: the same score row (same sizes) as the collapsed card, plus
+     **competition – stage · round** · arena
+     the latest line of the play-by-play -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -12,8 +13,8 @@
     <include layout="@layout/notif_live_row" />
 
     <TextView
-        android:id="@+id/comp"
-        style="@style/TextAppearance.Compat.Notification.Title"
+        android:id="@+id/info"
+        style="@style/TextAppearance.Compat.Notification"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
@@ -21,18 +22,17 @@
         android:gravity="center"
         android:singleLine="true"
         android:textDirection="rtl"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:textSize="13sp" />
 
     <TextView
-        android:id="@+id/venue"
+        android:id="@+id/play"
         style="@style/TextAppearance.Compat.Notification"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="4dp"
         android:ellipsize="end"
         android:gravity="center"
-        android:singleLine="true"
+        android:maxLines="2"
         android:textDirection="rtl"
         android:textSize="13sp" />
 </LinearLayout>

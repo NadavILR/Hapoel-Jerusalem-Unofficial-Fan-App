@@ -43,6 +43,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(UpdaterPlugin.class);
         registerPlugin(LiveActivityPlugin.class);
         super.onCreate(savedInstanceState);
+        // Opened from the live score card: the app opens that game's page (LiveActivity.takeOpen)
+        LiveActivityPlugin.fromIntent(getIntent());
         // Ask for the screen's highest refresh rate (e.g. 120Hz), so scrolling and animations are not held at 60Hz
         preferHighRefreshRate();
         // Transparent status bar: the app's frosted header continues underneath it (the page gets its height as --sat)
@@ -103,6 +105,12 @@ public class MainActivity extends BridgeActivity {
             }
         };
         getOnBackPressedDispatcher().addCallback(this, appBack);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        LiveActivityPlugin.fromIntent(intent);
     }
 
     /** Height of the status bar in pixels. */

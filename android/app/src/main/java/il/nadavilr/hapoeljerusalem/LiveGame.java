@@ -3,13 +3,16 @@ package il.nadavilr.hapoeljerusalem;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.drawable.Icon;
-import android.os.Build;
-import android.os.Bundle;
+import android.graphics.Typeface;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.StyleSpan;
 import android.view.View;
+import android.widget.RemoteViews;
 import androidx.core.app.NotificationCompat;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -20,26 +23,34 @@ import java.util.Map;
 import org.json.JSONObject;
 
 /**
- * One live game, shown in two notifications while Hapoel plays:
+ * One live game, shown as the live score card (one ongoing notification, laid out like Google's sports card in the
+ * app's colours). Collapsed and expanded share the same score row:
  *
- * - The score card (custom layout, like Google's sports card, in the app's colours): the two crests with the scores
- *   and a quarter • clock pill between them; expanded, it adds the competition / stage / round and the arena.
- * - The Live Update (Android 16+: status-bar chip, lock screen, Samsung Now Bar): the score, quarter • clock and
- *   one image with both crests. A custom layout can't be a Live Update, hence two notifications.
+ *   [home crest]  home score  (quarter • clock)  away score  [away crest]
+ *
+ * and the expanded card adds
+ *
+ *   **competition – stage / round** · arena
+ *   the latest line of the play-by-play
  *
  * Everything reads right to left (home team on the right) even on a phone set to English.
+ * Tapping it opens the game's page in the app.
  */
 final class LiveGame {
 
     static final int HAPOEL = 634;
+    static final String TEAM = "הפועל ירושלים";
+    /** Intent extra: the tip-off time of the game whose page to open. */
+    static final String EXTRA_OPEN = "hpj_open_game";
     private static final String RLM = "‏";
-    private static final int RED = 0xFFD21919, GREY = 0x33888888;
     private static final String IMG = "https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,"
         + "d_Competitors:default1.png/v%d/Competitors/%d";
 
-    String comp = "", homeName = "", awayName = "", venue = "", status = "", clock = "", homeImg, awayImg;
+    String comp = "", homeName = "", awayName = "", venue = "", status = "", clock = "", play = "", homeImg, awayImg;
     int hs, as;
     boolean meHome = true;
+    /** Scheduled tip-off (ms): identifies the game when the card is tapped. */
+    long t;
 
     /** From a 365scores game (games/current). */
     static LiveGame from365(JSONObject g) {
@@ -63,7 +74,7 @@ final class LiveGame {
         int round = g.optInt("roundNum", 0);
         String roundName = g.optString("roundName", "").trim();
         if (roundName.isEmpty() || "null".equals(roundName)) roundName = "מחזור";
-        x.comp = comp + (round > 0 ? (comp.isEmpty() ? "" : " · ") + roundName + " " + round : "");
+        x.comp = comp + (round > 0 ? (comp.isEmpty() ? "" : " – ") + roundName + " " + round : "");
         return x;
     }
 
@@ -77,12 +88,7 @@ final class LiveGame {
         return id > 0 ? String.format(Locale.US, IMG, Math.max(1, c.optInt("imageVersion", 1)), id) : null;
     }
 
-    /** Score with the home team on the right: "78 – 72" in a right-to-left line. */
-    String score() {
-        return RLM + hs + " – " + as + RLM;
-    }
-
-    /** Names and score, home on the right (for phones without the crests). */
+    /** Names and score, home on the right (the notification's text, e.g. for accessibility and the lock screen). */
     String scoreWithNames() {
         return RLM + homeName + "  " + hs + " – " + as + "  " + awayName + RLM;
     }
@@ -93,7 +99,7 @@ final class LiveGame {
     }
 
     String key() {
-        return comp + "|" + hs + "|" + as + "|" + status + "|" + clock;
+        return comp + "|" + hs + "|" + as + "|" + status + "|" + clock + "|" + play;
     }
 
     // ---------- crests ----------
@@ -126,17 +132,6 @@ final class LiveGame {
         return b;
     }
 
-    /** Both crests in one square image: the home team top right, the away team bottom left. */
-    static Bitmap matchup(Bitmap home, Bitmap away) {
-        int size = 160, cs = 94;
-        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas cv = new Canvas(out);
-        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG | android.graphics.Paint.ANTI_ALIAS_FLAG);
-        cv.drawBitmap(Bitmap.createScaledBitmap(away, cs, cs, true), 3, size - cs - 3, p);
-        cv.drawBitmap(Bitmap.createScaledBitmap(home, cs, cs, true), size - cs - 3, 3, p);
-        return out;
-    }
-
     /** The crest centred on a transparent square, so it is not stretched. */
     private static Bitmap square(Bitmap src, int size) {
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
@@ -147,172 +142,9 @@ final class LiveGame {
         return out;
     }
 
-    // ---------- the notification ----------
+    // ---------- the live score card ----------
 
-    /**
-     * Builds the live notification. {@code homeCrest} / {@code awayCrest} may be null (then the names are shown).
-     * {@code del} runs when the user swipes it away (may be null).
-     */
-    static Notification notification(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, PendingIntent del) {
-        return notification(c, g, homeCrest, awayCrest, del, LiveScheduler.route(c));
-    }
-
-    /**
-     * {@code route} – how the Now Bar gets the score card's layout (Samsung publishes no contract for this; the keys
-     * come from dumps of Google's sports card in the Now Bar and from Samsung's own apps):
-     * 1 = Android 16 Live Update, plus Samsung's custom-layout extras (nowbarRemoteView / expandedRemoteView);
-     * 2 = Samsung's own Now Bar path, like Google's card: the hidden Notification.OngoingActivityStyle with the score
-     *     row as the card's centre and the full card as its expanded view.
-     */
-    static Notification notification(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, PendingIntent del, int route) {
-        boolean crests = homeCrest != null && awayCrest != null;
-        String title = crests && Build.VERSION.SDK_INT >= 36 ? g.score() : g.scoreWithNames();
-        String text = g.statusLine();
-        NotificationCompat.Builder b = LiveScoreService.base(c, title, text)
-            .setOngoing(true)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
-        if (del != null) b.setDeleteIntent(del);
-
-        // The score card's own layouts: the row (the Now Bar) and the full card (expanded)
-        android.widget.RemoteViews row = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_small);
-        android.widget.RemoteViews big = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_card);
-        fill(row, g, homeCrest, awayCrest, false, false);
-        fill(big, g, homeCrest, awayCrest, false, true);
-
-        Bundle x = new Bundle();
-        x.putInt("android.ongoingActivityNoti.chipBgColor", RED);
-        x.putBoolean("android.ongoingActivityNoti.show", true);
-        x.putString("android.ongoingActivityNoti.primaryInfo", g.score());
-        x.putString("android.ongoingActivityNoti.secondaryInfo", text);
-        x.putString("android.ongoingActivityNoti.nowbarPrimaryInfo", g.score());
-        x.putString("android.ongoingActivityNoti.nowbarSecondaryInfo", text);
-        x.putString("android.ongoingActivityNoti.chipExpandedText", g.score());
-        x.putParcelable("android.ongoingActivityNoti.nowbarRemoteView", row);
-        x.putParcelable("android.ongoingActivityNoti.expandedRemoteView", big);
-        x.putCharSequence("android.substName", "הפועל ירושלים");
-        boolean samsungPath = route == 2 || Build.VERSION.SDK_INT < 36;
-        if (samsungPath) {
-            // Samsung's private card path (One UI 7, and route 2 on One UI 8+)
-            x.putInt("android.ongoingActivityNoti.style", 1);
-            x.putInt("android.ongoingActivityNoti.actionType", 1);
-            x.putInt("android.ongoingActivityNoti.actionPrimarySet", 0);
-        }
-        b.addExtras(x);
-        Notification n = b.build();
-        if (samsungPath) return samsungStyle(c, n, g, row, big);
-        return liveUpdate(c, n, g, crests ? homeCrest : null, crests ? awayCrest : null);
-    }
-
-    /**
-     * Route 2: Samsung's hidden Notification.OngoingActivityStyle (what Google's sports card uses in the Now Bar),
-     * with our score row as the card's centre and the full score card as its expanded view. Every method is optional:
-     * whatever this One UI build lacks is skipped, and the same layouts are also in the extras.
-     */
-    private static Notification samsungStyle(Context c, Notification n, LiveGame g, android.widget.RemoteViews row, android.widget.RemoteViews big) {
-        try {
-            Class<?> k = Class.forName("android.app.Notification$OngoingActivityStyle");
-            java.lang.reflect.Constructor<?> ctor = k.getDeclaredConstructor();
-            ctor.setAccessible(true);
-            Object style = ctor.newInstance();
-            call(style, "setPrimaryInfo", g.score());
-            call(style, "setSecondaryInfo", g.statusLine());
-            call(style, "setChipBackground", RED);
-            call(style, "setCustomCardViewCenterUI", row);
-            call(style, "setCustomExpandedCardView", big);
-            Notification.Builder fb = Notification.Builder.recoverBuilder(c, n);
-            fb.setStyle((Notification.Style) style);
-            try {
-                Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class).invoke(fb, true);
-            } catch (Throwable ignored) {
-            }
-            Notification out = fb.build();
-            // Keep all the Samsung extras next to the style's own (without overwriting the style's keys)
-            for (String key : n.extras.keySet()) {
-                if (!out.extras.containsKey(key)) {
-                    Object v = n.extras.get(key);
-                    if (v instanceof android.os.Parcelable) out.extras.putParcelable(key, (android.os.Parcelable) v);
-                    else if (v instanceof CharSequence) out.extras.putCharSequence(key, (CharSequence) v);
-                    else if (v instanceof Integer) out.extras.putInt(key, (Integer) v);
-                    else if (v instanceof Boolean) out.extras.putBoolean(key, (Boolean) v);
-                }
-            }
-            return out;
-        } catch (Throwable e) {
-            // No hidden style on this phone: the extras alone (centre / expanded card layouts by key)
-            n.extras.putParcelable("android.ongoingActivityCustomCardViewCenterUI", row);
-            n.extras.putParcelable("android.ongoingActivityCustomExpandedCardView", big);
-            return n;
-        }
-    }
-
-    /** Calls a one-argument method by name if this build has it (any compatible parameter type). */
-    private static void call(Object target, String name, Object arg) {
-        for (Class<?> t = target.getClass(); t != null; t = t.getSuperclass()) {
-            for (java.lang.reflect.Method m : t.getDeclaredMethods()) {
-                if (!m.getName().equals(name) || m.getParameterTypes().length != 1) continue;
-                Class<?> p = m.getParameterTypes()[0];
-                boolean ok = p.isInstance(arg) || (p == int.class && arg instanceof Integer)
-                    || (p == CharSequence.class && arg instanceof CharSequence);
-                if (!ok) continue;
-                try {
-                    m.setAccessible(true);
-                    m.invoke(target, arg);
-                } catch (Throwable ignored) {
-                }
-                return;
-            }
-        }
-    }
-
-    /**
-     * Android 16+: Live Update (setRequestPromotedOngoing + setShortCriticalText) with both crests as its image. These APIs are newer than the SDK the app is built with, so they are called by reflection;
-     * each step that is missing on a device is skipped.
-     */
-    private static Notification liveUpdate(Context c, Notification n, LiveGame g, Bitmap homeCrest, Bitmap awayCrest) {
-        Notification.Builder fb;
-        try {
-            fb = Notification.Builder.recoverBuilder(c, n);
-        } catch (Throwable e) {
-            n.extras.putBoolean("android.requestPromotedOngoing", true);
-            n.extras.putString("android.shortCriticalText", g.score());
-            return n;
-        }
-        try {
-            Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class).invoke(fb, true);
-        } catch (Throwable e) {
-            fb.getExtras().putBoolean("android.requestPromotedOngoing", true);
-        }
-        boolean chip = false;
-        for (Class<?> t : new Class<?>[]{String.class, CharSequence.class}) {
-            try {
-                Notification.Builder.class.getMethod("setShortCriticalText", t).invoke(fb, g.score());
-                chip = true;
-                break;
-            } catch (Throwable ignored) {
-            }
-        }
-        if (!chip) fb.getExtras().putString("android.shortCriticalText", g.score());
-
-        if (homeCrest != null && awayCrest != null) {
-            // No progress bar: the standard Live Update, like the score card – the two crests (one image, home team
-            // on the right) next to the score, and quarter • clock under it
-            fb.setLargeIcon(Icon.createWithBitmap(matchup(homeCrest, awayCrest)));
-        } else {
-            fb.setContentTitle(g.scoreWithNames());
-        }
-        try {
-            return fb.build();
-        } catch (Throwable e) {
-            return n;
-        }
-    }
-
-    // ---------- the score card (Google-style, the app's colours) ----------
-
-    /** The card's notification id, next to the Live Update (LiveScoreService.NOTIF_ID). */
-    static final int CARD_ID = 63402;
-
-    private static void fill(android.widget.RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, boolean details) {
+    private static void fill(RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, boolean details) {
         v.setTextViewText(R.id.home_score, String.valueOf(g.hs));
         v.setTextViewText(R.id.away_score, String.valueOf(g.as));
         String st = fin ? "סיום" : g.status + (g.clock.isEmpty() ? "" : (g.status.isEmpty() ? "" : " • ") + g.clock);
@@ -324,41 +156,50 @@ final class LiveGame {
         else v.setViewVisibility(R.id.away_crest, View.GONE);
         v.setContentDescription(R.id.home_crest, g.homeName);
         v.setContentDescription(R.id.away_crest, g.awayName);
-        if (details) {
-            v.setTextViewText(R.id.comp, g.comp.isEmpty() ? "" : RLM + g.comp + RLM);
-            v.setViewVisibility(R.id.comp, g.comp.isEmpty() ? View.GONE : View.VISIBLE);
-            v.setTextViewText(R.id.venue, g.venue.isEmpty() ? "" : RLM + g.venue + RLM);
-            v.setViewVisibility(R.id.venue, g.venue.isEmpty() ? View.GONE : View.VISIBLE);
+        if (!details) return;
+        // **competition – stage / round** · arena  (one line)
+        SpannableStringBuilder info = new SpannableStringBuilder(RLM);
+        if (!g.comp.isEmpty()) {
+            int s = info.length();
+            info.append(g.comp);
+            info.setSpan(new StyleSpan(Typeface.BOLD), s, info.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+        if (!g.venue.isEmpty()) info.append(g.comp.isEmpty() ? "" : " · ").append(g.venue);
+        info.append(RLM);
+        boolean hasInfo = !g.comp.isEmpty() || !g.venue.isEmpty();
+        v.setTextViewText(R.id.info, info);
+        v.setViewVisibility(R.id.info, hasInfo ? View.VISIBLE : View.GONE);
+        v.setTextViewText(R.id.play, g.play.isEmpty() ? "" : RLM + g.play + RLM);
+        v.setViewVisibility(R.id.play, g.play.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    /** Opens the app on the page of the game that tips off at {@code t}. */
+    static PendingIntent open(Context c, long t) {
+        Intent i = new Intent(c, MainActivity.class)
+            .setAction(Intent.ACTION_VIEW)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(EXTRA_OPEN, t);
+        return PendingIntent.getActivity(c, 0, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     /**
-     * The score card in the notification shade, laid out like Google's sports card: crests and team names on the sides,
-     * the scores, a pill with quarter • clock between them, and the competition and arena below. Home team on the
-     * right. A custom layout can't be a Live Update, so the Live Update (Now Bar, status-bar chip) is a separate notification.
+     * The live score card. {@code fin} = after the final buzzer (grey "סיום" pill, not ongoing, gone after 30 minutes).
+     * {@code del} runs when the user swipes it away (may be null).
      */
     static Notification card(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, PendingIntent del) {
-        android.widget.RemoteViews big = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_card);
-        android.widget.RemoteViews small = new android.widget.RemoteViews(c.getPackageName(), R.layout.notif_live_small);
+        RemoteViews big = new RemoteViews(c.getPackageName(), R.layout.notif_live_card);
+        RemoteViews small = new RemoteViews(c.getPackageName(), R.layout.notif_live_small);
         fill(big, g, homeCrest, awayCrest, fin, true);
         fill(small, g, homeCrest, awayCrest, fin, false);
         NotificationCompat.Builder b = LiveScoreService.base(c, (fin ? RLM + "סיום: " : "") + g.scoreWithNames(), g.statusLine())
+            .setContentIntent(open(c, g.t))
             .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(small)
             .setCustomBigContentView(big)
             .setOngoing(!fin);
         if (fin) b.setAutoCancel(true).setTimeoutAfter(30 * 60_000L);
+        else b.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
         if (del != null) b.setDeleteIntent(del);
-        return b.build();
-    }
-
-    /** "Final" notification (not ongoing), home on the right. */
-    static Notification finalNotification(Context c, LiveGame g) {
-        NotificationCompat.Builder b = LiveScoreService.base(c, RLM + "סיום: " + g.scoreWithNames(), RLM + "התוצאה הסופית" + RLM)
-            .setOngoing(false)
-            .setAutoCancel(true)
-            .setTimeoutAfter(30 * 60_000L);
-        if (!g.comp.isEmpty()) b.setSubText(RLM + g.comp + RLM);
         return b.build();
     }
 }

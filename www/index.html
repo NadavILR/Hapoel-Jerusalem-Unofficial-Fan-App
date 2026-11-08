@@ -956,9 +956,7 @@ function Drawer(){
 const useScrollLock=()=>useEffect(()=>{const h=document.documentElement,b=document.body,ph=h.style.overflow,pb=b.style.overflow;h.style.overflow='hidden';b.style.overflow='hidden';return()=>{h.style.overflow=ph;b.style.overflow=pb}},[]);
 function Settings(){
  useScrollLock();
- const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v}),on=pf.on!==0&&A.perm==='granted',[chk,setChk]=useState(''),[lv,setLv]=useState(null);
- /* מצב ה-Live Updates במכשיר (אנדרואיד 16+) – כדי להסביר למה התוצאה לא מופיעה בשורת הסטטוס / ב-Now Bar */
- useEffect(()=>{const P=plug('LiveActivity');if(!P||!P.status)return;const f=()=>P.status().then(setLv).catch(()=>{});f();const v=()=>{if(document.visibilityState==='visible')f()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[]);
+ const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v}),on=pf.on!==0&&A.perm==='granted',[chk,setChk]=useState('');
  const toggle=()=>{
   if(on){A.setPf({...pf,on:0});const L=LN();if(L)L.getPending().then(r=>{const n=(r&&r.notifications||[]).map(x=>({id:x.id}));if(n.length)return L.cancel({notifications:n})}).catch(()=>{});A.toast('ההתראות בוטלו');return}
   if(typeof Notification==='undefined'&&!LN()){A.toast('המכשיר או הדפדפן לא תומכים בהתראות');return}
@@ -968,7 +966,7 @@ function Settings(){
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">הגדרות</div><button onClick=${()=>A.setSt(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="sf rounded-xl p-3 mb-3"><${Tg} on=${on} f=${toggle} l=${html`<span class="font-medium">התראות</span>`}/>
  <div class="text-xs mu">${on?'ההתראות פעילות ויופיעו גם במגש ההתראות של המכשיר.':A.perm==='denied'?'ההתראות חסומות בהגדרות המכשיר. כדי להפעיל אותן יש לאשר התראות לאפליקציה בהגדרות המכשיר.':'ההתראות כבויות. הפעילו כדי לקבל תזכורות למשחקים ועדכוני תוצאות.'}</div>
- ${on?html`<div class="mt-2 border-t bd pt-2"><${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/>${NATIVE?html`<${Tg} on=${pf.live!==0} f=${()=>sp('live',pf.live===0?1:0)} l=${html`תוצאה בלייב במגש ההתראות ובמסך הנעילה <span class="whitespace-nowrap">(<bdi dir="ltr">Live Updates / Now Bar</bdi>)</span>`}/>${pf.live!==0&&lv?html`<div class="text-xs mu pb-2 -mt-1">${lv.liveUpdates&&!lv.promoted?html`<div>האפשרות <bdi dir="ltr" class="font-medium">Live updates</bdi> כבויה בהגדרות ההתראות של האפליקציה במכשיר, ולכן התוצאה תופיע רק במגש ההתראות. <button onClick=${()=>plug('LiveActivity').openSettings().catch(()=>{})} class="font-bold text-[#D21919]">פתיחת ההגדרות</button></div>`:null}${!lv.liveUpdates?html`<div>בגרסת האנדרואיד של המכשיר התוצאה מופיעה כהתראה קבועה במגש ההתראות. שורת הסטטוס ומסך הנעילה דורשים אנדרואיד 16.</div>`:null}${lv.samsung?html`<div class="mt-2"><div class="font-medium mb-1" style=${{color:'var(--tx)'}}>עיצוב ה-Now Bar</div><div class="grid grid-cols-2 gap-1 p-1 rounded-xl seg">${[[1,'מסלול 1'],[2,'מסלול 2']].map(([k,l])=>html`<button key=${k} onClick=${()=>sp('nbr',k)} class=${'py-1.5 rounded-lg text-xs font-bold '+((pf.nbr===2?2:1)===k?'bg-[#D21919] text-white':'mu')}>${l}</button>`)}</div><div class="mt-1">שתי דרכים להעביר לסמסונג את העיצוב של כרטיס התוצאה. אם ב-Now Bar לא מופיעים הסמלים והתוצאה כמו בכרטיס, נסו את המסלול השני (אפשר לבדוק במצב הבדיקה).</div></div><div class="mt-1">בסמסונג: אם התוצאה לא מופיעה ב-Now Bar, יש להפעיל באפשרויות המפתחים של המכשיר את האפשרות <bdi dir="ltr" class="font-medium whitespace-nowrap">Live notifications for all apps</bdi>.</div>`:null}</div>`:null}`:null}<${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
+ ${on?html`<div class="mt-2 border-t bd pt-2"><${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/>${NATIVE?html`<${Tg} on=${pf.live!==0} f=${()=>sp('live',pf.live===0?1:0)} l="כרטיס התוצאה בלייב במגש ההתראות ובמסך הנעילה"/>`:null}<${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
  <div class="font-bold mt-2 text-sm">לפי מפעל</div>${Object.entries(COMPS).map(([k,l])=>html`<${Tg} key=${k} on=${pf.comps[k]} f=${()=>sp('comps',{...pf.comps,[k]:+!pf.comps[k]})} l=${l}/>`)}</div>`:null}</div>
  <div class="sf rounded-xl p-3"><div class="font-bold mb-1">עדכוני אפליקציה</div><div class="text-sm mu">גרסה מותקנת: ${window.APP_VERSION||''}</div>
  ${NATIVE?html`<button onClick=${check} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white text-sm font-bold">חפש עדכונים</button>${chk?html`<div class="text-xs mu mt-2">${chk}</div>`:null}<div class="text-xs mu mt-2">האפליקציה בודקת עדכונים אוטומטית בכל פתיחה. כשיש גרסה חדשה צריך לעדכן כדי להמשיך להשתמש בה.</div>`:html`<div class="text-xs mu mt-1">בגרסת הדפדפן האפליקציה מתעדכנת אוטומטית.</div>`}</div>
@@ -1088,11 +1086,13 @@ function App(){
    if(!stop)tm=setTimeout(tick,wait)};
   tick();const v=()=>{if(document.visibilityState==='visible'){clearTimeout(tm);tick()}};document.addEventListener('visibilitychange',v);
   return()=>{stop=true;clearTimeout(tm);document.removeEventListener('visibilitychange',v)}},[S.F]);
- /* תוצאה בלייב במגש ההתראות של אנדרואיד (Live Updates באנדרואיד 16, ה-Now Bar בסמסונג): האפליקציה מעבירה לחלק ה-native את שעות שריקת הפתיחה
-    של המשחקים הבאים, והוא מפעיל בשריקת הפתיחה התראה מתעדכנת עד הסיום – גם כשהאפליקציה סגורה. רק כשההתראות מאושרות במכשיר ופעילות באפליקציה */
+ /* כרטיס התוצאה בלייב במגש ההתראות של אנדרואיד: האפליקציה מעבירה לחלק ה-native את המשחקים הבאים (שעת שריקת הפתיחה, המפעל וקוד המשחק ביורוקאפ)
+    ואת שמות השחקנים של הפועל, והוא מפעיל בשריקת הפתיחה כרטיס שמתעדכן עד הסיום (תוצאה ומהלך המשחק) – גם כשהאפליקציה סגורה.
+    רק כשההתראות מאושרות במכשיר ופעילות באפליקציה */
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
-  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t}));
-   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,route:pf.nbr===2?2:1}).catch(()=>{})};
+  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0})),jer={};
+   (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
+   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer}).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
  /* מצב בדיקה: אותה התראה בלייב (Live Update / Now Bar) מוצגת עם התוצאה המדומה, ומתעדכנת עם כל עדכון של ההדמיה. כשמצב הבדיקה נכבה היא נעלמת */
  const demoKey=useRef('');
@@ -1100,9 +1100,15 @@ function App(){
   if(!demo){if(demoKey.current){demoKey.current='';P.demo({}).catch(()=>{})}return}
   const n=S.F.find(f=>f.id===demo.app)||nx,op=n?n.o:'',r=demo.r||[0,0],st=String(demo.st||'').replace(/^Q(\d)$/,'רבע $1').replace(/^OT(\d*)$/,(m,k)=>'הארכה'+(k&&k!=='1'?' '+k:'')),
    me={name:ME,score:r[0],img:'https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634'},them={name:op,score:r[1],img:crestSrcs(op)[0]||null},
-   o={route:pf.nbr===2?2:1,comp:(n&&COMPS[n.c])||'',venue:(n&&n.v)||'',status:st,clock:demo.clock||'',home:n&&!n.h?them:me,away:n&&!n.h?me:them},k=JSON.stringify(o),first=!demoKey.current;
+   p0=(demo.pbp||[])[0],
+   o={t:n?n.t:0,comp:(n&&COMPS[n.c])||'',venue:(n&&n.v)||'',play:p0?(p0.clock?p0.clock+' · ':'')+p0.text:'',status:st,clock:demo.clock||'',home:n&&!n.h?them:me,away:n&&!n.h?me:them},k=JSON.stringify(o),first=!demoKey.current;
   if(k===demoKey.current)return;demoKey.current=k;
-  P.demo(o).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר')}).catch(()=>{})},[demo,pf.nbr]);
+  P.demo(o).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר')}).catch(()=>{})},[demo]);
+ /* לחיצה על כרטיס התוצאה בלייב במגש ההתראות: האפליקציה נפתחת ישר בעמוד של אותו משחק */
+ const openRef=useRef();openRef.current=t=>{const f=S.F.slice().sort((a,b)=>Math.abs(a.t-t)-Math.abs(b.t-t))[0];if(!f||Math.abs(f.t-t)>6*H)return;
+  const T=TK();if(T)T.hide().catch(()=>{});setSt(false);setMo0(false);setDr(false);setPl(null);setPg('home');openGame({setGm},f)};
+ useEffect(()=>{const P=plug('LiveActivity');if(!P||!P.takeOpen)return;const f=()=>P.takeOpen().then(r=>{if(r&&r.t)openRef.current(+r.t)}).catch(()=>{});
+  f();const v=()=>{if(document.visibilityState==='visible')f()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[]);
  const [mo,setMo0]=useState(false);
  /* תפריט "עוד": מסך הכרטיסים באנדרואיד הוא חלון נפרד מעל האפליקציה, ולכן הוא מוסתר בזמן שהתפריט פתוח ומוצג שוב אם סוגרים בלי לבחור */
  const tixShow=home=>{const T=TK(),n=document.getElementById('app-nav');if(T)return T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home})};

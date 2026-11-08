@@ -8,10 +8,8 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -19,20 +17,13 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Live score while Hapoel Jerusalem plays: one ongoing notification that follows the game from tip-off to
- * the final buzzer and updates every 20 seconds from 365scores.
- *
- * On Android 16 the notification asks to be a "Live Update" (promoted ongoing notification), so the score
- * also shows as a chip in the status bar and on the lock screen; on Samsung (One UI 8) Live Updates appear in
- * the Now Bar. The Samsung "ongoing activity" extras are also set for One UI 7's Now Bar.
+ * Live score while Hapoel Jerusalem plays: one ongoing notification – the live score card (LiveGame) – that follows
+ * the game from tip-off to the final buzzer and updates every 20 seconds: the score from 365scores, the latest
+ * play-by-play line from EuroLeague / basket.co.il (LivePlay). Tapping it opens the game's page in the app.
  *
  * Started by LiveAlarmReceiver at tip-off (an exact alarm the app schedules), or by the app itself when it is
  * opened during a game. It runs only while the device allows the app's notifications.
@@ -42,17 +33,15 @@ public class LiveScoreService extends Service {
     static final String CHANNEL = "hpj-live";
     static final int NOTIF_ID = 63401;
     static final String ACTION_STOP = "il.nadavilr.hapoeljerusalem.LIVE_STOP";
-    private static final int HAPOEL = 634;
-    private static final String TEAM = "הפועל ירושלים";
     private static final String API = "https://webws.365scores.com/web/games/current/?appTypeId=5&langId=2"
-        + "&timezoneName=Asia/Jerusalem&userCountryId=6&competitors=" + HAPOEL;
+        + "&timezoneName=Asia/Jerusalem&userCountryId=6&competitors=" + LiveGame.HAPOEL;
     private static final long MIN = 60_000L, HOUR = 60 * MIN;
 
     private HandlerThread thread;
     private Handler handler;
     private long tipOff;
     private boolean wasLive, finalShown;
-    private String lastKey = "";
+    private String lastKey = "", lastPlay = "";
 
     /** Starts (or keeps) following the game that tips off at {@code tipOff} (ms). */
     static void start(Context c, long tipOff) {
@@ -74,7 +63,6 @@ public class LiveScoreService extends Service {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
             // The user swiped the live notification away: stop following this game
             LiveScheduler.dismissed(this, tipOff);
-            cancelCard();
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
             stopSelf();
             return START_NOT_STICKY;
@@ -83,7 +71,8 @@ public class LiveScoreService extends Service {
         if (t > 0) tipOff = t;
         if (tipOff == 0) tipOff = System.currentTimeMillis();
         ensureChannel(this);
-        Notification first = base(this, TEAM, "\u200Fשריקת הפתיחה בקרוב").setOngoing(true)
+        Notification first = base(this, LiveGame.TEAM, "\u200Fשריקת הפתיחה בקרוב").setOngoing(true)
+            .setContentIntent(LiveGame.open(this, tipOff))
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE).build();
         try {
             ServiceCompat.startForeground(this, NOTIF_ID, first,
@@ -107,7 +96,7 @@ public class LiveScoreService extends Service {
 
     @Override
     public void onDestroy() {
-        if (!finalShown) cancelCard(); // never leave a stale "live" card behind
+        if (!finalShown) cancel(); // never leave a stale "live" card behind
         if (handler != null) handler.removeCallbacksAndMessages(null);
         if (thread != null) thread.quitSafely();
         handler = null;
@@ -122,7 +111,7 @@ public class LiveScoreService extends Service {
             return;
         }
         try {
-            JSONArray games = new JSONObject(get(API)).optJSONArray("games");
+            JSONArray games = new JSONObject(LivePlay.get(API)).optJSONArray("games");
             JSONObject g = pick(games);
             if (g != null) {
                 int sg = g.optInt("statusGroup");
@@ -173,36 +162,43 @@ public class LiveScoreService extends Service {
         }
     }
 
-    private void show(JSONObject g) {
+    /** The game from 365scores, with the latest play-by-play line and the tip-off that identifies it. */
+    private LiveGame game(JSONObject g) {
         LiveGame x = LiveGame.from365(g);
+        if (x == null) return null;
+        x.t = tipOff;
+        JSONObject meta = LiveScheduler.game(this, tipOff);
+        String play = LivePlay.latest(meta.optString("c", ""), meta.optInt("eg", 0), tipOff, x, LiveScheduler.roster(this));
+        if (play != null && !play.isEmpty()) lastPlay = play;
+        x.play = lastPlay;
+        return x;
+    }
+
+    private void show(JSONObject g) {
+        LiveGame x = game(g);
         if (x == null) return;
         if (x.key().equals(lastKey)) return;
         lastKey = x.key();
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        Bitmap hc = LiveGame.crest(x.homeImg), ac = LiveGame.crest(x.awayImg);
-        notify(NOTIF_ID, LiveGame.notification(this, x, hc, ac, del));
-        notify(LiveGame.CARD_ID, LiveGame.card(this, x, hc, ac, false, del));
+        notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), false, del));
     }
 
-    /** Ends following the game; with a final game, leaves a regular "final score" notification for 30 minutes. */
+    /** Ends following the game; with a final game, the card stays for 30 minutes with the final score. */
     private void finish(JSONObject finalGame) {
-        LiveGame x = finalGame != null ? LiveGame.from365(finalGame) : null;
+        LiveGame x = finalGame != null ? game(finalGame) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         if (x != null && LiveScheduler.allowed(this)) {
-            // The card stays for 30 minutes with the final score; the Live Update goes away with the service
-            notify(LiveGame.CARD_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), true, null));
+            notify(NOTIF_ID, LiveGame.card(this, x, LiveGame.crest(x.homeImg), LiveGame.crest(x.awayImg), true, null));
             finalShown = true;
-        } else {
-            cancelCard();
         }
         LiveScheduler.done(this, tipOff);
         stopSelf();
     }
 
-    private void cancelCard() {
+    private void cancel() {
         try {
-            NotificationManagerCompat.from(this).cancel(LiveGame.CARD_ID);
+            NotificationManagerCompat.from(this).cancel(NOTIF_ID);
         } catch (Exception ignored) {
         }
     }
@@ -230,17 +226,6 @@ public class LiveScoreService extends Service {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT);
     }
 
-    /** Android 16+: whether the user allows this app's Live Updates (Settings > Notifications > the app > Live updates). */
-    static boolean canPromote(Context c) {
-        if (Build.VERSION.SDK_INT < 36) return false;
-        try {
-            NotificationManager nm = c.getSystemService(NotificationManager.class);
-            return Boolean.TRUE.equals(NotificationManager.class.getMethod("canPostPromotedNotifications").invoke(nm));
-        } catch (Throwable e) {
-            return false;
-        }
-    }
-
     static void ensureChannel(Context c) {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager nm = c.getSystemService(NotificationManager.class);
@@ -253,20 +238,4 @@ public class LiveScoreService extends Service {
         nm.createNotificationChannel(ch);
     }
 
-    private static String get(String url) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(15_000);
-        c.setReadTimeout(15_000);
-        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) HapoelJerusalemFanApp");
-        c.setRequestProperty("Accept", "application/json");
-        try (InputStream in = c.getInputStream()) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[16384];
-            int n;
-            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        } finally {
-            c.disconnect();
-        }
-    }
 }
