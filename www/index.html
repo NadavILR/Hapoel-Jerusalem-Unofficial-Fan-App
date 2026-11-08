@@ -182,6 +182,31 @@ async function liveEuro(){
   const ec=Object.keys(G).sort().map(k=>[ECG[k]||('בית '+k),G[k].sort((a,b)=>a.position-b.position).map(t=>[ECN[t.club.code]||t.club.name,t.gamesWon,t.gamesLost,parseInt(t.pointsDifference,10)||0])]);
   if(ec.length)EC=ec}
  return n}
+/* הפועל בכותרות: כתבות על קבוצת הכדורסל מכל המקורות. באנדרואיד נטען ישירות מהאתרים (Google News לחלק מהם, RSS של האתר לשאר),
+   ומתמזג עם הכותרות שבקובץ הנתונים. רק אתרים מהרשימה, ורק כתבות על הכדורסל (לא על קבוצת הכדורגל) */
+const NSRC=[[/israelhayom/,'ישראל היום'],[/sport5/,'ספורט 5'],[/walla/,'וואלה ספורט'],[/ynet/,'ynet'],[/sport1\.maariv|maariv/,'ספורט 1'],[/one\.co\.il/,'ONE'],[/sportsrabbi/,'ספורטס רבי'],[/kolhair/,'כל העיר'],[/sportando/,'Sportando',1],[/jpost/,'The Jerusalem Post',1],[/eurohoops/,'Eurohoops',1]];
+const GNQ=q=>'https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=he&gl=IL&ceid=IL:he';
+const NFEEDS=[GNQ('"הפועל ירושלים" כדורסל'),GNQ('"הפועל ירושלים" (site:one.co.il OR site:sportsrabbi.co.il OR site:kolhair.co.il OR site:ynet.co.il OR site:sports.walla.co.il OR site:israelhayom.co.il)'),
+ 'https://www.one.co.il/RSS/','https://www.sportsrabbi.co.il/feed/','https://www.kolhair.co.il/feed/','https://sportando.basketball/en/tag/hapoel-jerusalem/feed/','https://www.eurohoops.net/en/?s=hapoel+jerusalem&feed=rss2','https://www.jpost.com/rss/rssfeedssports.aspx'];
+const nkey=t=>String(t||'').replace(/[^֐-׿a-z0-9]/gi,'').toLowerCase().slice(0,40);
+async function liveNews(){
+ const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,''),AMB=/מכבי תל אביב|הפועל תל אביב|הפועל חולון|מכבי חיפה|הפועל באר שבע|הפועל ב״ש|מכבי נתניה|הפועל חיפה|בני סכנין|הפועל ירושלים/;
+ /* סימן לכדורסל: מילים מהענף, שמות שחקני הסגל, ויריבות שאין להן קבוצת כדורגל באותו שם */
+ const names=[...PL.map(p=>String(p[1]||'').split(' ').pop()),...[...new Set(F0.map(f=>f.o))].filter(o=>!AMB.test(o))].map(esc).filter(x=>x.length>2);
+ const cue=new RegExp(['כדורסל','יורוקאפ','ווינר','אוברדוביץ','פיס ארנה','basket','eurocup','euroleague',...names].join('|'),'i'),foot=/כדורגל|ביתר|בית"ר|בית״ר|טדי|שוער|פנדל|סכנין|football|soccer|\b\d:\d\b/i;
+ const out=[],seen=new Set();
+ const res=await Promise.all(NFEEDS.map(u=>getText(u).then(x=>[u,x]).catch(()=>null)));
+ for(const r of res){if(!r)continue;const [u,xml]=r,gn=/news\.google/.test(u);let doc;try{doc=new DOMParser().parseFromString(xml,'text/xml')}catch(e){continue}
+  for(const it of doc.querySelectorAll('item')){const g=t=>{const e=it.querySelector(t);return e?e.textContent.trim():''},src=it.querySelector('source');
+   let t=g('title'),link=g('link'),dsc=g('description').replace(/<[^>]+>/g,' '),dom=gn?(src&&src.getAttribute('url')||''):u;
+   const m=NSRC.find(([re])=>re.test(dom));if(!m)continue;
+   if(gn){const sn=src?src.textContent.trim():'';if(sn&&t.endsWith(' - '+sn))t=t.slice(0,-(sn.length+3));t=t.replace(/\s+-\s+[^-]{1,30}$/,'')}
+   const txt=t+' '+dsc;if(!/הפועל ירושלים|ירושלים|jerusalem/i.test(txt)||foot.test(txt))continue;if(!m[2]&&!cue.test(txt))continue;if(m[1]==='כל העיר'&&!/הפועל ירושלים/.test(txt))continue;if(m[2]&&!/basket|eurocup|euroleague|hoops|sportando|eurohoops/i.test(txt+u))continue;
+   const ts=Date.parse(g('pubDate'))||0,k=nkey(t);if(!t||!link||seen.has(k)||(ts&&Date.now()-ts>45*D))continue;seen.add(k);
+   out.push({t,u:link,s:m[1],en:m[2]?1:0,ts,d:ts?new Date(ts).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'}):''})}}
+ if(!out.length)return 0;
+ for(const n of NEWS){const k=nkey(n.t);if(!seen.has(k)){seen.add(k);out.push({...n,ts:Date.parse(n.d||'')||0})}}
+ out.sort((a,b)=>b.ts-a.ts);NEWS=out.slice(0,40);return out.length}
 async function liveIsrael(){
  const page=await getText('https://basket.co.il/team.asp?TeamId=2114'),by={};
  for(const r of page.match(/<tr[^>]*>[\s\S]*?<\/tr>/g)||[]){const id=(/GameId=(\d+)/.exec(r)||[])[1];if(!id||by[id])continue;const c=cellsOf(r),txt=c.join(' | '),d=/(\d\d)\/(\d\d)\/(\d{4})/.exec(txt);if(!d)continue;
@@ -282,7 +307,7 @@ function useSportsData(){
   /* 1. קובץ הנתונים העדכני ביותר מהאתר (באנדרואיד – מהאתר, לא העותק שבתוך האפליקציה) */
   for(const u of NATIVE?[SITE+'data.json','data.json']:['data.json']){try{const r=await fetch(u+'?t='+Date.now(),{cache:'no-store'});if(r.ok&&applyLive(await r.json())){mode='Live';break}}catch(e){}}
   /* 2. תוצאות, מועדים וטבלאות מהמקורות הרשמיים, נכון לרגע הלחיצה */
-  const ok=await Promise.all([liveEuro().catch(()=>0),NATIVE?liveIsrael().catch(()=>0):0]);
+  const ok=await Promise.all([liveEuro().catch(()=>0),NATIVE?liveIsrael().catch(()=>0):0]);if(NATIVE)await liveNews().catch(()=>0);
   if(ok.some(n=>n>0)||mode==='Live')at=new Date();
   setS({ld:0,up:new Date(),mode,F:F0,at});
  },[]);
@@ -406,9 +431,9 @@ function News(){
  if(!NEWS.length)return null;
  const L=all?NEWS:NEWS.slice(0,3),more=NEWS.length-3;
  const dd=d=>{const m=/^\d{4}-(\d\d)-(\d\d)/.exec(d||'');return m?(+m[2])+'.'+(+m[1]):''};
- return html`<div class="sf rounded-xl p-3"><div class="font-bold mb-1">חדשות המועדון</div>
-  ${L.map(n=>{const T=n.u?'a':'div',meta=[n.s,dd(n.d)].filter(Boolean).join(' · ');
-   return html`<${T} key=${n.u||n.t} href=${n.u||undefined} target=${n.u?'_blank':undefined} rel=${n.u?'noopener noreferrer':undefined} class="block py-3 border-t bd"><div class="text-sm font-medium leading-snug">${n.t}</div>${meta||n.u?html`<div class="text-xs mu mt-0.5 flex items-center gap-1">${meta}${n.u?html`<${I} n="ext" s=${11}/>`:null}</div>`:null}<//>`})}
+ return html`<div class="sf rounded-xl p-3"><div class="font-bold mb-1">הפועל בכותרות</div>
+  ${L.map(n=>{const T=n.u?'a':'div',meta=[n.s,n.en?'אנגלית':'',dd(n.d)].filter(Boolean).join(' · ');
+   return html`<${T} key=${n.u||n.t} href=${n.u||undefined} target=${n.u?'_blank':undefined} rel=${n.u?'noopener noreferrer':undefined} class="block py-3 border-t bd"><div dir="auto" class="text-sm font-medium leading-snug text-start">${n.t}</div>${meta||n.u?html`<div class="text-xs mu mt-0.5 flex items-center gap-1">${meta}${n.u?html`<${I} n="ext" s=${11}/>`:null}</div>`:null}<//>`})}
   ${more>0?html`<button onClick=${()=>setAll(!all)} class="w-full pt-2.5 border-t bd text-sm font-bold text-[#D21919]">${all?'הצג פחות':'עוד כותרות ('+more+')'}</button>`:null}</div>`;
 }
 /* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
