@@ -168,7 +168,8 @@ public class LiveScoreService extends Service {
                     JSONObject d = LivePlay.segevData(id);
                     x = LivePlay.baseGame(d);
                     if (x != null) {
-                        // Crests and team names from 365scores (names without sponsors); the rest from livestats
+                        // Crests, team names (without sponsors) and competition / stage from 365scores; the game itself
+                        // from livestats
                         LiveGame c365 = g365 != null ? LiveGame.from365(g365) : null;
                         if (c365 != null) {
                             boolean same = c365.meHome == x.meHome;
@@ -181,9 +182,11 @@ public class LiveScoreService extends Service {
                             if (x.meHome) x.awayName = meta.optString("o");
                             else x.homeName = meta.optString("o");
                         }
-                        // Competition and round: as in the app (its own data), e.g. "ליגת ווינר סל, מחזור 5"
+                        // Competition and stage from 365scores (e.g. "ליגת ווינר – מחזור 5", "גביע ווינר – חצי גמר");
+                        // until 365scores answers, as the app writes it
                         String label = meta.optString("l", "");
-                        x.comp = !label.isEmpty() ? label : "league".equals(comp) ? "ליגת ווינר סל" : "גביע ווינר סל";
+                        x.comp = c365 != null && !c365.comp.isEmpty() ? c365.comp
+                            : !label.isEmpty() ? label : "league".equals(comp) ? "ליגת ווינר סל" : "גביע ווינר סל";
                         state = LivePlay.applyLive(d, x);
                         String play = LivePlay.segevLine(d, x);
                         if (play != null && !play.isEmpty()) lastPlay = play;
