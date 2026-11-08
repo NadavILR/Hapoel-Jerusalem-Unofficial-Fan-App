@@ -23,6 +23,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Cache Gradle (the Gradle download and libraries)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/wrapper/dists
+            ~/.gradle/caches
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle') }}
+          restore-keys: gradle-${{ runner.os }}-
       - name: Install dependencies
         # --ignore-scripts: skips native downloads the APK build does not need (e.g. sharp for @capacitor/assets,
         # whose download from GitHub can time out and fail the whole build)
@@ -57,7 +65,9 @@ jobs:
           HPJ_KEY_PASSWORD: ${{ secrets.HPJ_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          # Downloads (Gradle itself, libraries) sometimes time out on the runner: try up to 3 times
+          for i in 1 2 3; do ./gradlew assembleRelease --no-daemon && break; echo "Gradle build failed, retrying ($i)"; sleep 20; done
+          test -f app/build/outputs/apk/release/app-release.apk
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/hapoel-jerusalem-v${{ steps.ver.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
         with:
