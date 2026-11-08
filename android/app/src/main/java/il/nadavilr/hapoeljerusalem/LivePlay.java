@@ -123,10 +123,15 @@ final class LivePlay {
         return t != null && (t.optString("nameLocal", "").contains("ירושלים") || t.optString("name", "").toUpperCase(Locale.ROOT).contains("JERUSALEM"));
     }
 
-    private static String segev(long tipOff, LiveGame g) throws Exception {
+    private static long idFor;
+    private static int cachedId;
+
+    /** The livestats game id of Hapoel's game at {@code tipOff} (from games.json, within 4 hours), 0 if none; cached. */
+    static synchronized int segevId(long tipOff) throws Exception {
+        if (idFor == tipOff && cachedId > 0) return cachedId;
         long bucket = System.currentTimeMillis() / 10_000L;
         JSONArray games = new JSONObject(get("https://basket.co.il/livestats/data/games.json?w=" + bucket)).optJSONArray("games");
-        if (games == null) return null;
+        if (games == null) return 0;
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
         f.setTimeZone(TimeZone.getTimeZone("Asia/Jerusalem"));
         int id = 0;
@@ -141,13 +146,31 @@ final class LivePlay {
                 break;
             }
         }
-        return id == 0 ? null : segevGame(id, g);
+        if (id > 0) {
+            idFor = tipOff;
+            cachedId = id;
+        }
+        return id;
+    }
+
+    /** A basket.co.il livestats game file (score, clock, play-by-play, box score). */
+    static JSONObject segevData(int id) throws Exception {
+        long bucket = System.currentTimeMillis() / 10_000L;
+        return new JSONObject(get("https://basket.co.il/livestats/data/game-" + id + ".json?w=" + bucket));
+    }
+
+    private static String segev(long tipOff, LiveGame g) throws Exception {
+        int id = segevId(tipOff);
+        return id == 0 ? null : segevLine(segevData(id), g);
     }
 
     /** The latest line of a basket.co.il livestats game. */
     static String segevGame(int id, LiveGame g) throws Exception {
-        long bucket = System.currentTimeMillis() / 10_000L;
-        JSONObject d = new JSONObject(get("https://basket.co.il/livestats/data/game-" + id + ".json?w=" + bucket));
+        return segevLine(segevData(id), g);
+    }
+
+    /** The latest line of an already-fetched livestats game file. */
+    static String segevLine(JSONObject d, LiveGame g) {
         JSONObject gi = d.optJSONObject("gameInfo");
         boolean jh = gi != null && isJ(gi.optJSONObject("homeTeam"));
         Map<String, String> names = new HashMap<>();
@@ -222,6 +245,80 @@ final class LivePlay {
             return line(a.optString("quarterTime", ""), text);
         }
         return null;
+    }
+
+    // ---------- the live game itself from livestats (Winner League / Winner Cup) ----------
+
+    static final int PRE = 2, LIVE = 3, FINAL = 4;
+
+    /** Names from a livestats file, when 365scores is not available (no crest for the opponent then). */
+    static LiveGame baseGame(JSONObject d) {
+        JSONObject gi = d.optJSONObject("gameInfo");
+        if (gi == null) return null;
+        JSONObject h = gi.optJSONObject("homeTeam"), a = gi.optJSONObject("awayTeam");
+        LiveGame x = new LiveGame();
+        x.meHome = isJ(h);
+        x.homeName = x.meHome ? LiveGame.TEAM : (h != null ? h.optString("shortNameLocal", h.optString("nameLocal", "")) : "");
+        x.awayName = !x.meHome ? LiveGame.TEAM : (a != null ? a.optString("shortNameLocal", a.optString("nameLocal", "")) : "");
+        return x;
+    }
+
+    /**
+     * Fills the score, quarter, clock and status of {@code x} from a livestats game file – the official live stats of
+     * the Winner League / Winner Cup – and returns PRE / LIVE / FINAL. {@code x}'s home / away are kept (365scores'
+     * order); the livestats sides are matched by which one is Hapoel.
+     */
+    static int applyLive(JSONObject d, LiveGame x) {
+        JSONObject gi = d.optJSONObject("gameInfo");
+        JSONObject box = d.optJSONObject("boxscore");
+        JSONObject bg = box != null ? box.optJSONObject("gameInfo") : null;
+        if (gi == null) return PRE;
+        boolean lsHomeIsJ = isJ(gi.optJSONObject("homeTeam"));
+        int lh = bg != null ? bg.optInt("homeScore", 0) : 0, la = bg != null ? bg.optInt("awayScore", 0) : 0;
+        boolean same = lsHomeIsJ == x.meHome; // livestats' home is 365scores' home
+        x.hs = same ? lh : la;
+        x.as = same ? la : lh;
+        JSONObject acts = d.optJSONObject("actions");
+        JSONArray list = acts != null ? acts.optJSONArray("actions") : null;
+        boolean started = false, onBreak = false;
+        if (list != null) {
+            for (int i = 0; i < list.length() && !started; i++) {
+                JSONObject a = list.optJSONObject(i);
+                if (a != null && !"clock".equals(a.optString("type"))) started = true;
+            }
+            for (int i = list.length() - 1; i >= 0; i--) {
+                JSONObject a = list.optJSONObject(i);
+                if (a == null || "clock".equals(a.optString("type"))) continue;
+                JSONObject p = a.optJSONObject("parameters");
+                onBreak = "quarter".equals(a.optString("type")) && p != null && "end-of-quarter".equals(p.optString("type"));
+                break;
+            }
+        }
+        if (gi.optBoolean("gameFinished", false)) {
+            x.status = "סיום";
+            x.clock = "";
+            return FINAL;
+        }
+        if (!started) return PRE;
+        int q = gi.optInt("currentQuarter", 1);
+        if (onBreak) {
+            x.status = q == 2 ? "מחצית" : "הפסקה";
+            x.clock = "";
+        } else {
+            x.status = q <= 4 ? "רבע " + q : "הארכה" + (q > 5 ? " " + (q - 4) : "");
+            // The newest clock: the latest action of this quarter (currentQuarterTime is updated less often)
+            String clock = "";
+            for (int i = list != null ? list.length() - 1 : -1; i >= 0; i--) {
+                JSONObject a = list.optJSONObject(i);
+                if (a == null) continue;
+                if (a.optInt("quarter", q) == q) clock = a.optString("quarterTime", "");
+                break;
+            }
+            JSONObject t = gi.optJSONObject("currentQuarterTime");
+            if (clock.isEmpty() && t != null) clock = String.format(Locale.US, "%02d:%02d", t.optInt("m", 0), t.optInt("s", 0));
+            x.clock = clock;
+        }
+        return LIVE;
     }
 
     // ---------- network ----------

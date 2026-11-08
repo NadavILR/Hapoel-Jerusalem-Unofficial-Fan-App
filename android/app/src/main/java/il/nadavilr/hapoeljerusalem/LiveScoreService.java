@@ -136,36 +136,79 @@ public class LiveScoreService extends Service {
      *  a few seconds of 365scores; every 10 seconds around tip-off; every minute before that. */
     private static final long LIVE_POLL = 2_000L, NEAR_POLL = 10_000L, PRE_POLL = 60_000L;
 
+    /** 365scores' game: names, crests and competition (and the score itself outside the Winner League / Cup). */
+    private JSONObject g365;
+    private long at365;
+
     private void poll() {
         long wait = LIVE_POLL, now = System.currentTimeMillis();
         if (!LiveScheduler.allowed(this)) {
             finish(null);
             return;
         }
-        try {
-            JSONArray games = new JSONObject(LivePlay.get(API)).optJSONArray("games");
-            JSONObject g = pick(games);
-            if (g != null) {
-                int sg = g.optInt("statusGroup");
-                if (sg == 4) { // final
-                    finish(wasLive ? g : null);
-                    return;
+        String comp = LiveScheduler.game(this, tipOff).optString("c", "");
+        // Winner League / Winner Cup: the game itself (score, quarter, clock, status, play-by-play) from the
+        // official live stats, basket.co.il/livestats; 365scores only for names and crests, every 30 seconds
+        boolean official = "league".equals(comp) || "wcup".equals(comp);
+        if (g365 == null || !official || now - at365 >= 30_000L) {
+            try {
+                JSONObject g = pick(new JSONObject(LivePlay.get(API)).optJSONArray("games"));
+                if (g != null) {
+                    g365 = g;
+                    at365 = now;
                 }
-                if (sg == 3) {
-                    wasLive = true;
-                    show(g);
-                    alerts(g);
-                } else {
-                    wait = now > tipOff - 5 * MIN ? NEAR_POLL : PRE_POLL; // not started yet
-                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
+        }
+        LiveGame x = null;
+        int state = 0;
+        if (official) {
+            try {
+                int id = LivePlay.segevId(tipOff);
+                if (id > 0) {
+                    JSONObject d = LivePlay.segevData(id);
+                    x = g365 != null ? LiveGame.from365(g365) : LivePlay.baseGame(d);
+                    if (x != null) {
+                        state = LivePlay.applyLive(d, x);
+                        String play = LivePlay.segevLine(d, x);
+                        if (play != null && !play.isEmpty()) lastPlay = play;
+                        x.play = lastPlay;
+                        x.t = tipOff;
+                    }
+                }
+            } catch (Exception e) {
+                x = null; // livestats did not answer: 365scores for this update
+            }
+        }
+        if (x == null && g365 != null) {
+            state = g365.optInt("statusGroup");
+            x = game(g365, lastHs >= 0 && scoreChanged365(g365));
+        }
+        if (x != null) {
+            if (state == LivePlay.FINAL) {
+                finish(wasLive ? x : null);
+                return;
+            }
+            if (state == LivePlay.LIVE) {
+                wasLive = true;
+                show(x);
+                alerts(x);
+            } else {
+                wait = now > tipOff - 5 * MIN ? NEAR_POLL : PRE_POLL; // not started yet
+            }
         }
         if (now > tipOff + 4 * HOUR) { // never runs for more than 4 hours after the scheduled tip-off
             finish(null);
             return;
         }
         if (handler != null) handler.postDelayed(this::poll, wait);
+    }
+
+    private boolean scoreChanged365(JSONObject g) {
+        JSONObject h = g.optJSONObject("homeCompetitor"), a = g.optJSONObject("awayCompetitor");
+        int hs = h != null ? (int) Math.max(0, Math.round(h.optDouble("score", 0))) : 0;
+        int as = a != null ? (int) Math.max(0, Math.round(a.optDouble("score", 0))) : 0;
+        return hs != lastHs || as != lastAs;
     }
 
     /** The game in progress; otherwise the one closest to the scheduled tip-off (within 3 hours). */
@@ -217,13 +260,8 @@ public class LiveScoreService extends Service {
 
     private long popUntil;
 
-    private void show(JSONObject g) {
-        JSONObject h = g.optJSONObject("homeCompetitor"), a = g.optJSONObject("awayCompetitor");
-        int hs = h != null ? (int) Math.max(0, Math.round(h.optDouble("score", 0))) : 0;
-        int as = a != null ? (int) Math.max(0, Math.round(a.optDouble("score", 0))) : 0;
-        boolean scored = lastHs >= 0 && (hs != lastHs || as != lastAs);
-        LiveGame x = game(g, scored);
-        if (x == null) return;
+    private void show(LiveGame x) {
+        boolean scored = lastHs >= 0 && (x.hs != lastHs || x.as != lastAs);
         long now = System.currentTimeMillis();
         // +1 / +2 / +3 next to the score that just changed (not on the first update)
         if (scored) {
@@ -252,8 +290,7 @@ public class LiveScoreService extends Service {
     }
 
     /** Ends following the game; with a final game, the card stays for 30 minutes with the final score. */
-    private void finish(JSONObject finalGame) {
-        LiveGame x = finalGame != null ? game(finalGame, true) : null;
+    private void finish(LiveGame x) {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         if (x != null && LiveScheduler.allowed(this)) {
             finalAlert(x);
@@ -298,8 +335,7 @@ public class LiveScoreService extends Service {
         return LiveGame.TEAM + " " + me + " – " + op + " " + opName;
     }
 
-    private void alerts(JSONObject g) {
-        LiveGame x = LiveGame.from365(g);
+    private void alerts(LiveGame x) {
         if (x == null || !alertsOn()) return;
         if (LiveScheduler.alertOnce(this, tipOff, "start")) {
             alert(ALERT_START, "המשחק התחיל: " + x.homeName + " – " + x.awayName);

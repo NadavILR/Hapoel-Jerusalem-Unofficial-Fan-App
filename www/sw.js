@@ -1,7 +1,7 @@
 // Service worker: works offline after the first visit.
 // data.json is network-first (fresh results when online, last copy when offline);
 // everything else is cache-first with a background refresh.
-const CACHE = 'hpj-v1.113';
+const CACHE = 'hpj-v1.114';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './data.json', './crests.json', './photos.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/notify-badge.png',
