@@ -49,7 +49,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .fbar{position:sticky;top:var(--hdh,64px);z-index:18;margin:0 -12px;padding:4px 12px 0;border-bottom:1px solid transparent;transition:background-color .2s var(--ease),border-color .2s var(--ease),padding .2s var(--ease),box-shadow .2s var(--ease)}
 /* כשהסרגל נצמד, הכותרת עצמה גדלה מתחתיו: הכותרת והמסננים יושבים על אותה שכבת זכוכית, והסרגל עצמו שקוף */
 .fbar.stuck{z-index:21}#app-hd{transition:padding-bottom .2s var(--ease)}html.bar-stuck #app-hd{padding-bottom:var(--fbh,0px)}
-.fbar>*{transition:transform .2s var(--ease)}.fbar.stuck>*{transform:scale(.97)}
+
 .back-stick{position:sticky;top:calc(var(--hdh,64px) + 8px);z-index:18;display:flex;width:max-content}
 .solid-card{background:var(--sf)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.no-sb{scrollbar-width:none}.no-sb::-webkit-scrollbar{display:none}
 /* זכוכית חלבית: שכבות שצפות מעל תוכן (כותרת, סרגל ניווט, תפריטים, חלונות) ומסך הבית שמעל תמונת הקבוצה */
@@ -80,7 +80,6 @@ button,a{-webkit-tap-highlight-color:transparent;transition:transform .18s var(-
 .seg-ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;border-radius:11px;background:#D21919;box-shadow:0 2px 8px rgb(210 25 25/.3);transition:opacity .2s}.seg>.seg-ind{border-radius:8px}
 .nav-ind{border-radius:999px;background:rgb(210 25 25/.12);box-shadow:none}#app-nav button{position:relative;z-index:1}#app-nav button:active{transform:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-ind{background:rgb(210 25 25/.25)}}:root[data-theme="dark"] .nav-ind{background:rgb(210 25 25/.25)}
-.gm-in{animation:hpjGm .36s var(--ease) backwards}@keyframes hpjGm{from{opacity:0;transform:scale(.86)}40%{opacity:1}}
 .car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;padding:6px 12px;margin:-6px 0;scroll-padding:0 12px}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}.car .sf{box-shadow:var(--gl-hi)}
 </style>
 </head>
@@ -489,11 +488,8 @@ function SegInd({k,sel,cls}){
   let ro=null;try{ro=new ResizeObserver(()=>{const z=rect();if(z){put(z);prev.current=z}});ro.observe(p)}catch(e){}return()=>{ro&&ro.disconnect()}},[k]);
  return html`<span ref=${r} aria-hidden="true" class=${'seg-ind '+(cls||'')}></span>`;
 }
-/* פתיחת עמוד משחק מכרטיס: העמוד "צומח" מהמקום שבו היה הכרטיס על המסך */
-const GMO={o:null};
-function openGame(A,g,e){const t=e&&e.currentTarget,c=t&&(t.closest('.car>*')||t),m=document.querySelector('main');
- if(c&&m){const r=c.getBoundingClientRect(),mr=m.getBoundingClientRect(),top=mr.top+12;GMO.o=Math.round(r.left+r.width/2-mr.left-12)+'px '+Math.round(r.top+r.height/2-top)+'px'}else GMO.o=null;
- A.setGm(g);window.scrollTo(0,0)}
+/* פתיחת עמוד משחק מכרטיס */
+function openGame(A,g){A.setGm(g);window.scrollTo(0,0)}
 /* סרגל הסינון: בגלילה הוא נצמד לכותרת ומקבל את הזכוכית שלה, כך ששניהם נראים כחלק אחד */
 function StickyBar({children}){
  const r=useRef(null),[stuck,setStuck]=useState(false);
@@ -1016,7 +1012,6 @@ function App(){
  useEffect(()=>{if(NATIVE)return;const marked=!!(history.state&&history.state.hpj);try{if(!atRoot&&!marked)history.pushState({hpj:1},'');else if(atRoot&&marked){skipPop.current=true;history.back()}}catch(e){}},[atRoot,st,dr,!!gm,!!pl,pg]);
  /* 3 לחיצות מהירות על השורה שבתחתית מסך הבית מפעילות / מכבות את מצב הבדיקה */
  const tapFoot=()=>{if(pg!=='home'||gm)return;const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];if(demo){setDemo(null);toast('מצב בדיקה כובה')}else if(nx){const n=nx;setDemo(mkDemo(n,S.F));toast('מצב בדיקה: המשחק הבא מוצג כמשחק בלייב');demoSquad(n).then(sq=>setDemo(d=>d&&d.app===n.id?demoNames(d,sq):d)).catch(()=>{})}};
- useEffect(()=>{if(!gm)GMO.o=null},[gm]);
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg:demo||lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
  const navOn=mo||EXT[pg]?'more':pg,Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  /* גובה הכותרת (כולל פס הסטטוס), בשביל סרגלי הסינון וכפתורי החזרה שנצמדים מתחתיה */
@@ -1029,7 +1024,7 @@ function App(){
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
   ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-[11px] font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(var(--sat) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
- <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${gm?(GMO.o?'gm-in':'pg-in'):EXT[pg]?'':'pg-in'} style=${gm&&GMO.o?{transformOrigin:GMO.o}:null}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נתונים: 365scores, איגוד הכדורסל ו-EuroLeague · גרסה ${window.APP_VERSION||''} · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי</a></span></div></main>
+ <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נתונים: 365scores, איגוד הכדורסל ו-EuroLeague · גרסה ${window.APP_VERSION||''} · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי</a></span></div></main>
  ${mo?html`<div class="fixed inset-0 z-[44]" onClick=${()=>setMo(false)}></div>
  <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass glass-menu" style=${{bottom:'calc(var(--navh,70px) + 10px)',transformOrigin:'bottom left'}}>
   ${MORE.map(([k,l,ic,sub])=>html`<button key=${k} onClick=${()=>go(k)} class=${'w-full flex items-center gap-3 px-4 py-3 text-right border-b bd last:border-0 '+(pg===k?'text-[#D21919]':'')}><span class="w-9 h-9 rounded-full flex items-center justify-center bg-[#D21919] text-white shrink-0"><${I} n=${ic} s=${18}/></span><span class="min-w-0"><span class="block font-medium">${l}</span><span class="block text-[11px] mu truncate">${sub}</span></span></button>`)}
