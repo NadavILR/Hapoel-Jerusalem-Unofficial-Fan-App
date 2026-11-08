@@ -325,7 +325,6 @@ public class LiveScoreService extends Service {
     // ---------- in-game notifications: tip-off, end of each quarter, final ----------
 
     static final String GAME_CHANNEL = "hpj-game";
-    private static final int ALERT_START = 63420, ALERT_QUARTER = 63421, ALERT_FINAL = 63430;
     private int lastQuarter;
 
     /** Quarter in progress from 365scores' status ("רבע 3" → 3, overtime → 5+), 0 during a break. */
@@ -347,48 +346,27 @@ public class LiveScoreService extends Service {
             && LiveScheduler.compOn(this, LiveScheduler.game(this, tipOff).optString("c", ""));
     }
 
-    private static String mine(LiveGame x) {
-        int me = x.meHome ? x.hs : x.as, op = x.meHome ? x.as : x.hs;
-        String opName = x.meHome ? x.awayName : x.homeName;
-        return LiveGame.TEAM + " " + me + " – " + op + " " + opName;
-    }
+    private int maxQuarter;
 
     private void alerts(LiveGame x) {
         if (x == null || !alertsOn()) return;
-        if (LiveScheduler.alertOnce(this, tipOff, "start")) {
-            alert(ALERT_START, "המשחק התחיל: " + x.homeName + " – " + x.awayName);
-        }
+        if (LiveScheduler.alertOnce(this, tipOff, "start")) GameAlerts.start(this, x, tipOff);
         int q = quarter(x.status);
         // The quarter that just ended: a break after it, or the next quarter already started
         int ended = q == 0 ? lastQuarter : (lastQuarter > 0 && q > lastQuarter ? lastQuarter : 0);
-        if (ended > 0 && LiveScheduler.alertOnce(this, tipOff, "q" + ended)) {
-            String name = ended <= 4 ? "סיום רבע " + ended : "סיום הארכה" + (ended > 5 ? " " + (ended - 4) : "");
-            alert(ALERT_QUARTER + ended, name + ": " + mine(x));
+        // After the 4th quarter / an overtime only when the score is tied (another overtime follows); otherwise the
+        // game is over and the final notification says it
+        boolean announce = ended > 0 && (ended < 4 || x.hs == x.as || q > ended);
+        if (announce && LiveScheduler.alertOnce(this, tipOff, "q" + ended)) GameAlerts.quarter(this, x, ended, tipOff);
+        if (q > 0) {
+            lastQuarter = q;
+            maxQuarter = Math.max(maxQuarter, q);
         }
-        if (q > 0) lastQuarter = q;
     }
 
     private void finalAlert(LiveGame x) {
         if (!alertsOn() || !LiveScheduler.alertOnce(this, tipOff, "end")) return;
-        int me = x.meHome ? x.hs : x.as, op = x.meHome ? x.as : x.hs;
-        alert(ALERT_FINAL, "סיום המשחק: " + mine(x) + (me > op ? " · ניצחון" : ""));
-    }
-
-    private void alert(int id, String text) {
-        ensureGameChannel(this);
-        NotificationCompat.Builder b = new NotificationCompat.Builder(this, GAME_CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat_hpj)
-            .setColor(Color.parseColor("#D21919"))
-            .setContentTitle(LiveGame.TEAM)
-            .setContentText("\u200F" + text)
-            .setStyle(new NotificationCompat.BigTextStyle().bigText("\u200F" + text))
-            .setContentIntent(LiveGame.open(this, tipOff))
-            .setAutoCancel(true)
-            .setGroup(NotifGroup.KEY)
-            .setSortKey("1")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        notify(id, b.build());
-        NotifGroup.refresh(this);
+        GameAlerts.fin(this, x, maxQuarter >= 5, tipOff);
     }
 
     static void ensureGameChannel(Context c) {

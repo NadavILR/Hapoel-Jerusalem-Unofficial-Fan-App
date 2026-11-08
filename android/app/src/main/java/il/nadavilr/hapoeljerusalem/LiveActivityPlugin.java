@@ -43,6 +43,32 @@ public class LiveActivityPlugin extends Plugin {
         call.resolve();
     }
 
+    /**
+     * Notification test screen: posts an in-game notification exactly as the live score service does (GameAlerts).
+     * testAlert({kind: start | quarter | final, q, ot, comp, t, meHome, home:{name, score}, away:{name, score}})
+     */
+    @PluginMethod
+    public void testAlert(PluginCall call) {
+        Context c = getContext();
+        JSObject home = call.getObject("home"), away = call.getObject("away");
+        LiveGame g = new LiveGame();
+        g.comp = call.getString("comp", "");
+        g.meHome = Boolean.TRUE.equals(call.getBoolean("meHome", true));
+        g.homeName = home != null ? home.optString("name", "") : "";
+        g.awayName = away != null ? away.optString("name", "") : "";
+        g.hs = home != null ? home.optInt("score", 0) : 0;
+        g.as = away != null ? away.optInt("score", 0) : 0;
+        Long t = call.getLong("t");
+        long tipOff = t != null ? t : 0L;
+        String kind = call.getString("kind", "");
+        if ("start".equals(kind)) GameAlerts.start(c, g, tipOff);
+        else if ("quarter".equals(kind)) GameAlerts.quarter(c, g, call.getInt("q", 1), tipOff);
+        else if ("final".equals(kind)) GameAlerts.fin(c, g, Boolean.TRUE.equals(call.getBoolean("ot", false)), tipOff);
+        JSObject r = new JSObject();
+        r.put("notifications", NotificationManagerCompat.from(c).areNotificationsEnabled());
+        call.resolve(r);
+    }
+
     @PluginMethod
     public void takeOpen(PluginCall call) {
         JSObject r = new JSObject();

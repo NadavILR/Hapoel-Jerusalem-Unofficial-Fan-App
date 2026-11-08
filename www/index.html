@@ -226,7 +226,10 @@ const url365=f=>f&&M365[f.id]?'https://www.365scores.com/he/basketball/match/'+M
 const openExt=u=>{if(NATIVE)location.href=u;else window.open(u,'_blank','noopener')};
 /* תקציר המשחק ביוטיוב: הקישור מהנתונים (שדה hl – הערוץ הרשמי של המפעל, ואם אין – של הפועל ירושלים); אם עוד לא הוזן – חיפוש ביוטיוב */
 const HLN={euro:'יורוקאפ',league:'ליגת ווינר',wcup:'גביע ווינר',cup:'גביע המדינה',super:'',prep:''};
-const ytId=g=>{const m=typeof g.hl==='string'&&/^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/.exec(g.hl);return m?m[1]:''};
+/* תקצירים שהאפליקציה מצאה בעצמה בערוצי היוטיוב (לפי מספר המשחק), עד שהם מגיעים גם בקובץ הנתונים */
+let HLC0=null;const HLC=()=>HLC0||(HLC0=LS.get('hpj-hl',{}));
+const hlOf=g=>{if(typeof g.hl==='string'&&g.hl)return g.hl;const e=HLC()[g.id];return e&&e.u||''};
+const ytId=g=>{const h=hlOf(g),m=/^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/.exec(h);return m?m[1]:''};
 /* תקציר בחלון קופץ בתוך האפליקציה (כפתור "חזור" של המכשיר סוגר אותו) */
 const VIDC={close:null};
 function VideoPop({g,onClose}){
@@ -239,7 +242,32 @@ function VideoPop({g,onClose}){
   <div class="rounded-xl overflow-hidden bg-black" style=${{aspectRatio:'16/9'}}><iframe src=${'https://www.youtube-nocookie.com/embed/'+id+'?rel=0&playsinline=1&autoplay=1'} title="תקציר המשחק" class="w-full h-full border-0" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>
  </div></div>`,document.body);
 }
-const hlUrl=g=>typeof g.hl==='string'&&/^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/.test(g.hl)?g.hl:'https://www.youtube.com/results?search_query='+encodeURIComponent(('תקציר '+(g.h?ME+' '+g.o:g.o+' '+ME)+' '+(HLN[g.c]||'')).trim());
+const hlUrl=g=>ytId(g)?'https://www.youtube.com/watch?v='+ytId(g):'https://www.youtube.com/results?search_query='+encodeURIComponent(('תקציר '+(g.h?ME+' '+g.o:g.o+' '+ME)+' '+(HLN[g.c]||'')).trim());
+/* תקציר המשחק מיד כשהוא עולה: הפיד (RSS) של ערוץ המפעל הרשמי – ליגת ווינר סל (גם הגביעים) או היורוקאפ – ואם אין שם, של ערוץ הפועל ירושלים.
+   נבדק במשחקים שהסתיימו בשבוע האחרון ואין להם עדיין תקציר: בפתיחת האפליקציה, כל 10 דקות וכשמשחק מסתיים */
+const YTC={il:'UCNWMa_pdt1GIWH_zwbTldEQ',euro:'UCpFqOv5z4WKps64GlQS4ytw',club:'UCM2ng9CAAebh7NIK_CmcsxA'};
+const ytDec=x=>String(x).replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+async function ytFeed(ch){const x=await getText('https://www.youtube.com/feeds/videos.xml?channel_id='+ch),out=[];
+ for(const m of x.matchAll(/<entry>([\s\S]*?)<\/entry>/g)){const e=m[1],v=/<yt:videoId>([\w-]{11})<\/yt:videoId>/.exec(e),t=/<title>([\s\S]*?)<\/title>/.exec(e),p=/<published>([^<]+)<\/published>/.exec(e);
+  if(v&&t)out.push({v:v[1],t:ytDec(t[1]),p:p?Date.parse(p[1]):0})}
+ return out}
+/* שם היריבה לחיפוש בכותרת: ב״ש ← באר שבע, ת״א ← תל אביב; בלי המילים הכלליות (הפועל, מכבי...) */
+const hlNorm=x=>String(x).replace(/ב[״"]ש/g,'באר שבע').replace(/ת[״"]א/g,'תל אביב').replace(/[״"׳']/g,'');
+const hlToks=o=>hlNorm(o).split(/[\s\/\-–]+/).filter(w=>w.length>=3&&!['הפועל','מכבי','בני','עירוני','אליצור'].includes(w));
+function hlFind(g,feeds,until){const ok=v=>v.p>=g.t&&v.p<=until,tk=hlToks(g.o||''),r=g.r||[],sc=t=>{const m=/(\d{2,3})\s*[-–]\s*(\d{2,3})/.exec(t);return m&&[+m[1],+m[2]].sort().join()===[r[0],r[1]].sort().join()};
+ const of=g.c==='euro'?(feeds.euro||[]).find(v=>ok(v)&&/jerusalem/i.test(v.t)&&/ - /.test(v.t)&&/round|game|playoff|final/i.test(v.t)&&!/top \d|mvp/i.test(v.t))
+  :['league','wcup','cup','super'].includes(g.c)?(feeds.il||[]).find(v=>{const t=hlNorm(v.t);return ok(v)&&/תקציר/.test(t)&&/ירושלים/.test(t)&&(!tk.length||tk.some(w=>t.includes(w)))}):null;
+ const cl=of?null:(feeds.club||[]).find(v=>ok(v)&&/נגד/.test(v.t)&&sc(v.t));
+ const v=of||cl;return v?{u:'https://www.youtube.com/watch?v='+v.v,o:of?1:0}:null}
+async function hlScan(F){const now=Date.now(),m=HLC(),
+  /* בלי תקציר; או עם התקציר של ערוץ הפועל – ואז עוד 3 ימים מחפשים את התקציר של ערוץ המפעל, שמחליף אותו */
+  need=F.filter(f=>f.r&&!(typeof f.hl==='string'&&f.hl)&&f.c!=='prep'&&now>f.t&&(m[f.id]?!m[f.id].o&&now-f.t<3*D:now-f.t<7*D));if(!need.length)return 0;
+ const chs=new Set(['club']);need.forEach(f=>chs.add(f.c==='euro'?'euro':'il'));const feeds={};
+ await Promise.all([...chs].map(k=>ytFeed(YTC[k]).then(x=>{feeds[k]=x}).catch(()=>{})));
+ let n=0;
+ for(const f of need){const nx=F.filter(x=>x.t>f.t).sort((a,b)=>a.t-b.t)[0],e=hlFind(f,feeds,Math.min(f.t+7*D,nx?nx.t:Infinity)),p=m[f.id];
+  if(e&&(!p||p.u!==e.u)){m[f.id]=e;n++}}
+ if(n)LS.set('hpj-hl',Object.fromEntries(Object.entries(m).slice(-30)));return n}
 /* סטטיסטיקות מלאות מ-365scores, באותו מבנה של הסטטיסטיקות שבאפליקציה אחרי המשחק ([הפועל ירושלים, יריבה]) */
 const sv=(a,t)=>{const x=(a||[]).find(y=>y.type===t);return x?x.value:''},mk2=v=>{const m=/(\d+)\s*\/\s*(\d+)/.exec(v||'');return m?[+m[1],+m[2]]:[0,0]},int=v=>parseInt(v,10)||0;
 function gs365(d,ts){const jh=d.homeCompetitor.id===634,J=jh?d.homeCompetitor:d.awayCompetitor,O=jh?d.awayCompetitor:d.homeCompetitor,mem={},nm=x=>String(x||'').replace(/'/g,'׳');
@@ -252,6 +280,12 @@ function gs365(d,ts){const jh=d.homeCompetitor.id===634,J=jh?d.homeCompetitor:d.
  return{q,fg:pr(5,9,10),p3:pr(9,11,12),ft:pr(13,13,14),t:{ast:pr(18,6),reb:pr(17,5),or:pr(15,15),dr:pr(16,16),stl:pr(19,7),blk:pr(21,8),to:pr(20,17),pf:pr(22,18)},pl,live:1}}
 /* סטטיסטיקות של משחקים שהסתיימו בזמן שהאפליקציה עקבה אחריהם בלייב */
 let LIVEGS0=null;const liveGS=()=>LIVEGS0||(LIVEGS0=LS.get('hpj-livegs',{}));
+/* המשחק בלייב שמור במכשיר משריקת הפתיחה ועד הסיום (עד 3 שעות מהעדכון האחרון), כדי שהכרטיס יופיע מיד כשפותחים את האפליקציה מחדש */
+const lgSaved=()=>{const x=LS.get('hpj-live-L',null);return x&&x.L&&x.L.app&&x.L.status!=='end'&&Date.now()-x.ts<3*H?x.L:null};
+const lgSave=(L,n)=>{if(L.status==='end'||(L.status==='pre'&&Date.now()<n.t)){if(LS.get('hpj-live-L',null))LS.set('hpj-live-L',null);return}
+ LS.set('hpj-live-L',{ts:Date.now(),L:{...L,pbp:L.pbp?L.pbp.slice(0,40):null}})};
+/* תוצאות סיום שהגיעו מהלייב: נשמרות במכשיר עד שהן מגיעות גם מקובץ הנתונים, כדי שרענון לא יחזיר משחק שהסתיים לספירה לאחור */
+const keepRes=()=>{const rs=LS.get('hpj-res',{});if(!Object.keys(rs).length)return;F0=F0.map(f=>!f.r&&Array.isArray(rs[f.id])?{...f,r:rs[f.id]}:f)};
 /* שמות רבעים אחידים: Q1–Q4 והארכות OT1, OT2… (גם כשהמקור כותב "ר1", "רבע 1", "הא1" או "הארכה") */
 const qLbl=s=>{s=String(s||'');const n=(/(\d+)/.exec(s)||[])[1];if(/הארכה|הא|OT/i.test(s))return 'OT'+(n||1);if(n&&/רבע|ר|Q/i.test(s))return 'Q'+n;return s};
 /* מצב המשחק לפי 365scores: pre / live / end */
@@ -299,7 +333,7 @@ function demoTick(L){const t=L.clock.split(':').map(Number);let sec=t[0]*60+t[1]
  return demoSync({...L,st,clock,qa,pbp},sc)}
 
 function useSportsData(){
- const [s,setS]=useState({ld:1,up:null,mode:'Snapshot',F:F0});
+ const [s,setS]=useState(()=>{keepRes();return{ld:1,up:null,mode:'Snapshot',F:F0}});
  const refresh=useCallback(async()=>{
   setS(x=>({...x,ld:1}));let mode='Snapshot',at=null;
   /* 1. קובץ הנתונים העדכני ביותר מהאתר (באנדרואיד – מהאתר, לא העותק שבתוך האפליקציה) */
@@ -307,11 +341,12 @@ function useSportsData(){
   /* 2. תוצאות, מועדים וטבלאות מהמקורות הרשמיים, נכון לרגע הלחיצה */
   const ok=await Promise.all([liveEuro().catch(()=>0),NATIVE?liveIsrael().catch(()=>0):0]);if(NATIVE)await liveNews().catch(()=>0);
   if(ok.some(n=>n>0)||mode==='Live')at=new Date();
-  setS({ld:0,up:new Date(),mode,F:F0,at});
+  keepRes();setS({ld:0,up:new Date(),mode,F:F0,at});
  },[]);
  useEffect(()=>{refresh()},[refresh]);
  /* תוצאת סיום מהלייב: המשחק נחשב שוחק, והספירה לאחור עוברת למשחק הבא */
- const markResult=useCallback((id,r)=>{F0=F0.map(f=>f.id===id&&!f.r?{...f,r}:f);setS(x=>({...x,F:F0}))},[]);
+ const markResult=useCallback((id,r)=>{const rs=LS.get('hpj-res',{});rs[id]=r;LS.set('hpj-res',Object.fromEntries(Object.entries(rs).slice(-20)));
+  F0=F0.map(f=>f.id===id&&!f.r?{...f,r}:f);setS(x=>({...x,F:F0}))},[]);
  return {...s,refresh,markResult};
 }
 
@@ -472,8 +507,8 @@ function GameCard({kind,g,now,L}){
  const df=Math.max(0,g.t-now),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]];
  const open=e=>openGame(A,g,e);
  /* כשהספירה לאחור נגמרת והמשחק עולה לאוויר בזמן שהמסך פתוח: תוכן הכרטיס יוצא, הכותרת "הפועל לייב" נכנסת, ורק אחריה שאר המידע */
- const [ph,setPh]=useState(L?'live':'cd');
- useEffect(()=>{if(L&&ph==='cd'){setPh('out');const t1=setTimeout(()=>setPh('in'),420),t2=setTimeout(()=>setPh('live'),2200);return()=>{clearTimeout(t1);clearTimeout(t2)}}if(!L&&ph!=='cd')setPh('cd')},[!!L]);
+ const [ph,setPh]=useState(L?'live':'cd'),cd0=useRef(g.t>Date.now());
+ useEffect(()=>{if(L&&ph==='cd'){/* המשחק כבר התחיל כשהכרטיס הופיע (למשל פתיחה מחדש של האפליקציה באמצע משחק): בלי אנימציה */if(!cd0.current){setPh('live');return}setPh('out');const t1=setTimeout(()=>setPh('in'),420),t2=setTimeout(()=>setPh('live'),2200);return()=>{clearTimeout(t1);clearTimeout(t2)}}if(!L&&ph!=='cd')setPh('cd')},[!!L]);
  const LV=L&&(ph==='in'||ph==='live');
  return html`<div class=${'rounded-2xl p-4 flex flex-col '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
  ${LV?html`<${LiveCard} L=${L} g=${g} intro=${ph==='in'}/>`:html`<div class=${'flex-1 flex flex-col'+(ph==='out'?' cd-out':'')}>
@@ -853,7 +888,7 @@ function ScoreDock({cardR,g,L,sc}){
  React.useLayoutEffect(()=>{const de=document.documentElement,h=r.current?r.current.offsetHeight:0;de.style.setProperty('--fbh',h+'px');de.style.setProperty('--dockh',(on?h:0)+'px');de.classList.toggle('bar-stuck',on);de.classList.toggle('dock-on',on)},[on]);
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,live=L&&L.status==='live',hs=L?L.hs:sc[0],as=L?L.as:sc[1];
  /* ה-+1/+2/+3 מופיע בצד של התוצאה שפונה למרכז: משמאל לתוצאה של הקבוצה שמימין, ומימין לתוצאה של הקבוצה שמשמאל */
- const num=(v,sd)=>html`<span class="text-[26px] leading-none font-extrabold sb tabular-nums">${L?html`<${Pts} v=${v} k=${L.app} side=${sd}/>`:v}</span>`;
+ const fin=!L&&sc&&sc[0]!==sc[1],num=(v,sd)=>html`<span class=${'text-[26px] leading-none sb tabular-nums '+(fin&&v<Math.max(hs,as)?'font-normal':'font-extrabold')}>${L?html`<${Pts} v=${v} k=${L.app} side=${sd}/>`:v}</span>`;
  const side=(n,v)=>html`<div class="flex items-center gap-2 min-w-0 flex-1 ${n===hm?'justify-start':'justify-end'}">${n===hm?html`<${Cr} n=${n} s=${30}/>${num(v,'l')}`:html`${num(v,'r')}<${Cr} n=${n} s=${30}/>`}</div>`;
  return html`<div ref=${r} class=${'score-dock'+(on?' on':'')} aria-hidden=${on?undefined:'true'}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto px-4 pb-2 flex items-center gap-3" dir="rtl">
   ${side(hm,hs)}
@@ -861,17 +896,21 @@ function ScoreDock({cardR,g,L,sc}){
   ${side(aw,as)}</div></div>`;
 }
 function Game({g}){
- const cardR=useRef(null),A=useContext(Ctx),LG=A.lg&&A.lg.app===g.id&&A.lg.status!=='pre'?A.lg:null,[tb,setTb]=useState('g'),[pp,setPp]=useState(null),[ld,setLd]=useState(null);
+ /* המשחק כפי שהוא עכשיו בלוח (כשמשחק בלייב מסתיים, העמוד עובר מיד לתצוגה של משחק שהסתיים) */
+ const A=useContext(Ctx);g=A.F.find(f=>f.id===g.id)||g;
+ const cardR=useRef(null),LG=A.lg&&A.lg.app===g.id&&A.lg.status==='live'?A.lg:null,[tb,setTb]=useState('g'),[pp,setPp]=useState(null),[ld,setLd]=useState(null);
  /* ליגת ווינר / גביע ווינר – משחק שהסתיים: התוצאה, התוצאה לפי רבעים והסטטיסטיקה מקובץ ה-Live Stats של המשחק */
  useEffect(()=>{setLd(null);if(!LG&&g.r&&OFFC(g.c)){let on=true;pastLs(g).then(d=>{if(on&&d)setLd(d)});return()=>{on=false}}},[g.id,!!LG]);
  const lsGs=ld?(()=>{try{return gsLs(ld)}catch(e){return null}})():null,lr=ld?lsFinal(ld):null;
  g=lr&&(lr[0]||lr[1])?{...g,r:lr}:g;
- const gs=LG&&LG.gs?LG.gs:(lsGs||GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null;
+ const gs=LG&&LG.gs?LG.gs:(lsGs||GS[g.id]||liveGS()[g.id]),gg=LG?{...g,r:LG.r}:g,pf=Array.isArray(GP[g.id])?GP[g.id].filter(p=>Array.isArray(p)&&p.length>1):null,hm=g.h?ME:g.o,aw=g.h?g.o:ME,sc=g.r?(g.h?[g.r[0],g.r[1]]:[g.r[1],g.r[0]]):null,
+  /* המנצחת (0 – הקבוצה המארחת, 1 – האורחת): שמה והתוצאה שלה בבולד */
+  wn=sc&&sc[0]!==sc[1]?(sc[0]>sc[1]?0:1):-1;
  useEffect(()=>{setPp(null);if(!LG&&g.r){let on=true;pastPbp(g).then(x=>{if(on)setPp(x)});return()=>{on=false}}},[g.id,!!LG]);
  const PB=LG&&LG.pbp?LG:pp?{pbp:pp}:null;
  return html`<div>${LG||sc?html`<${ScoreDock} cardR=${cardR} g=${g} L=${LG} sc=${sc}/>`:null}<button onClick=${()=>A.setGm(null)} class="on-glass back-stick text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
  ${LG?html`<div ref=${cardR} class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="mt-2 text-center"><span class="on-glass text-[11px] mu">${LG.status==='live'?'סטטיסטיקות בלייב מ-365scores · מתעדכן כל 20 שניות':'סטטיסטיקות סיום מ-365scores'}</span></div>`:html`<div ref=${cardR} class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
- <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class="text-sm mt-1">${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl font-semibold sb" dir="rtl"><span>${sc[0]}</span><span class="opacity-60">–</span><span>${sc[1]}</span></div>`:html`<div class="text-2xl font-semibold sb opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class="text-sm mt-1">${aw}</div></div></div>
+ <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class=${'text-sm mt-1'+(wn===0?' font-bold':'')}>${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl sb" dir="rtl"><span class=${wn===0?'font-extrabold':'font-normal'}>${sc[0]}</span><span class="opacity-60">–</span><span class=${wn===1?'font-extrabold':'font-normal'}>${sc[1]}</span></div>`:html`<div class="text-2xl font-semibold sb opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class=${'text-sm mt-1'+(wn===1?' font-bold':'')}>${aw}</div></div></div>
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
  ${g.r&&!LG?(ytId(g)?html`<div class="mt-3 rounded-xl overflow-hidden bg-black fade-in" style=${{aspectRatio:'16/9'}}><iframe key=${ytId(g)} src=${'https://www.youtube-nocookie.com/embed/'+ytId(g)+'?rel=0&playsinline=1'} title="תקציר המשחק" class="w-full h-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
   :html`<button onClick=${()=>openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white font-bold flex items-center justify-center gap-2"><${I} n="play" s=${18}/>לתקציר המשחק ביוטיוב</button>`):null}
@@ -988,16 +1027,48 @@ function NoteRow({n,i,out,onGone}){
  const up=()=>{const s=st.current;st.current=null;if(!s||!s.on)return;if(Math.abs(s.dx)>90){const w=(r.current?r.current.offsetWidth:360)+40;set(s.dx>0?w:-w,true);setGone(1);setTimeout(onGone,260)}else set(0,true)};
  return html`<div ref=${r} onPointerDown=${down} onPointerMove=${move} onPointerUp=${up} onPointerCancel=${up} style=${{touchAction:'pan-y',...(out?{animationDelay:i*40+'ms'}:{})}} class=${'sf rounded-xl p-3 text-sm flex gap-2 select-none '+(out?'note-out ':'')+(n.r?'opacity-60':'')}>${!n.r&&html`<span class="w-2 h-2 mt-1.5 rounded-full bg-[#D21919] shrink-0"></span>`}<div class="flex-1">${n.t}<div class="text-xs mu">${n.ts?ago(n.ts):n.w}</div></div></div>`;
 }
+/* מסך בדיקת התראות (3 לחיצות על הכותרת "מרכז התראות"): כל ההתראות שיש באפליקציה, עם הנוסח המדויק שלהן, וכפתור ששולח כל אחת למכשיר.
+   התראות המשחק נשלחות דרך אותו קוד native שמשמש בזמן משחק (GameAlerts); הנתונים – מהמשחק הבא, התוצאות לדוגמה */
+function NotifTest({onClose}){
+ const A=useContext(Ctx),P=plug('LiveActivity'),f=A.F.filter(x=>!x.r).sort((a,b)=>a.t-b.t)[0]||A.F[A.F.length-1]||{id:0,h:1,o:'יריבה',c:'league',t:Date.now()};
+ const ME365='https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634';
+ const nat=(kind,r,extra)=>P&&P.testAlert?P.testAlert({kind,...extra,comp:cmp(f),t:f.t||0,meHome:!!f.h,home:{name:NT.home(f),score:f.h?r[0]:r[1]},away:{name:NT.away(f),score:f.h?r[1]:r[0]}}):null;
+ const game=(m,kind,r,extra)=>[m,()=>nat(kind,r,extra)||devNotify(NT.line(m),m)];
+ const items=[
+  ['לפני המשחק',[NT.hour(f),()=>devNotify(NT.line(NT.hour(f)),NT.hour(f))],'תזכורת שעה לפני שריקת הפתיחה'],
+  ['במהלך המשחק',game(NT.start(f),'start',[0,0]),'תחילת המשחק'],
+  [null,game(NT.quarter(f,[22,18],1),'quarter',[22,18],{q:1}),'סיום רבע ראשון'],
+  [null,game(NT.quarter(f,[45,40],2),'quarter',[45,40],{q:2}),'סיום רבע שני'],
+  [null,game(NT.quarter(f,[66,61],3),'quarter',[66,61],{q:3}),'סיום רבע שלישי'],
+  [null,game(NT.fin(f,[88,80],false),'final',[88,80],{ot:false}),'סיום רבע רביעי (ללא הארכה) – ניצחון'],
+  [null,game(NT.fin(f,[80,88],false),'final',[80,88],{ot:false}),'סיום רבע רביעי (ללא הארכה) – הפסד'],
+  [null,game(NT.quarter(f,[80,80],4),'quarter',[80,80],{q:4}),'סיום רבע רביעי (משחק עם הארכה)'],
+  [null,game(NT.quarter(f,[90,90],5),'quarter',[90,90],{q:5}),'סיום הארכה (כשיש כמה הארכות)'],
+  [null,game(NT.fin(f,[101,97],true),'final',[101,97],{ot:true}),'סיום המשחק (עם הארכה) – ניצחון'],
+  [null,game(NT.fin(f,[97,101],true),'final',[97,101],{ot:true}),'סיום המשחק (עם הארכה) – הפסד'],
+  [null,[{title:'כרטיס התוצאה בלייב',l2:'הסמלים, התוצאה, הרבע והשעון ומהלך המשחק (נעלם אחרי 20 שניות)'},()=>{if(!P||!P.demo)return A.toast('כרטיס התוצאה בלייב קיים רק באפליקציית האנדרואיד');
+    P.demo({t:f.t||0,comp:cmp(f),status:'רבע 3',clock:'04:12',play:'04:12 · '+ME+' – שלשה',home:{name:NT.home(f),score:66,img:f.h?ME365:crestSrcs(f.o)[0]||null},away:{name:NT.away(f),score:61,img:f.h?crestSrcs(f.o)[0]||null:ME365}}).catch(()=>{});setTimeout(()=>P.demo({}).catch(()=>{}),2e4)}],'כרטיס התוצאה בלייב'],
+  ['כללי',[{title:ME,l2:'ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר'},()=>devNotify('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר')],'הפעלת ההתראות'],
+  [null,[{title:ME,l2:'התראת בדיקה: ההתראות של הפועל ירושלים פועלות'},()=>devNotify('התראת בדיקה: ההתראות של הפועל ירושלים פועלות')],'התראת בדיקה']];
+ const send=(go,l)=>{const run=()=>{try{const x=go();if(x&&x.catch)x.catch(()=>{})}catch(e){}A.toast('נשלחה: '+l)};if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);run()});else run()};
+ return html`<div class="fixed inset-0 z-[60] flex" onClick=${e=>{e.stopPropagation();onClose()}}><div class="w-full h-full overflow-y-auto fade-in glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
+ <div class="flex items-center justify-between mb-1"><div class="text-lg font-bold">בדיקת התראות</div><button onClick=${onClose} aria-label="סגירה"><${I} n="x"/></button></div>
+ <div class="text-xs mu mb-3">כל ההתראות של האפליקציה, בנוסח המדויק שלהן. "שליחה" שולחת אותה עכשיו למכשיר. הנתונים מהמשחק הבא (${NT.match(f)}); התוצאות לדוגמה.</div>
+ ${items.map(([sec,[m,go],l],i)=>html`<${React.Fragment} key=${i}>${sec?html`<div class="font-bold text-sm mt-3 mb-1">${sec}</div>`:null}
+  <div class="sf rounded-xl p-3 mb-2 flex items-center gap-3"><div class="flex-1 min-w-0"><div class="text-[11px] mu">${l}</div><div class="font-bold text-sm">${m.title}</div>${m.l1?html`<div class="text-xs mu">${m.l1}</div>`:null}<div class="text-xs mu">${m.l2}</div></div>
+  <button onClick=${()=>send(go,l)} class="shrink-0 px-3 py-2 rounded-lg bg-[#D21919] text-white text-xs font-bold">שליחה</button></div><//>`)}
+ </div></div>`;
+}
 function Drawer(){
  const A=useContext(Ctx),pf=A.pf,sp=(k,v)=>A.setPf({...pf,[k]:v}),[clr,setClr]=useState('');
  /* "סמן הכל כנקרא": ההתראות יוצאות אחת אחרי השנייה, נמחקות, ומופיעה הודעה קצרה. בפתיחה הבאה המסך ריק */
- const list=A.notes.slice(0,8),taps=useRef([]);
- /* 3 לחיצות מהירות על הכותרת שולחות התראת בדיקה */
- const tapTitle=()=>{const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];
-  const go=()=>A.nf.current('התראת בדיקה: ההתראות של הפועל ירושלים פועלות');if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);go()});else go()};
+ const list=A.notes.slice(0,8),taps=useRef([]),[tst,setTst]=useState(false);
+ /* 3 לחיצות מהירות על הכותרת פותחות את מסך בדיקת ההתראות */
+ const tapTitle=()=>{const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];setTst(true)};
  const clearAll=()=>{if(!A.notes.length||clr)return;setClr('out');setTimeout(()=>{A.setNotes([]);setClr('done')},Math.min(list.length,8)*40+270)};
  return html`<div class="fixed inset-0 z-[55] bg-[rgb(var(--blk-rgb)/0.35)] dim-in flex items-start justify-center" onClick=${()=>A.setDr(false)}><div class="bg-app w-full max-w-xl max-h-[88%] overflow-y-auto rounded-b-2xl sheet-down glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'16px'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-3"><div onClick=${tapTitle} class="text-lg font-bold select-none">מרכז התראות</div><button onClick=${()=>A.setDr(false)} aria-label="סגירה"><${I} n="x"/></button></div>
+ ${tst?ReactDOM.createPortal(html`<${NotifTest} onClose=${()=>setTst(false)}/>`,document.body):null}
  ${A.notes.length&&clr!=='done'?html`<div class="mb-3"><button onClick=${clearAll} class="w-full py-2 rounded-lg sf text-sm font-bold">סמן הכל כנקרא</button></div>`:null}
  ${list.length&&!clr?html`<div class="text-[11px] mu mb-2">החליקו התראה הצידה כדי למחוק אותה</div>`:null}
  ${clr==='done'?html`<div class="note-done flex items-center justify-center gap-2 py-6 mb-4 text-sm mu"><span class="w-8 h-8 rounded-full bg-green-600/10 text-green-700 flex items-center justify-center"><${I} n="check" s=${18}/></span>כל ההתראות נקראו</div>`:null}
@@ -1098,9 +1169,21 @@ async function relAtom(){const t=await getText('https://github.com/'+REPO+'/rele
 async function latestRelease(){try{const r=await relApi();if(r)return r}catch(e){}return relAtom()}
 /* כל ההתראות של האפליקציה בקבוצה אחת במגש ההתראות (יחד עם כרטיס התוצאה בלייב ועדכוני המשחק של החלק ה-native) */
 const NGROUP='hpj-all';
-const schedRem=(f)=>{const L=LN();if(!L||f.tbd||f.t-H<=Date.now())return;L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(f.t-H),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919',group:NGROUP}]}).catch(()=>{})};
+/* נוסח ההתראות (חוץ מכרטיס התוצאה בלייב): כותרת, ושורות הטקסט – l1 (מפעל, מחזור/שלב) מעל l2 (הקבוצות / התוצאה). זהה לנוסח בחלק ה-native (GameAlerts) */
+const NT={home:f=>f.h?ME:f.o,away:f=>f.h?f.o:ME,match:f=>NT.home(f)+' מול '+NT.away(f),
+ score:(f,r)=>NT.home(f)+' '+(f.h?r[0]:r[1])+' - '+(f.h?r[1]:r[0])+' '+NT.away(f),
+ qt:q=>q===1?'סיום רבע ראשון':q===2?'מחצית':q===3?'סיום רבע שלישי':q===4?'סיום רבע רביעי':'סיום הארכה '+(q-4),
+ hour:f=>({title:'יושב סופר את הדקות... עוד שעה מתחילים!!!',l1:cmp(f),l2:NT.match(f)}),
+ start:f=>({title:'המשחק התחיל',l1:cmp(f),l2:NT.match(f)}),
+ quarter:(f,r,q)=>({title:NT.qt(q),l2:NT.score(f,r)}),
+ fin:(f,r,ot)=>({title:(ot?'סיום המשחק (לאחר הארכה) - ':'סיום המשחק – ')+(r[0]>r[1]?'ניצחון':'הפסד'),l2:NT.score(f,r)}),
+ /* לרשימת ההתראות שבאפליקציה: שורה אחת */
+ line:m=>m.title+(m.l1?' · '+m.l1:'')+' · '+m.l2,
+ /* ל-LocalNotifications: מקופל – שורת הקבוצות, פתוח – שתי השורות */
+ ln:m=>({title:m.title,body:m.l2,largeBody:(m.l1?m.l1+'\n':'')+m.l2})};
+const schedRem=(f)=>{const L=LN();if(!L||f.tbd||f.t-H<=Date.now())return;L.schedule({notifications:[{id:f.id%2147483647,...NT.ln(NT.hour(f)),schedule:{at:new Date(f.t-H),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919',group:NGROUP}]}).catch(()=>{})};
 const lnPerm=r=>r&&r.display==='granted'?'granted':r&&r.display==='denied'?'denied':'default';
-function devNotify(t){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),title:ME,body:t,smallIcon:'ic_stat_hpj',iconColor:'#D21919',group:NGROUP}]}).then(()=>{const P=plug('LiveActivity');if(P&&P.group)return P.group()}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+function devNotify(t,m){try{const L=LN();if(L){L.schedule({notifications:[{id:Math.floor(Math.random()*2e9),...(m?NT.ln(m):{title:ME,body:t}),smallIcon:'ic_stat_hpj',iconColor:'#D21919',group:NGROUP}]}).then(()=>{const P=plug('LiveActivity');if(P&&P.group)return P.group()}).catch(()=>{});return}if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
  /* בלי תמונת סמל בתוך ההתראה; badge הוא האייקון הקטן בשורת הסטטוס (אנדרואיד מציג אותו בצבע אחד) */
  const o={body:t,badge:'icons/notify-badge.png',lang:'he',dir:'rtl',tag:'hpj-'+Date.now(),data:{url:location.href}};
  const plain=()=>{try{new Notification(ME,o)}catch(e){}};
@@ -1122,13 +1205,19 @@ function App(){
  const toast=t=>{const id=Math.random();setToasts(x=>[...x,{id,t}]);setTimeout(()=>setToasts(x=>x.filter(y=>y.id!==id)),3500)};
  const nf=useRef();
  /* עדכוני משחק (פתיחה / סיום) במגש ההתראות: באפליקציית האנדרואיד החלק ה-native שולח אותם בעצמו (גם כשהאפליקציה סגורה), ולכן כאן הם רק נכנסים לרשימת ההתראות שבאפליקציה */
- nf.current=(t,c,k)=>{if(pf.on===0)return;if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);if(!(k==='quarter'&&pf.live!==0&&plug('LiveActivity')))devNotify(t)};
+ nf.current=(t,c,k,m)=>{if(pf.on===0)return;if(k&&!pf[k])return;if(c&&!pf.comps[c])return;setNotes(n=>[{id:Date.now()+Math.random(),t,ts:Date.now(),r:0},...n].slice(0,30));toast(t);if(!(k==='quarter'&&pf.live!==0&&plug('LiveActivity')))devNotify(t,m)};
  /* תזכורות למשחקים: שעה לפני שריקת הפתיחה (נבדק כל 30 שניות כשהאפליקציה פתוחה) */
- useEffect(()=>{if(LN())return;const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;nf.current('תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד '+Math.max(1,Math.round((f.t-now)/6e4))+' דקות',f.c,'hour')}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
- const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour&&pf.on!==0)L.schedule({notifications:[{id:f.id%2147483647,title:ME,body:'תזכורת: '+(f.h?ME+' – '+f.o:f.o+' – '+ME)+' מתחיל בעוד שעה',schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919',group:NGROUP}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
+ useEffect(()=>{if(LN())return;const chk=()=>{const now=Date.now(),fired=LS.get('hpj-fired',{});let ch=0;for(const f of S.F){if(!rem[f.id]||f.r||fired[f.id]||f.tbd)continue;if(now>=f.t-H&&now<f.t){fired[f.id]=1;ch=1;{const m=NT.hour(f);nf.current(NT.line(m),f.c,'hour',m)}}}if(ch)LS.set('hpj-fired',fired)};chk();const i=setInterval(chk,3e4);return()=>clearInterval(i)},[rem,S.F,pf]);
+ const togRem=f=>{const L=LN();if(L){const on=!rem[f.id],at=f.t-H;if(on&&at>Date.now()&&!f.tbd&&pf.hour&&pf.on!==0)L.schedule({notifications:[{id:f.id%2147483647,...NT.ln(NT.hour(f)),schedule:{at:new Date(at),allowWhileIdle:true},smallIcon:'ic_stat_hpj',iconColor:'#D21919',group:NGROUP}]}).catch(()=>{});else L.cancel({notifications:[{id:f.id%2147483647}]}).catch(()=>{})}setRem(r=>({...r,[f.id]:!r[f.id]}));toast(rem[f.id]?'התזכורת בוטלה':'תזכורת למשחק הוגדרה בהצלחה')};
  const nx=S.F.filter(f=>!f.r).sort((a,b)=>a.t-b.t)[0];
+ /* תקצירים: כשנמצא תקציר חדש, הכפתור בכרטיס המשחק הקודם והסרטון בעמוד המשחק מופיעים מיד */
+ const [,setHlv]=useState(0);
+ useEffect(()=>{let on=true;const f=()=>{if(document.visibilityState!=='hidden')hlScan(S.F).then(n=>{if(on&&n)setHlv(x=>x+1)}).catch(()=>{})};
+  f();const i=setInterval(f,10*6e4),v=()=>{if(document.visibilityState==='visible')f()};document.addEventListener('visibilitychange',v);
+  return()=>{on=false;clearInterval(i);document.removeEventListener('visibilitychange',v)}},[S.F]);
  /* לייב: מ-10 דקות לפני שריקת הפתיחה ועד הסיום – בדיקה ב-365scores כל 20 שניות */
- const [lg,setLg]=useState(null),lgRef=useRef(null),[demo,setDemo]=useState(null),taps=useRef([]);
+ /* המשחק בלייב נשמר במכשיר: כשפותחים את האפליקציה מחדש באמצע משחק, הכרטיס מופיע מיד עם התוצאה האחרונה (בלי טעינה ובלי האנימציה), ומתעדכן מיד אחר כך */
+ const [lg,setLg]=useState(lgSaved),lgRef=useRef(lg),[demo,setDemo]=useState(null),taps=useRef([]);
  useEffect(()=>{if(!demo)return;const i=setInterval(()=>setDemo(d=>d&&demoTick(d)),4000);return()=>clearInterval(i)},[!!demo]);
  useEffect(()=>{let stop=false,tm=null,full=0;
   /* בזמן משחק חי: התוצאה והשעון כל 3 שניות (כמעט מיד אחרי 365scores); סטטיסטיקה ומהלך המשחק – כל 10 שניות או מיד כשהתוצאה משתנה */
@@ -1148,9 +1237,9 @@ function App(){
        if(heavy){full=Date.now();const ts=await getJSON(S365+'game/stats/?'+Q365+'&games='+g.id).catch(()=>null);try{L.gs=gs365(det,ts)}catch(e){}const pb=await livePbp(n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}
        else if(same){L.gs=prev.gs;L.pbp=prev.pbp}}}
      if(L&&!stop){if(L.status==='live')wait=3000;
-      lgRef.current=L;setLg(L);
-      if(L.status==='live'&&(!prev||prev.app!==n.id||prev.status!=='live'))nf.current('המשחק התחיל: '+(L.jh?ME+' – '+n.o:n.o+' – '+ME),n.c,'quarter');
-      if(L.status==='end'){const fired=LS.get('hpj-final',{});if(!fired[n.id]){fired[n.id]=1;LS.set('hpj-final',fired);nf.current('סיום המשחק: '+ME+' '+L.r[0]+' – '+L.r[1]+' '+n.o+(L.r[0]>L.r[1]?' · ניצחון':''),n.c,'quarter')}if(L.gs){const lg=liveGS();lg[n.id]=L.gs;LS.set('hpj-livegs',lg)}S.markResult(n.id,L.r);return}}}
+      lgRef.current=L;setLg(L);lgSave(L,n);
+      if(L.status==='live'&&(!prev||prev.app!==n.id||prev.status!=='live')){const m=NT.start(n);nf.current(NT.line(m),n.c,'quarter',m)}
+      if(L.status==='end'){const fired=LS.get('hpj-final',{});if(!fired[n.id]){fired[n.id]=1;LS.set('hpj-final',fired);{const m=NT.fin(n,L.r,(L.q||[]).length>4);nf.current(NT.line(m),n.c,'quarter',m)}}if(L.gs){const lg=liveGS();lg[n.id]=L.gs;LS.set('hpj-livegs',lg)}S.markResult(n.id,L.r);return}}}
    }catch(e){}
    if(!stop)tm=setTimeout(tick,wait)};
   tick();const v=()=>{if(document.visibilityState==='visible'){clearTimeout(tm);tick()}};document.addEventListener('visibilitychange',v);
@@ -1209,7 +1298,7 @@ function App(){
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
   ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-[11px] font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(var(--sat) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
- <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נתונים: 365scores, איגוד הכדורסל ו-EuroLeague · גרסה ${window.APP_VERSION||''} · <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי</a></span></div></main>
+ <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נדב רובינסון © גרסה ${window.APP_VERSION||''} • <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי של הקבוצה</a></span></div></main>
  ${mo?html`<div class="fixed inset-0 z-[44]" onClick=${()=>setMo(false)}></div>
  <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass glass-menu" style=${{bottom:'calc(var(--navh,70px) + 10px)',transformOrigin:'bottom left'}}>
   ${MORE.map(([k,l,ic,sub])=>html`<button key=${k} onClick=${()=>go(k)} class=${'w-full flex items-center gap-3 px-4 py-3 text-right border-b bd last:border-0 '+(pg===k?'text-[#D21919]':'')}><span class="w-9 h-9 rounded-full flex items-center justify-center bg-[#D21919] text-white shrink-0"><${I} n=${ic} s=${18}/></span><span class="min-w-0"><span class="block font-medium">${l}</span><span class="block text-[11px] mu truncate">${sub}</span></span></button>`)}
