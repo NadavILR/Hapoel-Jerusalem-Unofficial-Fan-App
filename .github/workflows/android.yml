@@ -34,8 +34,23 @@ jobs:
           echo "version=$v" >> "$GITHUB_OUTPUT"
           # Release tag is always X.Y.Z (1.19 -> v1.19.0): app versions up to 1.1.8 only recognize such tags
           if [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then echo "tag=v$v.0" >> "$GITHUB_OUTPUT"; else echo "tag=v$v" >> "$GITHUB_OUTPUT"; fi
+      - name: Restore the signing key from GitHub secrets
+        env:
+          KS: ${{ secrets.HPJ_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/hpj-release.jks"
+            echo "HPJ_KEYSTORE=$RUNNER_TEMP/hpj-release.jks" >> "$GITHUB_ENV"
+            echo "Signing key: from secrets"
+          else
+            echo "::warning::HPJ_KEYSTORE_BASE64 secret is not set – signing with the key file in the repository"
+          fi
       - name: Build APK
         working-directory: android
+        env:
+          HPJ_STORE_PASSWORD: ${{ secrets.HPJ_STORE_PASSWORD }}
+          HPJ_KEY_ALIAS: ${{ secrets.HPJ_KEY_ALIAS }}
+          HPJ_KEY_PASSWORD: ${{ secrets.HPJ_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon

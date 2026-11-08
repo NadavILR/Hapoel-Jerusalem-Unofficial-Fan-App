@@ -23,13 +23,16 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    // One fixed signing key for every build, so each new APK installs as an update over the previous one
+    // One fixed signing key for every build, so each new APK installs as an update over the previous one.
+    // In CI the key and its passwords come from GitHub secrets (HPJ_KEYSTORE_BASE64, HPJ_STORE_PASSWORD, HPJ_KEY_ALIAS, HPJ_KEY_PASSWORD);
+    // the workflow writes the key to a temp file and passes its path in HPJ_KEYSTORE.
     signingConfigs {
         hpj {
-            storeFile rootProject.file('keystore/hpj-release.jks')
-            storePassword 'hapoeljerusalem'
-            keyAlias 'hpj'
-            keyPassword 'hapoeljerusalem'
+            def env = System.getenv()
+            storeFile env.HPJ_KEYSTORE ? file(env.HPJ_KEYSTORE) : rootProject.file('keystore/hpj-release.jks')
+            storePassword env.HPJ_STORE_PASSWORD ?: 'hapoeljerusalem'
+            keyAlias env.HPJ_KEY_ALIAS ?: 'hpj'
+            keyPassword env.HPJ_KEY_PASSWORD ?: env.HPJ_STORE_PASSWORD ?: 'hapoeljerusalem'
         }
     }
     buildTypes {
