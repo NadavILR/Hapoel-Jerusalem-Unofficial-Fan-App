@@ -966,7 +966,7 @@ function Settings(){
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">הגדרות</div><button onClick=${()=>A.setSt(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="sf rounded-xl p-3 mb-3"><${Tg} on=${on} f=${toggle} l=${html`<span class="font-medium">התראות</span>`}/>
  <div class="text-xs mu">${on?'ההתראות פעילות ויופיעו גם במגש ההתראות של המכשיר.':A.perm==='denied'?'ההתראות חסומות בהגדרות המכשיר. כדי להפעיל אותן יש לאשר התראות לאפליקציה בהגדרות המכשיר.':'ההתראות כבויות. הפעילו כדי לקבל תזכורות למשחקים ועדכוני תוצאות.'}</div>
- ${on?html`<div class="mt-2 border-t bd pt-2"><${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/><${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
+ ${on?html`<div class="mt-2 border-t bd pt-2"><${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/>${NATIVE?html`<${Tg} on=${pf.live!==0} f=${()=>sp('live',pf.live===0?1:0)} l="תוצאה בלייב במגש ההתראות ובמסך הנעילה (Live Updates / Now Bar)"/>`:null}<${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
  <div class="font-bold mt-2 text-sm">לפי מפעל</div>${Object.entries(COMPS).map(([k,l])=>html`<${Tg} key=${k} on=${pf.comps[k]} f=${()=>sp('comps',{...pf.comps,[k]:+!pf.comps[k]})} l=${l}/>`)}</div>`:null}</div>
  <div class="sf rounded-xl p-3"><div class="font-bold mb-1">עדכוני אפליקציה</div><div class="text-sm mu">גרסה מותקנת: ${window.APP_VERSION||''}</div>
  ${NATIVE?html`<button onClick=${check} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white text-sm font-bold">חפש עדכונים</button>${chk?html`<div class="text-xs mu mt-2 text-center">${chk}</div>`:null}<div class="text-xs mu mt-2">האפליקציה בודקת עדכונים אוטומטית בכל פתיחה. כשיש גרסה חדשה צריך לעדכן כדי להמשיך להשתמש בה.</div>`:html`<div class="text-xs mu mt-1">בגרסת הדפדפן האפליקציה מתעדכנת אוטומטית.</div>`}</div>
@@ -1086,6 +1086,12 @@ function App(){
    if(!stop)tm=setTimeout(tick,wait)};
   tick();const v=()=>{if(document.visibilityState==='visible'){clearTimeout(tm);tick()}};document.addEventListener('visibilitychange',v);
   return()=>{stop=true;clearTimeout(tm);document.removeEventListener('visibilitychange',v)}},[S.F]);
+ /* תוצאה בלייב במגש ההתראות של אנדרואיד (Live Updates באנדרואיד 16, ה-Now Bar בסמסונג): האפליקציה מעבירה לחלק ה-native את שעות שריקת הפתיחה
+    של המשחקים הבאים, והוא מפעיל בשריקת הפתיחה התראה מתעדכנת עד הסיום – גם כשהאפליקציה סגורה. רק כשההתראות מאושרות במכשיר ופעילות באפליקציה */
+ useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
+  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t}));
+   P.sync({on:pf.on!==0&&pf.live!==0,games:gs}).catch(()=>{})};
+  sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
  const [mo,setMo0]=useState(false);
  /* תפריט "עוד": מסך הכרטיסים באנדרואיד הוא חלון נפרד מעל האפליקציה, ולכן הוא מוסתר בזמן שהתפריט פתוח ומוצג שוב אם סוגרים בלי לבחור */
  const tixShow=home=>{const T=TK(),n=document.getElementById('app-nav');if(T)return T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home})};

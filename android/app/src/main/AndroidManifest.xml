@@ -20,6 +20,25 @@
             </intent-filter>
         </activity>
 
+        <!-- Live score while a game is on: an ongoing "Live Update" notification (status bar chip, lock screen,
+             Samsung Now Bar), started at tip-off by an exact alarm and updated from 365scores -->
+        <service
+            android:name=".LiveScoreService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Live score of the basketball game in progress, shown as an ongoing notification until the final buzzer" />
+        </service>
+        <receiver android:name=".LiveAlarmReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <!-- Samsung One UI 7: allow the app's ongoing notification in the Now Bar (Live Notifications) -->
+        <meta-data android:name="com.samsung.android.support.ongoing_activity" android:value="true" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -34,4 +53,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- In-app updates: install the new APK downloaded from the app's GitHub Releases -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Live score notification during a game -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 </manifest>

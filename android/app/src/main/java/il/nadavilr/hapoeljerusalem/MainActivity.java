@@ -41,6 +41,7 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(TicketsPlugin.class);
         registerPlugin(UpdaterPlugin.class);
+        registerPlugin(LiveActivityPlugin.class);
         super.onCreate(savedInstanceState);
         // Ask for the screen's highest refresh rate (e.g. 120Hz), so scrolling and animations are not held at 60Hz
         preferHighRefreshRate();
