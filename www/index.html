@@ -570,7 +570,7 @@ function Sched(){
   <${Cr} n=${f.o} s=${32}/>
   <div class="flex-1 min-w-0"><div class="font-bold truncate">${f.o}</div><div class="text-xs mu truncate">${f.tbd?'שעה טרם נקבעה':hm(f.t)} · ${cmp(f)}</div><div class="text-xs mu truncate">${f.v||(f.h?'משחק בית':'משחק חוץ')}</div></div>
   ${f.r?html`<div class="text-center shrink-0"><div dir="rtl" class="font-semibold sb flex gap-1 justify-center"><span>${f.h?f.r[0]:f.r[1]}</span><span>–</span><span>${f.h?f.r[1]:f.r[0]}</span></div><span class=${'text-xs font-medium px-2 rounded '+(w?'text-green-700 bg-green-600/10':'text-[#D21919] bg-[#D21919]/10')}>${w?'W':'L'}</span></div>`
-  :html`<div class="flex flex-col items-center gap-1 shrink-0"><button onClick=${e=>{e.stopPropagation();A.togRem(f)}} aria-label="תזכורת" class=${'p-2 rounded-full '+(A.rem[f.id]?'bg-[#D21919] text-white':'bx mu')}><${I} n="bell" s=${16}/></button>${f.h?html`<button onClick=${e=>{e.stopPropagation();A.go('tix')}} class="text-xs font-bold text-[#D21919]">כרטיסים</button>`:null}</div>`}</div><//>`}):html`<div class="text-center mu py-10">אין משחקים להצגה במפעל הזה</div>`}</div></div>`;
+  :html`<div class="relative w-11 flex justify-center shrink-0"><button onClick=${e=>{e.stopPropagation();A.togRem(f)}} aria-label="תזכורת" class=${'p-2 rounded-full '+(A.rem[f.id]?'bg-[#D21919] text-white':'bx mu')}><${I} n="bell" s=${16}/></button>${f.h?html`<button onClick=${e=>{e.stopPropagation();A.go('tix')}} class="absolute top-full mt-1 text-xs font-bold text-[#D21919] whitespace-nowrap">כרטיסים</button>`:null}</div>`}</div><//>`}):html`<div class="text-center mu py-10">אין משחקים להצגה במפעל הזה</div>`}</div></div>`;
 }
 
 /* סימון מקומות בטבלה: ירוק – פלייאוף / רבע גמר, סגול – פליי-אין, אדום – בית תחתון */
