@@ -9,11 +9,17 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
+import android.text.Layout;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.AlignmentSpan;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -24,12 +30,14 @@ import java.lang.reflect.Method;
  *
  * Android 17+ – MetricStyle, a row of three columns like the app's card (home team on the right):
  *
- *     competition (title)                                         [both crests – the large icon]
- *     away name       quarter          home name                  ← labels
- *     72 +2           04:40            77                         ← values; +N next to the score that changed
+ *                          competition, round / stage (title, centred)            [both crests – the large icon]
+ *     away team (full name)        quarter            home team (full name)       ← labels
+ *              72 +2                04:40                     77                  ← values; +N next to a new score
  *
  *   The order follows the phone's layout direction, so the home team is on the right also on a phone set to English
- *   (there the row is laid out left to right); every label is aligned to the same side as its value.
+ *   (there the row is laid out left to right). The template puts a column's label and value at the column's start
+ *   and has no centring, so the narrower of the two is padded with thin spaces (measured on the phone) to sit centred
+ *   over / under the other.
  *
  * Android 16 – the standard template: the score as the title, the competition / quarter / play below, both crests as
  * the large icon. (Its progress template has an image at each end of a row, but always draws a bar between them.)
@@ -92,9 +100,10 @@ final class NowBar {
 
             Notification.Style metrics = Build.VERSION.SDK_INT >= 37 ? metrics(c, g, fin) : null;
             if (metrics != null) {
+                // The competition and round / stage in the middle of the card (a Live Update keeps text styling)
                 b.setStyle(metrics)
-                    .setContentTitle(RLM + (fin ? "סיום · " : "") + title + RLM)
-                    .setContentText(fin || g.play.isEmpty() ? g.scoreWithNames() : RLM + g.play + RLM);
+                    .setContentTitle(centred(RLM + (fin ? "סיום · " : "") + title + RLM))
+                    .setContentText(centred(fin || g.play.isEmpty() ? g.scoreWithNames() : RLM + g.play + RLM));
             } else {
                 // Android 16: the score as the title (home on the right; +N next to the score that changed)
                 String ph = fin || g.popHome < 1 || g.popHome > 3 ? "" : " " + LRI + "+" + g.popHome + PDI;
@@ -139,20 +148,20 @@ final class NowBar {
             Class<?> metricC = Class.forName("android.app.Notification$Metric");
             Class<?> valueC = Class.forName("android.app.Notification$Metric$MetricValue");
             Constructor<?> metric = metricC.getConstructor(valueC, CharSequence.class);
-            Constructor<?> fixedInt = Class.forName("android.app.Notification$Metric$FixedInt").getConstructor(int.class, CharSequence.class);
-            Constructor<?> fixedText = Class.forName("android.app.Notification$Metric$FixedText").getConstructor(CharSequence.class);
+            Constructor<?> fixedText = Class.forName("android.app.Notification$Metric$FixedText").getConstructor(CharSequence.class, CharSequence.class);
             Object style = styleC.getConstructor().newInstance();
             Method add = styleC.getMethod("addMetric", metricC);
 
             // The row is laid out in the phone's direction: right to left in Hebrew (the first column on the right),
-            // left to right in English. The home team must be on the right either way, and each label must sit on
-            // the same side as its value (the value is placed at the column's start).
+            // left to right in English. The home team must be on the right either way.
             boolean rtl = c.getResources().getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
             String st = fin ? "סיום" : g.status, mid = fin || g.clock.isEmpty() ? (st.isEmpty() ? "לייב" : st) : g.clock;
             String midLabel = !fin && !g.clock.isEmpty() && !st.isEmpty() ? st : "מצב המשחק";
-            Object home = metric.newInstance(fixedInt.newInstance(g.hs, pop(fin ? 0 : g.popHome)), label(g.homeName, rtl));
-            Object clock = metric.newInstance(fixedText.newInstance(mid), label(midLabel, rtl));
-            Object away = metric.newInstance(fixedInt.newInstance(g.as, pop(fin ? 0 : g.popAway)), label(g.awayName, rtl));
+            Col cols = new Col(c);
+            String[] h = cols.pair(g.homeName, String.valueOf(g.hs)), m = cols.pair(midLabel, mid), a = cols.pair(g.awayName, String.valueOf(g.as));
+            Object home = metric.newInstance(fixedText.newInstance((rtl ? RLM : "") + h[2], pop(fin ? 0 : g.popHome)), label(h, rtl));
+            Object clock = metric.newInstance(fixedText.newInstance((rtl ? RLM : "") + m[2], null), label(m, rtl));
+            Object away = metric.newInstance(fixedText.newInstance((rtl ? RLM : "") + a[2], pop(fin ? 0 : g.popAway)), label(a, rtl));
             add.invoke(style, rtl ? home : away);
             add.invoke(style, clock);
             add.invoke(style, rtl ? away : home);
@@ -165,26 +174,55 @@ final class NowBar {
     }
 
     /**
-     * A label of up to 10 characters ("הפועל ירושלים" → "ירושלים", "דרטונה טורטונה" → "דרטונה"). On a left-to-right
-     * phone it starts with a left-to-right mark, so it is aligned to the left like the number under it, and the Hebrew
-     * itself is isolated so it still reads correctly ("רבע 4", not "4 רבע").
+     * A label in the phone's direction. On a left-to-right phone it starts with a left-to-right mark, so it starts on
+     * the left like the value under it, and the Hebrew itself is isolated so it still reads correctly ("רבע 4", not
+     * "4 רבע"). {@code s} is [padding, text].
      */
-    static String label(String n, boolean rtl) {
-        n = n == null ? "" : n.trim();
-        if (n.length() > 10) {
-            String s = n.replaceFirst("^(הפועל|מכבי|בני|עירוני|אליצור|הכח)\\s+", "");
-            if (s.length() > 10) {
-                StringBuilder b = new StringBuilder();
-                for (String w : s.split("\\s+")) {
-                    if (b.length() + (b.length() > 0 ? 1 : 0) + w.length() > 10) break;
-                    if (b.length() > 0) b.append(' ');
-                    b.append(w);
-                }
-                s = b.length() > 0 ? b.toString() : s.substring(0, 10);
-            }
-            n = s;
+    static String label(String[] s, boolean rtl) {
+        return rtl ? RLM + s[0] + s[1] : LRM + s[0] + RLI + s[1] + PDI;
+    }
+
+    /** A whole text centred in its line (the title and the text of the card). */
+    static CharSequence centred(String t) {
+        SpannableString s = new SpannableString(t);
+        s.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), 0, s.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        return s;
+    }
+
+    /**
+     * Centres a column's label (14sp) and value (28sp) over each other: both start at the column's start, so the
+     * narrower one gets thin spaces in front of it, half the difference in width. Widths are measured with the
+     * phone's own font at the template's text sizes; a label wider than the column is cut by the system, so its width
+     * is capped at an estimate of the column's width.
+     */
+    private static final class Col {
+        final Paint lp = new Paint(Paint.ANTI_ALIAS_FLAG), vp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        final float colW;
+
+        Col(Context c) {
+            android.util.DisplayMetrics dm = c.getResources().getDisplayMetrics();
+            lp.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, dm));
+            lp.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            vp.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 28, dm));
+            vp.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+            // The card's width less the template's margins (about 104dp), in three columns with 4dp between them
+            colW = Math.max(60 * dm.density, (Math.min(dm.widthPixels, dm.heightPixels) - 104 * dm.density) / 3f - 4 * dm.density);
         }
-        return rtl ? RLM + n : LRM + RLI + n + PDI;
+
+        /** [label padding, label, value padding + value]. */
+        String[] pair(String label, String value) {
+            float wl = Math.min(lp.measureText(label), colW), wv = Math.min(vp.measureText(value), colW);
+            String pl = wv > wl ? pad((wv - wl) / 2f, lp) : "", pv = wl > wv ? pad((wl - wv) / 2f, vp) : "";
+            return new String[] {pl, label, pv + value};
+        }
+
+        /** Spaces (then hair spaces for the rest) about {@code w} pixels wide. */
+        private static String pad(float w, Paint p) {
+            StringBuilder b = new StringBuilder();
+            while (b.length() < 40 && p.measureText(b + " ") <= w) b.append(' ');
+            while (b.length() < 80 && p.measureText(b + "\u200A") <= w) b.append('\u200A');
+            return b.toString();
+        }
     }
 
     private static CharSequence pop(int pts) {
