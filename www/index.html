@@ -1092,6 +1092,14 @@ function App(){
   const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t}));
    P.sync({on:pf.on!==0&&pf.live!==0,games:gs}).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
+ /* מצב בדיקה: אותה התראה בלייב (Live Update / Now Bar) מוצגת עם התוצאה המדומה, ומתעדכנת עם כל עדכון של ההדמיה. כשמצב הבדיקה נכבה היא נעלמת */
+ const demoKey=useRef('');
+ useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
+  if(!demo){if(demoKey.current){demoKey.current='';P.demo({}).catch(()=>{})}return}
+  const n=S.F.find(f=>f.id===demo.app)||nx,op=n?n.o:'',r=demo.r||[0,0],st=String(demo.st||'').replace(/^Q(\d)$/,'רבע $1').replace(/^OT(\d*)$/,(m,k)=>'הארכה'+(k&&k!=='1'?' '+k:'')),
+   o={title:ME+' '+r[0]+' – '+r[1]+' '+op,text:st+(demo.clock?' · '+demo.clock:''),chip:r[0]+'-'+r[1],opponent:op},k=o.title+'|'+o.text,first=!demoKey.current;
+  if(k===demoKey.current)return;demoKey.current=k;
+  P.demo(o).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר')}).catch(()=>{})},[demo]);
  const [mo,setMo0]=useState(false);
  /* תפריט "עוד": מסך הכרטיסים באנדרואיד הוא חלון נפרד מעל האפליקציה, ולכן הוא מוסתר בזמן שהתפריט פתוח ומוצג שוב אם סוגרים בלי לבחור */
  const tixShow=home=>{const T=TK(),n=document.getElementById('app-nav');if(T)return T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home})};

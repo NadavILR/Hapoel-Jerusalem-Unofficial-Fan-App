@@ -197,7 +197,7 @@ public class LiveScoreService extends Service {
         String[] t = finalGame != null ? texts(finalGame) : null;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         if (t != null && LiveScheduler.allowed(this)) {
-            NotificationCompat.Builder b = base("סיום: " + t[0], "התוצאה הסופית")
+            NotificationCompat.Builder b = base(this, "סיום: " + t[0], "התוצאה הסופית")
                 .setOngoing(false)
                 .setAutoCancel(true)
                 .setTimeoutAfter(30 * MIN);
@@ -215,10 +215,10 @@ public class LiveScoreService extends Service {
         }
     }
 
-    private NotificationCompat.Builder base(String title, String text) {
-        Intent open = new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        return new NotificationCompat.Builder(this, CHANNEL)
+    static NotificationCompat.Builder base(Context c, String title, String text) {
+        Intent open = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pi = PendingIntent.getActivity(c, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        return new NotificationCompat.Builder(c, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_hpj)
             .setColor(Color.parseColor("#D21919"))
             .setContentTitle(title)
@@ -233,10 +233,15 @@ public class LiveScoreService extends Service {
     private Notification build(String title, String text, String chip, String opponent, boolean live) {
         Intent stop = new Intent(this, LiveScoreService.class).setAction(ACTION_STOP);
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder b = base(title, text)
+        return build(this, title, text, chip, opponent, live, del);
+    }
+
+    /** The live notification itself (also used by the app's test mode, with no service behind it). */
+    static Notification build(Context c, String title, String text, String chip, String opponent, boolean live, PendingIntent del) {
+        NotificationCompat.Builder b = base(c, title, text)
             .setOngoing(true)
-            .setDeleteIntent(del)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
+        if (del != null) b.setDeleteIntent(del);
         Bundle x = new Bundle();
         // Android 16 "Live Updates": ask to be promoted (status bar chip, lock screen, Samsung Now Bar on One UI 8)
         x.putBoolean("android.requestPromotedOngoing", true);

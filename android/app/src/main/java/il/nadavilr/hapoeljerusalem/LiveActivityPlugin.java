@@ -44,4 +44,38 @@ public class LiveActivityPlugin extends Plugin {
         }
         call.resolve(r);
     }
+
+    /**
+     * Test mode (three taps under the home screen): shows the same live notification with the simulated score.
+     * demo({title, text, chip, opponent}) shows / updates it, demo({}) without a title removes it.
+     */
+    @PluginMethod
+    public void demo(PluginCall call) {
+        android.content.Context c = getContext();
+        JSObject r = new JSObject();
+        String title = call.getString("title");
+        androidx.core.app.NotificationManagerCompat nm = androidx.core.app.NotificationManagerCompat.from(c);
+        if (title == null || title.isEmpty()) {
+            nm.cancel(LiveScoreService.NOTIF_ID);
+            r.put("shown", false);
+            call.resolve(r);
+            return;
+        }
+        if (!nm.areNotificationsEnabled()) {
+            r.put("shown", false);
+            r.put("reason", "notifications-off");
+            call.resolve(r);
+            return;
+        }
+        LiveScoreService.ensureChannel(c);
+        try {
+            nm.notify(LiveScoreService.NOTIF_ID, LiveScoreService.build(c, title, call.getString("text", ""),
+                call.getString("chip"), call.getString("opponent"), true, null));
+            r.put("shown", true);
+        } catch (SecurityException e) {
+            r.put("shown", false);
+            r.put("reason", "notifications-off");
+        }
+        call.resolve(r);
+    }
 }
