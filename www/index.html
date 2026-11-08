@@ -1050,6 +1050,7 @@ function NoteRow({n,i,out,onGone}){
 function NotifTest({onClose}){
  const A=useContext(Ctx),P=plug('LiveActivity'),f=A.F.filter(x=>!x.r).sort((a,b)=>a.t-b.t)[0]||A.F[A.F.length-1]||{id:0,h:1,o:'יריבה',c:'league',t:Date.now()};
  const ME365='https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634';
+ const nbSel=A.pf.nb==='t'?'t':'m';
  const nat=(kind,r,extra)=>P&&P.testAlert?P.testAlert({kind,...extra,comp:cmp(f),t:f.t||0,meHome:!!f.h,home:{name:NT.home(f),score:f.h?r[0]:r[1]},away:{name:NT.away(f),score:f.h?r[1]:r[0]}}):null;
  const game=(m,kind,r,extra)=>[m,()=>nat(kind,r,extra)||devNotify(NT.line(m),m)];
  const items=[
@@ -1072,6 +1073,8 @@ function NotifTest({onClose}){
  return html`<div class="fixed inset-0 z-[60] flex" onClick=${e=>{e.stopPropagation();onClose()}}><div class="w-full h-full overflow-y-auto fade-in glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-1"><div class="text-lg font-bold">בדיקת התראות</div><button onClick=${onClose} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="text-xs mu mb-3">כל ההתראות של האפליקציה, בנוסח המדויק שלהן. "שליחה" שולחת אותה עכשיו למכשיר. הנתונים מהמשחק הבא (${NT.match(f)}); התוצאות לדוגמה.</div>
+ ${P&&P.demo?html`<div class="sf rounded-xl p-3 mb-2"><div class="font-bold text-sm">עיצוב התוצאה בלייב ב-Now Bar</div><div class="text-xs mu mb-2">באנדרואיד 17. אחרי הבחירה – "שליחה" בשורה "כרטיס התוצאה בלייב" למטה. הבחירה נשמרת גם למשחקים.</div>
+  <div class="segc grid grid-cols-2 gap-1 p-1 rounded-xl seg"><${SegInd} k=${nbSel}/>${[['m','שורת תוצאות'],['t','טקסט וסמלי הקבוצות']].map(([k,l])=>html`<button key=${k} data-on=${nbSel===k?'':undefined} onClick=${()=>A.setPf({...A.pf,nb:k})} class=${'py-2 rounded-lg text-[13px] font-bold '+(nbSel===k?'text-white':'mu')}>${l}</button>`)}</div></div>`:null}
  ${items.map(([sec,[m,go],l],i)=>html`<${React.Fragment} key=${i}>${sec?html`<div class="font-bold text-sm mt-3 mb-1">${sec}</div>`:null}
   <div class="sf rounded-xl p-3 mb-2 flex items-center gap-3"><div class="flex-1 min-w-0"><div class="text-[11px] mu">${l}</div><div class="font-bold text-sm">${m.title}</div>${m.l1?html`<div class="text-xs mu">${m.l1}</div>`:null}<div class="text-xs mu">${m.l2}</div></div>
   <button onClick=${()=>send(go,l)} class="shrink-0 px-3 py-2 rounded-lg bg-[#D21919] text-white text-xs font-bold">שליחה</button></div><//>`)}
@@ -1274,7 +1277,7 @@ function App(){
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
   const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f),o:f.o||''})),jer={};
    (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
-   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{}}).then(()=>P.group&&P.group()).catch(()=>{})};
+   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{},nb:pf.nb==='t'?'t':'m'}).then(()=>P.group&&P.group()).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
  /* מצב בדיקה: אותה התראה בלייב (Live Update / Now Bar) מוצגת עם התוצאה המדומה, ומתעדכנת עם כל עדכון של ההדמיה. כשמצב הבדיקה נכבה היא נעלמת */
  const demoKey=useRef('');

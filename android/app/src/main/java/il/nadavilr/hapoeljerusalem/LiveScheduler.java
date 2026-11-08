@@ -60,6 +60,15 @@ final class LiveScheduler {
     }
 
     /** Settings from the app (sync): quarter alerts and competitions. */
+    /** The Now Bar's design, chosen in the app's notification test screen: "m" – the row of scores (default), "t" – text with the crests. */
+    static String nowBar(Context c) {
+        return prefs(c).getString("nb", "m");
+    }
+
+    static void saveNowBar(Context c, String nb) {
+        if (nb != null && !nb.equals(nowBar(c))) prefs(c).edit().putString("nb", nb).apply();
+    }
+
     static void saveSettings(Context c, Boolean quarter, org.json.JSONObject comps) {
         SharedPreferences.Editor e = prefs(c).edit();
         if (quarter != null) e.putBoolean("quarter", quarter);

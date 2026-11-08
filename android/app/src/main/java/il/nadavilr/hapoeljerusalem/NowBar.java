@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
 import android.text.Layout;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.AlignmentSpan;
 import android.text.style.StyleSpan;
@@ -40,8 +41,10 @@ import java.lang.reflect.Method;
  *   and has no centring, so the narrower of the two is padded with thin spaces (measured on the phone) to sit centred
  *   over / under the other.
  *
- * Android 16 – the standard template: the score as the title, the competition / quarter / play below, both crests as
- * the large icon. (Its progress template has an image at each end of a row, but always draws a bar between them.)
+ * Android 16, or "text with the crests" chosen in the app's notification test screen – the standard template: the
+ * full names (bold) and the score as the title, the quarter / clock (bold), competition and play below, all centred,
+ * and both crests as the notification's image. (The progress template has an image at each end of a row, but always
+ * draws a bar between them.) Android doesn't keep bold in MetricStyle's labels and values.
  *
  * Status bar chip: the score. Android 15 and older, Live Updates turned off for the app (Settings › Notifications), or
  * any failure: the app's own card (LiveGame.card). The app compiles against an older SDK, so the newer APIs are
@@ -107,21 +110,34 @@ final class NowBar {
                 b.addExtras(ci);
             }
 
-            Notification.Style metrics = Build.VERSION.SDK_INT >= 37 ? metrics(c, g, fin) : null;
+            Notification.Style metrics = Build.VERSION.SDK_INT >= 37 && !"t".equals(LiveScheduler.nowBar(c)) ? metrics(c, g, fin) : null;
             if (metrics != null) {
                 // The competition and round / stage in the middle of the card (a Live Update keeps text styling)
                 b.setStyle(metrics)
                     .setContentTitle(centred(RLM + (fin ? "סיום · " : "") + title + RLM))
                     .setContentText(centred(fin || g.play.isEmpty() ? g.scoreWithNames() : RLM + g.play + RLM));
             } else {
-                // Android 16: the score as the title (home on the right; +N next to the score that changed)
-                String ph = fin || g.popHome < 1 || g.popHome > 3 ? "" : " " + LRI + "+" + g.popHome + PDI;
-                String pa = fin || g.popAway < 1 || g.popAway > 3 ? "" : LRI + "+" + g.popAway + PDI + " ";
-                String text = st + (fin || g.play.isEmpty() ? "" : "\n" + RLM + g.play + RLM);
-                b.setContentTitle(RLM + g.hs + ph + " – " + pa + g.as + RLM)
-                    .setContentText(st)
-                    .setSubText(RLM + title + RLM)
-                    .setStyle(new Notification.BigTextStyle().bigText(text));
+                // Text with the crests (Android 16, or chosen in the app's test screen), everything centred:
+                //   **home team** 77⁺² – 72 **away team**     ← the title: full names in bold, home on the right
+                //   **quarter • clock**
+                //   competition, round / stage
+                //   the latest play                                  + both crests as the notification's image
+                String hb = badge(fin ? 0 : g.popHome), ab = badge(fin ? 0 : g.popAway);
+                SpannableStringBuilder t = new SpannableStringBuilder(RLM);
+                boldPart(t, g.homeName);
+                t.append(" ").append(String.valueOf(g.hs)).append(hb.isEmpty() ? "" : LRI + hb + PDI).append(" – ")
+                    .append(ab.isEmpty() ? "" : LRI + ab + PDI).append(String.valueOf(g.as)).append(" ");
+                boldPart(t, g.awayName);
+                t.append(RLM);
+                t.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), 0, t.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+                SpannableStringBuilder x = new SpannableStringBuilder();
+                boldPart(x, st);
+                x.append("\n").append(RLM + title + RLM);
+                if (!fin && !g.play.isEmpty()) x.append("\n").append(RLM + g.play + RLM);
+                x.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), 0, x.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+                b.setContentTitle(t)
+                    .setContentText(centred(st))
+                    .setStyle(new Notification.BigTextStyle().bigText(x));
             }
             if (fin) b.setAutoCancel(true).setTimeoutAfter(30 * 60_000L);
             else b.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
@@ -200,6 +216,12 @@ final class NowBar {
     static CharSequence value(String v, boolean rtl, boolean bold) {
         String t = (rtl ? RLM : "") + v;
         return bold ? bold(t) : t;
+    }
+
+    private static void boldPart(SpannableStringBuilder b, String t) {
+        int s0 = b.length();
+        b.append(t);
+        b.setSpan(new StyleSpan(Typeface.BOLD), s0, b.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     static CharSequence bold(String t) {
