@@ -251,7 +251,7 @@ final class LivePlay {
 
     static final int PRE = 2, LIVE = 3, FINAL = 4;
 
-    /** The game's teams from a livestats file (Hapoel as "הפועל ירושלים", the opponent by its official name). */
+    /** The game's sides from a livestats file. The names are replaced by 365scores' (no sponsors) in LiveScoreService. */
     static LiveGame baseGame(JSONObject d) {
         JSONObject gi = d.optJSONObject("gameInfo");
         if (gi == null) return null;

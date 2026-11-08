@@ -1134,7 +1134,7 @@ function App(){
     ואת שמות השחקנים של הפועל, והוא מפעיל בשריקת הפתיחה כרטיס שמתעדכן עד הסיום (תוצאה ומהלך המשחק) – גם כשהאפליקציה סגורה.
     רק כשההתראות מאושרות במכשיר ופעילות באפליקציה */
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
-  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f)})),jer={};
+  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f),o:f.o||''})),jer={};
    (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
    P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{}}).then(()=>P.group&&P.group()).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
