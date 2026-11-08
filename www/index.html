@@ -37,7 +37,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .sf.p-1.rounded-xl>button{border-radius:11px}
 .glass-sheet button:active,.glass-sheet a:active{transform:none}
 .chips{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.chips>*{box-shadow:none!important}
-.pbp-hd{background:var(--bar);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border-bottom:1px solid var(--gl-bd)}
+.upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.jpg) center/cover no-repeat}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
+.pbp-hd{border-bottom:1px solid var(--gl-bd)}
 .chips>.sf{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(var(--sf-rgb)/.78)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg{background:rgb(0 0 0/.45)}}:root[data-theme="dark"] .seg{background:rgb(0 0 0/.45)}
@@ -890,21 +892,24 @@ function UpdGate({u}){
   try{const c=await U.canInstall();if(!c||!c.allowed){setSt('perm');await U.openInstallSettings();return}}catch(e){}
   setSt('dl');setP(0);let h=null;try{h=await U.addListener('progress',e=>setP(Math.round(e&&e.p||0)))}catch(e){}
   try{await U.downloadAndInstall({url:u.url});setSt('inst')}catch(e){setSt('err')}finally{try{h&&h.remove&&Promise.resolve(h.remove()).catch(()=>{})}catch(e){}}};
- const [src]=usePh(TP,'team'),busy=st==='dl',notes=(u.notes||[]).filter(Boolean);
+ const busy=st==='dl',notes=(u.notes||[]).filter(Boolean),gate=useRef(null),wn=useRef(null),[cut,setCut]=useState(0);
+ /* רקע האפליקציה (הפסים) מגיע עד תחילת הריבוע של "מה חדש", ומשם והלאה הרקע לבן / שחור */
+ const measure=()=>{const g=gate.current,w=wn.current;if(!g)return;const gr=g.getBoundingClientRect();setCut(w?Math.max(0,gr.bottom-w.getBoundingClientRect().top):0)};
+ React.useLayoutEffect(()=>{measure();window.addEventListener('resize',measure);return()=>window.removeEventListener('resize',measure)},[notes.length]);
  /* מסך מלא: תמונת הקבוצה מטושטשת ברקע, אייקון האפליקציה, מעבר בין הגרסאות בספרות לוח התוצאות, "מה חדש" וכפתור עדכון עם התקדמות ההורדה בתוכו */
- return html`<div class="fixed inset-0 z-[80] flex flex-col fade-in" style=${{background:'var(--bg)'}}>
- <div class="absolute inset-x-0 top-0 h-[55%] overflow-hidden pointer-events-none" aria-hidden="true">${src?html`<img src=${src} alt="" referrerPolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover scale-125" style=${{filter:'blur(32px) saturate(1.3)',opacity:.75}}/>`:null}<div class="absolute inset-0" style=${{background:'linear-gradient(160deg,rgb(210 25 25/.6),rgb(40 40 40/.45) 55%,var(--bg))'}}></div><div class="absolute inset-x-0 bottom-0 h-1/2" style=${{background:'linear-gradient(to bottom,transparent,var(--bg))'}}></div></div>
- <div class="relative flex-1 overflow-y-auto px-6 text-center" style=${{paddingTop:'calc(var(--sat) + 56px)'}}>
+ return html`<div ref=${gate} class="upd-gate fixed inset-0 z-[80] flex flex-col fade-in">
+ <div class="upd-bg absolute inset-0 pointer-events-none" aria-hidden="true" style=${{clipPath:'inset(0 0 '+cut+'px 0)'}}></div>
+ <div onScroll=${measure} class="relative flex-1 overflow-y-auto px-6 text-center" style=${{paddingTop:'calc(var(--sat) + 56px)'}}>
   <img src="icons/icon-192.png" alt="" class="w-24 h-24 mx-auto rounded-[28px] shadow-xl pop-in"/>
   <div class="inline-flex items-center gap-2 mt-5 px-3 py-1 rounded-full glass text-xs font-bold">גרסה חדשה</div>
-  <div class="text-3xl font-extrabold mt-3 leading-tight text-white" style=${{textShadow:'0 2px 12px rgb(0 0 0/.35)'}}>עדכון חדש זמין</div>
+  <div class="text-3xl font-extrabold mt-3 leading-tight">עדכון חדש זמין</div>
   <div class="flex items-center justify-center gap-3 mt-4" dir="rtl">
    <span class="px-3 py-1.5 rounded-xl glass sb font-semibold text-lg mu">${window.APP_VERSION||''}</span>
    <span class="mu text-lg">←</span>
    <span class="px-3 py-1.5 rounded-xl bg-[#D21919] text-white sb font-semibold text-lg">${u.v}</span>
   </div>
   <div class="text-sm mu mt-3">כדי להמשיך להשתמש באפליקציה יש לעדכן</div>
-  ${notes.length?html`<div class="sf rounded-2xl p-4 mt-6 text-right max-w-md mx-auto"><div class="font-bold mb-2">מה חדש</div>${notes.map((n,i)=>html`<div key=${i} class="flex gap-2 py-1.5 text-sm leading-snug"><span class="w-1.5 h-1.5 rounded-full bg-[#D21919] mt-2 shrink-0"></span><span>${n}</span></div>`)}</div>`:null}
+  ${notes.length?html`<div ref=${wn} class="sf rounded-2xl p-4 mt-6 text-right max-w-md mx-auto"><div class="font-bold mb-2">מה חדש</div>${notes.map((n,i)=>html`<div key=${i} class="flex gap-2 py-1.5 text-sm leading-snug"><span class="w-1.5 h-1.5 rounded-full bg-[#D21919] mt-2 shrink-0"></span><span>${n}</span></div>`)}</div>`:null}
  </div>
  <div class="relative px-6 pt-3 max-w-md w-full mx-auto" style=${{paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 20px)'}}>
   ${st==='perm'?html`<div class="text-xs mu mb-3 text-center">אשרו בהגדרות שנפתחו "התרת התקנה ממקור זה", חזרו לכאן ולחצו שוב "עדכן עכשיו"</div>`:null}
