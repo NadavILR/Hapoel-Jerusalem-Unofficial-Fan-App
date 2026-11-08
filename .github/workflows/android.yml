@@ -24,7 +24,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Copy the web app into the Android project
         run: npx cap sync android
       - name: Read the app version
