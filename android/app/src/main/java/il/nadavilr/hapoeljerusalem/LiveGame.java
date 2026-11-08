@@ -9,31 +9,25 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
 import androidx.core.app.NotificationCompat;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.json.JSONObject;
 
 /**
- * One live game as the notification shows it, laid out like the app's design:
+ * One live game, shown in two notifications while Hapoel plays:
  *
- *   competition – round
- *   [home crest]   home score – away score   [away crest]
- *   quarter • clock
+ * - The score card (custom layout, like Google's sports card, in the app's colours): the two crests with the scores
+ *   and a quarter • clock pill between them; expanded, it adds the competition / stage / round and the arena.
+ * - The Live Update (Android 16+: status-bar chip, lock screen, Samsung Now Bar): the score, quarter • clock and
+ *   one image with both crests. A custom layout can't be a Live Update, hence two notifications.
  *
  * Everything reads right to left (home team on the right) even on a phone set to English.
- * On Android 16+ it is a Live Update (status-bar chip, lock screen, Samsung Now Bar) in Android's
- * ProgressStyle: the two crests sit at the two ends and the bar between them is the game clock (4 quarters).
  */
 final class LiveGame {
 
@@ -102,20 +96,6 @@ final class LiveGame {
         return comp + "|" + hs + "|" + as + "|" + status + "|" + clock;
     }
 
-    /** Seconds played out of 4 x 10 minutes, from the quarter and the clock (counting down). */
-    int elapsed() {
-        String s = status;
-        if (s.contains("הארכה") || s.toUpperCase(Locale.US).contains("OT")) return 2400;
-        if (s.contains("מחצית") || s.toLowerCase(Locale.US).contains("half")) return 1200;
-        Matcher m = Pattern.compile("(\\d)").matcher(s);
-        int q = m.find() ? Integer.parseInt(m.group(1)) : 0;
-        if (q < 1 || q > 4) return 0;
-        int left = 600;
-        Matcher c = Pattern.compile("(\\d{1,2}):(\\d{2})").matcher(clock);
-        if (c.find()) left = Math.min(600, Integer.parseInt(c.group(1)) * 60 + Integer.parseInt(c.group(2)));
-        return Math.max(0, Math.min(2400, (q - 1) * 600 + (600 - left)));
-    }
-
     // ---------- crests ----------
 
     private static final Map<String, Bitmap> CRESTS = new HashMap<>();
@@ -144,6 +124,17 @@ final class LiveGame {
             CRESTS.put(url, b);
         }
         return b;
+    }
+
+    /** Both crests in one square image: the home team top right, the away team bottom left. */
+    static Bitmap matchup(Bitmap home, Bitmap away) {
+        int size = 256, cs = 150;
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(out);
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG | android.graphics.Paint.ANTI_ALIAS_FLAG);
+        cv.drawBitmap(Bitmap.createScaledBitmap(away, cs, cs, true), 4, size - cs - 4, p);
+        cv.drawBitmap(Bitmap.createScaledBitmap(home, cs, cs, true), size - cs - 4, 4, p);
+        return out;
     }
 
     /** The crest centred on a transparent square, so it is not stretched. */
@@ -193,8 +184,7 @@ final class LiveGame {
     }
 
     /**
-     * Android 16+: Live Update (setRequestPromotedOngoing + setShortCriticalText) in ProgressStyle with the crests at
-     * both ends. These APIs are newer than the SDK the app is built with, so they are called by reflection;
+     * Android 16+: Live Update (setRequestPromotedOngoing + setShortCriticalText) with both crests as its image. These APIs are newer than the SDK the app is built with, so they are called by reflection;
      * each step that is missing on a device is skipped.
      */
     private static Notification liveUpdate(Context c, Notification n, LiveGame g, Bitmap homeCrest, Bitmap awayCrest) {
@@ -223,33 +213,9 @@ final class LiveGame {
         if (!chip) fb.getExtras().putString("android.shortCriticalText", g.score());
 
         if (homeCrest != null && awayCrest != null) {
-            try {
-                Class<?> ps = Class.forName("android.app.Notification$ProgressStyle");
-                Class<?> seg = Class.forName("android.app.Notification$ProgressStyle$Segment");
-                Object style = ps.getConstructor().newInstance();
-                List<Object> segs = new ArrayList<>();
-                for (int i = 0; i < 4; i++) {
-                    Object s = seg.getConstructor(int.class).newInstance(600);
-                    seg.getMethod("setColor", int.class).invoke(s, RED);
-                    segs.add(s);
-                }
-                ps.getMethod("setProgressSegments", List.class).invoke(style, segs);
-                ps.getMethod("setProgress", int.class).invoke(style, g.elapsed());
-                try {
-                    ps.getMethod("setStyledByProgress", boolean.class).invoke(style, true);
-                } catch (Throwable ignored) {
-                }
-                // Home team on the right whatever the phone's language: on a right-to-left phone the bar's start
-                // is on the right, on a left-to-right phone it is on the left.
-                boolean rtl = TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_RTL;
-                Icon home = Icon.createWithBitmap(homeCrest), away = Icon.createWithBitmap(awayCrest);
-                ps.getMethod("setProgressStartIcon", Icon.class).invoke(style, rtl ? home : away);
-                ps.getMethod("setProgressEndIcon", Icon.class).invoke(style, rtl ? away : home);
-                fb.setStyle((Notification.Style) style);
-            } catch (Throwable ignored) {
-                // No ProgressStyle on this device: the standard Live Update with the names in the title
-                fb.setContentTitle(g.scoreWithNames());
-            }
+            // No progress bar: the standard Live Update, like the score card – the two crests (one image, home team
+            // on the right) next to the score, and quarter • clock under it
+            fb.setLargeIcon(Icon.createWithBitmap(matchup(homeCrest, awayCrest)));
         } else {
             fb.setContentTitle(g.scoreWithNames());
         }
