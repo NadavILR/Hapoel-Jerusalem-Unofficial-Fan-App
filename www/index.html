@@ -37,7 +37,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .sf.p-1.rounded-xl>button{border-radius:11px}
 .glass-sheet button:active,.glass-sheet a:active{transform:none}
 .chips{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.chips>*{box-shadow:none!important}
-.pbp-bar{position:sticky;top:calc(var(--hdh,64px) + 52px);z-index:5;background:rgb(var(--sf-rgb)/.97);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
+.pbp-hd{background:var(--bar);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border-bottom:1px solid var(--gl-bd)}
 .chips>.sf{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(var(--sf-rgb)/.78)}
 .seg{background:rgb(0 0 0/.06);border:1px solid var(--gl-bd)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg{background:rgb(0 0 0/.45)}}:root[data-theme="dark"] .seg{background:rgb(0 0 0/.45)}
@@ -373,7 +373,7 @@ function PullRefresh({onRefresh,off}){
  offR.current=off;fnR.current=onRefresh;
  const set=v=>{dR.current=v;setD(v)};
  useEffect(()=>{
-  const start=e=>{if(offR.current||busyR.current||window.scrollY>0||e.touches.length!==1)return;const t=e.touches[0];st.current={x:t.clientX,y:t.clientY,on:false}};
+  const start=e=>{if(offR.current||busyR.current||window.scrollY>0||e.touches.length!==1)return;/* גלילה בתוך חלון פנימי (כמו מהלך המשחק) לא מפעילה רענון */for(let el=e.target;el&&el!==document.body;el=el.parentElement)if(el.scrollTop>0)return;const t=e.touches[0];st.current={x:t.clientX,y:t.clientY,on:false}};
   const move=e=>{const s=st.current;if(!s)return;const t=e.touches[0],dy=t.clientY-s.y,dx=t.clientX-s.x;
    if(!s.on){if(dy>8&&dy>Math.abs(dx)*1.5&&window.scrollY<=0){s.on=true;const h=document.getElementById('app-hd');topR.current=h?h.getBoundingClientRect().bottom:0}else if(Math.abs(dx)>8||dy<-4){st.current=null;return}else return}
    set(Math.max(0,Math.min(120,dy*0.5)));if(e.cancelable)e.preventDefault()};
@@ -697,27 +697,29 @@ async function pbpSegev(f){const list=await getJSON('https://basket.co.il/livest
   out.push({q,clock:a.quarterTime||'',side,text,big,sc:big?[sc[0],sc[1]]:null})}
  return out.reverse()}
 async function livePbp(f){try{if(f.c==='euro'){const c=egCode(f);return c?await pbpEuro(c,f):null}if(NATIVE&&['league','wcup','cup','super'].includes(f.c))return await pbpSegev(f)}catch(e){}return null}
-/* מהלך המשחק: סינון לפי רבע. בכל שורה רק השעון; הרבע כתוב מתחת לסינון, וב"כל המשחק" הוא מתעדכן לפי הרבע שמוצג כרגע בגלילה (לפי הכותרות שבין הרבעים) */
+/* מהלך המשחק: חלון בגובה קבוע שהמהלכים נגללים בתוכו. למעלה – כותרת וסינון לפי רבע על זכוכית כמו הכותרת של האפליקציה, והמהלכים נחתכים בתחתית שלה.
+   בכל שורה רק השעון; ב"כל המשחק" יש כותרת בין הרבעים, והכיתוב שמתחת לסינון מתעדכן לפי הרבע שמוצג כרגע בגלילה */
 function Pbp({L,g}){
- const [all,setAll]=useState(false),[qf,setQf]=useState(0),[cur,setCur]=useState(null),bar=useRef(null),box=useRef(null);
- const qs=[...new Set(L.pbp.map(x=>x.q))].sort((a,b)=>a-b),fl=qf?L.pbp.filter(x=>x.q===qf):L.pbp,list=all?fl:fl.slice(0,60);
+ const [qf,setQf]=useState(0),[cur,setCur]=useState(null),box=useRef(null);
+ const qs=[...new Set(L.pbp.map(x=>x.q))].sort((a,b)=>a-b),list=qf?L.pbp.filter(x=>x.q===qf):L.pbp;
  const qn=q=>q<=4?'ר'+q:q===5?'הארכה':'הא'+(q-4);
- useEffect(()=>{if(qf)return;const f=()=>{const b=bar.current,c=box.current;if(!b||!c)return;const y=b.getBoundingClientRect().bottom;let q=null;
-   c.querySelectorAll('[data-qh]').forEach(h=>{if(h.getBoundingClientRect().top<=y+1)q=+h.dataset.qh});setCur(q)};
-  f();window.addEventListener('scroll',f,{passive:true});return()=>window.removeEventListener('scroll',f)},[qf,list.length]);
- const shown=qf||cur||(list[0]&&list[0].q);
- return html`<div ref=${box} class="sf rounded-xl p-3 mt-3"><div class="flex items-center justify-between mb-2"><div class="font-bold">מהלך המשחק</div><span class="text-[11px] mu">התוצאה: ${ME} – יריבה</span></div>
- <div ref=${bar} class="pbp-bar -mx-3 px-3 pt-1 pb-2">
-  <div class="segc grid gap-1 p-1 rounded-xl seg" style=${{gridTemplateColumns:'auto repeat('+qs.length+',minmax(0,1fr))'}}><${SegInd} k=${qf}/>${[[0,'כל המשחק'],...qs.map(q=>[q,qn(q)])].map(([k,l])=>html`<button key=${k} data-on=${qf===k?'':undefined} onClick=${()=>{setQf(k);setAll(false)}} class=${'py-1.5 px-2.5 rounded-lg text-[12px] font-bold whitespace-nowrap '+(qf===k?'text-white':'mu')}>${l}</button>`)}</div>
-  ${shown?html`<div class="text-center text-sm font-bold mt-2"><span key=${shown} class="fade-in inline-block">${PBQ(shown)}</span></div>`:null}
+ const onScroll=()=>{const c=box.current;if(!c)return;const y=c.getBoundingClientRect().top;let q=null;c.querySelectorAll('[data-qh]').forEach(h=>{if(h.getBoundingClientRect().top<=y+1)q=+h.dataset.qh});setCur(q)};
+ useEffect(()=>{const c=box.current;if(c)c.scrollTop=0;setCur(null)},[qf]);
+ const shown=cur||(list[0]&&list[0].q);
+ return html`<div class="sf rounded-xl mt-3 overflow-hidden flex flex-col" style=${{height:'min(68vh,560px)'}}>
+ <div class="pbp-hd px-3 pt-3 pb-2 shrink-0">
+  <div class="flex items-center justify-between mb-2"><div class="font-bold">מהלך המשחק</div><span class="text-[11px] mu">התוצאה: ${ME} – יריבה</span></div>
+  <div class="segc grid gap-1 p-1 rounded-xl seg" style=${{gridTemplateColumns:'auto repeat('+qs.length+',minmax(0,1fr))'}}><${SegInd} k=${qf}/>${[[0,'כל המשחק'],...qs.map(q=>[q,qn(q)])].map(([k,l])=>html`<button key=${k} data-on=${qf===k?'':undefined} onClick=${()=>setQf(k)} class=${'py-1.5 px-2.5 rounded-lg text-[12px] font-bold whitespace-nowrap '+(qf===k?'text-white':'mu')}>${l}</button>`)}</div>
+  ${!qf&&shown?html`<div class="text-center text-sm font-bold mt-2"><span key=${shown} class="fade-in inline-block">${PBQ(shown)}</span></div>`:null}
  </div>
+ <div ref=${box} onScroll=${onScroll} class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pb-2">
  ${list.map((x,i)=>{const head=!qf&&i>0&&list[i-1].q!==x.q;return html`<${React.Fragment} key=${i}>${head?html`<div data-qh=${x.q} class="flex items-center gap-2 pt-3 pb-1"><span class="h-px flex-1 bg-[var(--bd)]"></span><span class="text-xs font-bold text-[#D21919]">${PBQ(x.q)}</span><span class="h-px flex-1 bg-[var(--bd)]"></span></div>`:null}<div class=${'flex items-start gap-2 py-1.5 text-sm'+(i&&!head?' border-t bd':'')}>
   <span class="w-11 shrink-0 text-[11px] mu leading-5" dir="ltr">${x.clock}</span>
   <span class="w-5 h-5 shrink-0 flex items-center justify-center">${x.side?html`<${Cr} n=${x.side==='j'?ME:g.o} s=${18}/>`:null}</span>
   <span class=${'flex-1 '+(x.side==='j'?'font-bold':'')+(x.side?'':' mu')}>${x.text}</span>
   ${x.sc?html`<span class="text-xs tabular-nums shrink-0 leading-5" dir="ltr">${[0,1].map(k=>{const hot=(k===0)===(x.side==='j');return html`<${React.Fragment} key=${k}>${k?html`<span class="mu">-</span>`:null}<span class=${hot?'text-[15px] font-extrabold'+(x.side==='j'?' text-[#D21919]':''):'mu'}>${x.sc[k]}</span><//>`})}</span>`:null}</div><//>`})}
- ${!fl.length?html`<div class="text-center text-sm mu py-4">אין מהלכים ברבע הזה</div>`:null}
- ${!all&&fl.length>60?html`<button onClick=${()=>setAll(true)} class="mt-2 w-full py-2 rounded-lg sf text-sm font-bold">הצג את כל המהלכים (${fl.length})</button>`:null}</div>`;
+ ${!list.length?html`<div class="text-center text-sm mu py-4">אין מהלכים ברבע הזה</div>`:null}
+ </div></div>`;
 }
 
 function Game({g}){
