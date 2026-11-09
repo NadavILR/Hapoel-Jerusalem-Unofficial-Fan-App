@@ -60,9 +60,12 @@ final class LiveScheduler {
     }
 
     /** Settings from the app (sync): quarter alerts and competitions. */
-    /** The Now Bar's design, chosen in the app's notification test screen: "m" – the row of scores (default), "t" – text with the crests. */
+    /**
+     * How the live score is shown, chosen in the app's settings: "c" – the app's own live card (default), or in the
+     * Now Bar (Android 16+): "m" – the row of scores, "t" – text with the crests.
+     */
     static String nowBar(Context c) {
-        return prefs(c).getString("nb", "m");
+        return prefs(c).getString("nb", "c");
     }
 
     static void saveNowBar(Context c, String nb) {

@@ -1050,7 +1050,6 @@ function NoteRow({n,i,out,onGone}){
 function NotifTest({onClose}){
  const A=useContext(Ctx),P=plug('LiveActivity'),f=A.F.filter(x=>!x.r).sort((a,b)=>a.t-b.t)[0]||A.F[A.F.length-1]||{id:0,h:1,o:'יריבה',c:'league',t:Date.now()};
  const ME365='https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634';
- const nbSel=A.pf.nb==='t'?'t':'m';
  const nat=(kind,r,extra)=>P&&P.testAlert?P.testAlert({kind,...extra,comp:cmp(f),t:f.t||0,meHome:!!f.h,home:{name:NT.home(f),score:f.h?r[0]:r[1]},away:{name:NT.away(f),score:f.h?r[1]:r[0]}}):null;
  const game=(m,kind,r,extra)=>[m,()=>nat(kind,r,extra)||devNotify(NT.line(m),m)];
  const items=[
@@ -1066,15 +1065,14 @@ function NotifTest({onClose}){
   [null,game(NT.fin(f,[101,97],true),'final',[101,97],{ot:true}),'סיום המשחק (עם הארכה) – ניצחון'],
   [null,game(NT.fin(f,[97,101],true),'final',[97,101],{ot:true}),'סיום המשחק (עם הארכה) – הפסד'],
   [null,[{title:'כרטיס התוצאה בלייב',l2:'הסמלים, התוצאה, הרבע והשעון ומהלך המשחק (נעלם אחרי 20 שניות)'},()=>{if(!P||!P.demo)return A.toast('כרטיס התוצאה בלייב קיים רק באפליקציית האנדרואיד');
-    P.demo({t:f.t||0,comp:cmp(f),status:'רבע 3',clock:'04:12',play:'04:12 · '+ME+' – שלשה',home:{name:NT.home(f),score:66,img:f.h?ME365:crestSrcs(f.o)[0]||null},away:{name:NT.away(f),score:61,img:f.h?crestSrcs(f.o)[0]||null:ME365},check:true}).then(x=>{if(nbMsg(x))A.toast(nbMsg(x))}).catch(()=>{});setTimeout(()=>P.demo({}).catch(()=>{}),2e4)}],'כרטיס התוצאה בלייב'],
+    P.demo({t:f.t||0,comp:cmp(f),status:'רבע 3',clock:'04:12',play:'04:12 · '+ME+' – שלשה',home:{name:NT.home(f),score:66,img:f.h?ME365:crestSrcs(f.o)[0]||null},away:{name:NT.away(f),score:61,img:f.h?crestSrcs(f.o)[0]||null:ME365},check:true}).then(x=>{if(nbMsg(x,A.pf))A.toast(nbMsg(x,A.pf))}).catch(()=>{});setTimeout(()=>P.demo({}).catch(()=>{}),2e4)}],'כרטיס התוצאה בלייב'],
   ['כללי',[{title:ME,l2:'ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר'},()=>devNotify('ההתראות הופעלו – עדכונים יופיעו גם במגש ההתראות של המכשיר')],'הפעלת ההתראות'],
   [null,[{title:ME,l2:'התראת בדיקה: ההתראות של הפועל ירושלים פועלות'},()=>devNotify('התראת בדיקה: ההתראות של הפועל ירושלים פועלות')],'התראת בדיקה']];
  const send=(go,l)=>{const run=()=>{try{const x=go();if(x&&x.catch)x.catch(()=>{})}catch(e){}A.toast('נשלחה: '+l)};if(A.perm==='default')askNotify().then(p=>{A.setPerm(p);run()});else run()};
  return html`<div class="fixed inset-0 z-[60] flex" onClick=${e=>{e.stopPropagation();onClose()}}><div class="w-full h-full overflow-y-auto fade-in glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-1"><div class="text-lg font-bold">בדיקת התראות</div><button onClick=${onClose} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="text-xs mu mb-3">כל ההתראות של האפליקציה, בנוסח המדויק שלהן. "שליחה" שולחת אותה עכשיו למכשיר. הנתונים מהמשחק הבא (${NT.match(f)}); התוצאות לדוגמה.</div>
- ${P&&P.demo?html`<div class="sf rounded-xl p-3 mb-2"><div class="font-bold text-sm">עיצוב התוצאה בלייב ב-Now Bar</div><div class="text-xs mu mb-2">באנדרואיד 17. אחרי הבחירה – "שליחה" בשורה "כרטיס התוצאה בלייב" למטה. הבחירה נשמרת גם למשחקים.</div>
-  <div class="segc grid grid-cols-2 gap-1 p-1 rounded-xl seg"><${SegInd} k=${nbSel}/>${[['m','שורת תוצאות'],['t','טקסט וסמלי הקבוצות']].map(([k,l])=>html`<button key=${k} data-on=${nbSel===k?'':undefined} onClick=${()=>A.setPf({...A.pf,nb:k})} class=${'py-2 rounded-lg text-[13px] font-bold '+(nbSel===k?'text-white':'mu')}>${l}</button>`)}</div></div>`:null}
+ ${P&&P.demo?html`<div class="sf rounded-xl p-3 mb-2"><div class="font-bold text-sm">התוצאה בלייב</div><div class="text-xs mu mb-2">כרטיס התוצאה של האפליקציה, או ב-Now Bar (אנדרואיד 16 ומעלה). אחרי הבחירה – "שליחה" בשורה "כרטיס התוצאה בלייב" למטה. זו אותה בחירה כמו בהגדרות.</div><${NbPick} A=${A}/></div>`:null}
  ${items.map(([sec,[m,go],l],i)=>html`<${React.Fragment} key=${i}>${sec?html`<div class="font-bold text-sm mt-3 mb-1">${sec}</div>`:null}
   <div class="sf rounded-xl p-3 mb-2 flex items-center gap-3"><div class="flex-1 min-w-0"><div class="text-[11px] mu">${l}</div><div class="font-bold text-sm">${m.title}</div>${m.l1?html`<div class="text-xs mu">${m.l1}</div>`:null}<div class="text-xs mu">${m.l2}</div></div>
   <button onClick=${()=>send(go,l)} class="shrink-0 px-3 py-2 rounded-lg bg-[#D21919] text-white text-xs font-bold">שליחה</button></div><//>`)}
@@ -1112,7 +1110,7 @@ function Settings(){
  <div class="flex items-center justify-between mb-3"><div class="text-lg font-bold">הגדרות</div><button onClick=${()=>A.setSt(false)} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="sf rounded-xl p-3 mb-3"><${Tg} on=${on} f=${toggle} l=${html`<span class="font-medium">התראות</span>`}/>
  <div class="text-xs mu">${on?'ההתראות פעילות ויופיעו גם במגש ההתראות של המכשיר.':A.perm==='denied'?'ההתראות חסומות בהגדרות המכשיר. כדי להפעיל אותן יש לאשר התראות לאפליקציה בהגדרות המכשיר.':'ההתראות כבויות. הפעילו כדי לקבל תזכורות למשחקים ועדכוני תוצאות.'}</div>
- ${on?html`<div class="mt-2 border-t bd pt-2"><${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/>${NATIVE?html`<${Tg} on=${pf.live!==0} f=${()=>sp('live',pf.live===0?1:0)} l="כרטיס התוצאה בלייב במגש ההתראות ובמסך הנעילה"/>${pf.live!==0?html`<${Tg} on=${pf.bg===1} f=${()=>{const on=pf.bg!==1;sp('bg',on?1:0);const P=plug('LiveActivity');if(on&&P&&P.background)P.background({ask:true}).catch(()=>{})}} l="להמשיך לעקוב ברקע גם כשהאפליקציה סגורה"/><div class="text-xs mu pb-2 -mt-1">כשיש משחק חי, כרטיס התוצאה ממשיך להתעדכן גם אם סוגרים את האפליקציה לגמרי. בהפעלה אנדרואיד שואל אם לאפשר לאפליקציה לפעול ללא חיסכון בסוללה – כדאי לאשר.</div>`:null}`:null}<${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
+ ${on?html`<div class="mt-2 border-t bd pt-2"><${Tg} on=${pf.hour} f=${()=>sp('hour',+!pf.hour)} l="תזכורת שעה לפני שריקת הפתיחה"/><${Tg} on=${pf.quarter} f=${()=>sp('quarter',+!pf.quarter)} l="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/>${NATIVE?html`<${Tg} on=${pf.live!==0} f=${()=>sp('live',pf.live===0?1:0)} l="כרטיס התוצאה בלייב במגש ההתראות ובמסך הנעילה"/>${pf.live!==0?html`<div class="pb-2"><div class="text-sm mb-1">איך להציג את התוצאה בלייב</div><${NbPick} A=${A}/><div class="text-xs mu mt-1">${nbMode(pf)==='c'?'כרטיס התוצאה של האפליקציה, עם סמלי הקבוצות.':'ב-Now Bar ובשורת הסטטוס (אנדרואיד 16 ומעלה, כש"עדכונים חיים" מופעלים לאפליקציה בהגדרות ההתראות של המכשיר). אנדרואיד לא מאפשר שם עיצוב משלנו. במכשיר אחר – כרטיס התוצאה של האפליקציה.'}</div></div><${Tg} on=${pf.bg===1} f=${()=>{const on=pf.bg!==1;sp('bg',on?1:0);const P=plug('LiveActivity');if(on&&P&&P.background)P.background({ask:true}).catch(()=>{})}} l="להמשיך לעקוב ברקע גם כשהאפליקציה סגורה"/><div class="text-xs mu pb-2 -mt-1">כשיש משחק חי, כרטיס התוצאה ממשיך להתעדכן גם אם סוגרים את האפליקציה לגמרי. בהפעלה אנדרואיד שואל אם לאפשר לאפליקציה לפעול ללא חיסכון בסוללה – כדאי לאשר.</div>`:null}`:null}<${Tg} on=${pf.sales} f=${()=>sp('sales',+!pf.sales)} l="פתיחת מכירת כרטיסים ומבצעים בחנות"/>
  <div class="font-bold mt-2 text-sm">לפי מפעל</div>${Object.entries(COMPS).map(([k,l])=>html`<${Tg} key=${k} on=${pf.comps[k]} f=${()=>sp('comps',{...pf.comps,[k]:+!pf.comps[k]})} l=${l}/>`)}</div>`:null}</div>
  <div class="sf rounded-xl p-3"><div class="font-bold mb-1">עדכוני אפליקציה</div><div class="text-sm mu">גרסה מותקנת: ${window.APP_VERSION||''}</div>
  ${NATIVE?html`<button onClick=${check} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white text-sm font-bold">חפש עדכונים</button>${chk?html`<div class="text-xs mu mt-2">${chk}</div>`:null}<div class="text-xs mu mt-2">האפליקציה בודקת עדכונים אוטומטית בכל פתיחה. כשיש גרסה חדשה צריך לעדכן כדי להמשיך להשתמש בה.</div>`:html`<div class="text-xs mu mt-1">בגרסת הדפדפן האפליקציה מתעדכנת אוטומטית.</div>`}</div>
@@ -1191,8 +1189,12 @@ async function latestRelease(){try{const r=await relApi();if(r)return r}catch(e)
 /* כל ההתראות של האפליקציה בקבוצה אחת במגש ההתראות (יחד עם כרטיס התוצאה בלייב ועדכוני המשחק של החלק ה-native) */
 const NGROUP='hpj-all';
 /* נוסח ההתראות (חוץ מכרטיס התוצאה בלייב): כותרת, ושורות הטקסט – l1 (מפעל, מחזור/שלב) מעל l2 (הקבוצות / התוצאה). זהה לנוסח בחלק ה-native (GameAlerts) */
-/* אנדרואיד 16 ומעלה: האם כרטיס התוצאה מוצג גם ב-Now Bar (כ-Live Update) – הודעה אחרי ההצגה הראשונה במצב בדיקה / במסך בדיקת ההתראות */
-const nbMsg=x=>!x||!(x.sdk>=36)||x.shown===false?'':x.promoted?'התוצאה מוצגת עכשיו גם ב-Now Bar':x.nowbar?'אנדרואיד לא הציג את התוצאה ב-Now Bar':'כדי לראות את התוצאה ב-Now Bar יש להפעיל "עדכונים חיים" לאפליקציה בהגדרות ההתראות של המכשיר';
+/* איך מוצגת התוצאה בלייב: c – כרטיס התוצאה של האפליקציה (ברירת המחדל), m / t – ב-Now Bar (שורת תוצאות / טקסט וסמלים) */
+const nbMode=pf=>pf&&(pf.nb==='m'||pf.nb==='t')?pf.nb:'c';
+function NbPick({A}){const sel=nbMode(A.pf);
+ return html`<div class="segc grid grid-cols-3 gap-1 p-1 rounded-xl seg"><${SegInd} k=${sel}/>${[['c','כרטיס התוצאה'],['m','Now Bar · שורה'],['t','Now Bar · טקסט']].map(([k,l])=>html`<button key=${k} data-on=${sel===k?'':undefined} onClick=${()=>A.setPf({...A.pf,nb:k})} class=${'py-2 px-1 rounded-lg text-[12px] font-bold whitespace-nowrap '+(sel===k?'text-white':'mu')}>${l}</button>`)}</div>`}
+/* אנדרואיד 16 ומעלה, כשנבחר Now Bar: האם כרטיס התוצאה מוצג בו (כ-Live Update) – הודעה אחרי ההצגה הראשונה במצב בדיקה / במסך בדיקת ההתראות */
+const nbMsg=(x,pf)=>!x||nbMode(pf)==='c'||!(x.sdk>=36)||x.shown===false?'':x.promoted?'התוצאה מוצגת עכשיו גם ב-Now Bar':x.nowbar?'אנדרואיד לא הציג את התוצאה ב-Now Bar':'כדי לראות את התוצאה ב-Now Bar יש להפעיל "עדכונים חיים" לאפליקציה בהגדרות ההתראות של המכשיר';
 const NT={home:f=>f.h?ME:f.o,away:f=>f.h?f.o:ME,match:f=>NT.home(f)+' מול '+NT.away(f),
  score:(f,r)=>NT.home(f)+' '+(f.h?r[0]:r[1])+' - '+(f.h?r[1]:r[0])+' '+NT.away(f),
  qt:q=>q===1?'סיום רבע ראשון':q===2?'מחצית':q===3?'סיום רבע שלישי':q===4?'סיום רבע רביעי':'סיום הארכה '+(q-4),
@@ -1277,7 +1279,7 @@ function App(){
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
   const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f),o:f.o||''})),jer={};
    (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
-   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{},nb:pf.nb==='t'?'t':'m'}).then(()=>P.group&&P.group()).catch(()=>{})};
+   P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{},nb:nbMode(pf)}).then(()=>P.group&&P.group()).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);
  /* מצב בדיקה: אותה התראה בלייב (Live Update / Now Bar) מוצגת עם התוצאה המדומה, ומתעדכנת עם כל עדכון של ההדמיה. כשמצב הבדיקה נכבה היא נעלמת */
  const demoKey=useRef('');
@@ -1288,7 +1290,7 @@ function App(){
    p0=(demo.pbp||[])[0],
    o={t:n?n.t:0,comp:(n&&COMPS[n.c])||'',play:p0?(p0.clock?p0.clock+' · ':'')+p0.text:'',status:st,clock:demo.clock||'',home:n&&!n.h?them:me,away:n&&!n.h?me:them},k=JSON.stringify(o),first=!demoKey.current;
   if(k===demoKey.current)return;demoKey.current=k;
-  P.demo({...o,check:first}).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר');else if(first&&nbMsg(x))toast(nbMsg(x))}).catch(()=>{})},[demo]);
+  P.demo({...o,check:first}).then(x=>{if(first&&x&&x.shown===false)toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר');else if(first&&nbMsg(x,pf))toast(nbMsg(x,pf))}).catch(()=>{})},[demo]);
  /* לחיצה על כרטיס התוצאה בלייב במגש ההתראות: האפליקציה נפתחת ישר בעמוד של אותו משחק */
  const openRef=useRef();openRef.current=t=>{const f=S.F.slice().sort((a,b)=>Math.abs(a.t-t)-Math.abs(b.t-t))[0];if(!f||Math.abs(f.t-t)>6*H)return;
   const T=TK();if(T)T.hide().catch(()=>{});setSt(false);setMo0(false);setDr(false);setPl(null);setPg('home');openGame({setGm},f)};

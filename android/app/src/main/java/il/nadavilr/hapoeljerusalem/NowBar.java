@@ -27,7 +27,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
- * The live score card as an Android Live Update, when Live Updates are allowed for the app: shown in the Now Bar /
+ * The live score card as an Android Live Update – when the Now Bar is chosen in the app's settings (the default is the
+ * app's own card) and Live Updates are allowed for the app: shown in the Now Bar /
  * status bar chip and on top of the notification shade. A Live Update can't have a custom layout (no RemoteViews), so:
  *
  * Android 17+ – MetricStyle, a row of three columns like the app's card (home team on the right):
@@ -86,11 +87,12 @@ final class NowBar {
 
     /** The live card as a Live Update, or null (then the app's own card is used). */
     static Notification card(Context c, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin, PendingIntent del) {
-        if (Build.VERSION.SDK_INT < 36 || !available(c)) return null;
+        // Only when the Now Bar was chosen in the app's settings (the default is the app's own card)
+        if (Build.VERSION.SDK_INT < 36 || "c".equals(LiveScheduler.nowBar(c)) || !available(c)) return null;
         try {
             String title = g.comp.isEmpty() ? LiveGame.TEAM : g.comp;
             String st = fin ? RLM + "סיום" + RLM : g.statusLine().isEmpty() ? RLM + "לייב" + RLM : g.statusLine();
-            Notification.Builder b = new Notification.Builder(c, LiveScoreService.CHANNEL)
+            Notification.Builder b = new Notification.Builder(c, LiveScoreService.NOW_CHANNEL)
                 .setSmallIcon(R.drawable.ic_stat_hpj)
                 .setColor(RED)
                 .setContentIntent(LiveGame.open(c, g.t))

@@ -31,8 +31,9 @@ import org.json.JSONObject;
 public class LiveScoreService extends Service {
 
     /** The live score card's channel (IMPORTANCE_LOW). "hpj-live" was the old one, at IMPORTANCE_DEFAULT. */
-    static final String CHANNEL = "hpj-live-low";
-    private static final String OLD_CHANNEL = "hpj-live";
+    static final String CHANNEL = "hpj-live";
+    /** The Now Bar's channel (Live Update), IMPORTANCE_LOW. */
+    static final String NOW_CHANNEL = "hpj-live-low";
     static final int NOTIF_ID = 63401;
     static final String ACTION_STOP = "il.nadavilr.hapoeljerusalem.LIVE_STOP";
     private static final String API = "https://webws.365scores.com/web/games/current/?appTypeId=5&langId=2"
@@ -407,24 +408,32 @@ public class LiveScoreService extends Service {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_LOW);
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
     }
 
     static void ensureChannel(Context c) {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager nm = c.getSystemService(NotificationManager.class);
-        if (nm == null || nm.getNotificationChannel(CHANNEL) != null) return;
-        try {
-            if (nm.getNotificationChannel(OLD_CHANNEL) != null) nm.deleteNotificationChannel(OLD_CHANNEL);
-        } catch (Exception ignored) {
+        if (nm == null) return;
+        // The app's live card – as in 1.110 (if the channel was removed by 1.123–1.130, re-creating it restores it
+        // with the settings it had)
+        if (nm.getNotificationChannel(CHANNEL) == null) {
+            NotificationChannel ch = new NotificationChannel(CHANNEL, "תוצאה בלייב", NotificationManager.IMPORTANCE_DEFAULT);
+            ch.setDescription("התוצאה של המשחק בזמן אמת, בזמן שהפועל ירושלים משחקת");
+            ch.setSound(null, null);
+            ch.enableVibration(false);
+            ch.setShowBadge(false);
+            nm.createNotificationChannel(ch);
         }
-        // Low: no sound, no pop-up – the score just updates (still allowed as a Live Update, which only rules out MIN)
-        NotificationChannel ch = new NotificationChannel(CHANNEL, "תוצאה בלייב", NotificationManager.IMPORTANCE_LOW);
-        ch.setDescription("התוצאה של המשחק בזמן אמת, בזמן שהפועל ירושלים משחקת");
-        ch.setSound(null, null);
-        ch.enableVibration(false);
-        ch.setShowBadge(false);
-        nm.createNotificationChannel(ch);
+        // The Now Bar (when chosen in the settings): low – no sound, no pop-up; a Live Update only rules out MIN
+        if (nm.getNotificationChannel(NOW_CHANNEL) == null) {
+            NotificationChannel ch = new NotificationChannel(NOW_CHANNEL, "תוצאה בלייב ב-Now Bar", NotificationManager.IMPORTANCE_LOW);
+            ch.setDescription("התוצאה של המשחק בזמן אמת ב-Now Bar, כשהאפשרות נבחרה בהגדרות האפליקציה");
+            ch.setSound(null, null);
+            ch.enableVibration(false);
+            ch.setShowBadge(false);
+            nm.createNotificationChannel(ch);
+        }
     }
 
 }
