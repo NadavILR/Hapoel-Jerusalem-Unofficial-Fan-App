@@ -2,7 +2,7 @@ name: Build Android app (APK)
 # Builds the Capacitor Android app and publishes the APK as the "android-latest" release,
 # so it can be downloaded and installed straight from the phone.
 # From main: a regular release (the app offers it as an update). From any other branch: a pre-release
-# (tag vX.Y.0-beta, not "latest") that the app never offers – it is only downloadable from GitHub.
+# (tag vX.Y-beta, not "latest") that the app never offers – it is only downloadable from GitHub.
 on:
   push:
     branches: [main, ccr-14a15d85-izwe4r]
@@ -34,13 +34,14 @@ jobs:
         run: |
           v=$(tr -d '[:space:]' < VERSION)
           echo "version=$v" >> "$GITHUB_OUTPUT"
-          # Release tag is always X.Y.Z (1.19 -> v1.19.0): app versions up to 1.1.8 only recognize such tags
-          if [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then t="v$v.0"; else t="v$v"; fi
+          # Release tag = the version as it is: 1.132 -> v1.132 (until 1.131 it was v1.131.0). The app's update check
+          # accepts both forms (releases/latest and the releases.atom fallback); only versions up to 1.1.8 wanted X.Y.Z
+          t="v$v"
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "tag=$t" >> "$GITHUB_OUTPUT"; echo "pre=false" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v" >> "$GITHUB_OUTPUT"
           else
             # Pre-release: the "-beta" tag is never offered as an update (releases/latest skips pre-releases, and the
-            # app's releases.atom fallback only accepts tags like v1.2.3)
+            # app's releases.atom fallback only accepts tags like v1.132 / v1.2.3)
             echo "tag=$t-beta" >> "$GITHUB_OUTPUT"; echo "pre=true" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v (ניסיונית)" >> "$GITHUB_OUTPUT"
           fi
       - name: Restore the signing key from GitHub secrets

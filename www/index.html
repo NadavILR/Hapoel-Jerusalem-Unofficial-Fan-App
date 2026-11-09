@@ -1176,7 +1176,7 @@ const vcmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.
 const DLPFX='https://github.com/'+REPO+'/releases/download/';
 /* הגרסה האחרונה: קודם ה-API של GitHub; אם הוא חסום (מגבלת 60 בקשות לשעה לכל כתובת IP – בסלולר הרבה משתמשים חולקים כתובת אחת)
    או לא זמין – פיד ה-releases הציבורי (releases.atom), שאין עליו מגבלה כזו. שם קובץ ה-APK נגזר מהגרסה, כמו ב-workflow */
-const relVer=tag=>String(tag||'').replace(/^v/,'').replace(/^(\d+\.\d{2})\.0$/,'$1');
+const relVer=tag=>String(tag||'').replace(/^v/,'').replace(/^(\d+\.\d{2,})\.0$/,'$1');
 const notesOf=t=>String(t||'').split('\n').map(l=>/^\s*-\s+(.+)/.exec(l)).filter(Boolean).map(m=>m[1].replace(/`/g,'').trim()).filter(x=>!/^להתקנה/.test(x)).slice(0,8);
 const unHtml=t=>t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&');
 async function relApi(){const raw=NATIVE?await getText('https://api.github.com/repos/'+REPO+'/releases/latest'):await (async()=>{const r=await fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw new Error('http '+r.status);return r.text()})();
