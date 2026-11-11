@@ -69,6 +69,32 @@ public class LiveActivityPlugin extends Plugin {
         call.resolve(r);
     }
 
+    /** Notification test screen: the live card's state on the phone (settings, the game on now, running or not). */
+    @PluginMethod
+    public void state(PluginCall call) {
+        Context c = getContext();
+        JSObject r = new JSObject();
+        try {
+            org.json.JSONObject o = LiveScheduler.state(c);
+            java.util.Iterator<String> k = o.keys();
+            while (k.hasNext()) {
+                String n = k.next();
+                r.put(n, o.get(n));
+            }
+            boolean shown = false;
+            for (android.service.notification.StatusBarNotification s : c.getSystemService(android.app.NotificationManager.class).getActiveNotifications())
+                if (s.getId() == LiveScoreService.NOTIF_ID) shown = true;
+            r.put("shown", shown);
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                android.app.NotificationChannel ch = c.getSystemService(android.app.NotificationManager.class).getNotificationChannel(LiveScoreService.CHANNEL);
+                r.put("channel", ch == null ? -1 : ch.getImportance());
+            }
+        } catch (Exception e) {
+            r.put("error", String.valueOf(e));
+        }
+        call.resolve(r);
+    }
+
     @PluginMethod
     public void takeOpen(PluginCall call) {
         JSObject r = new JSObject();
@@ -87,6 +113,8 @@ public class LiveActivityPlugin extends Plugin {
         LiveScheduler.saveSettings(getContext(), call.getBoolean("quarter"), call.getObject("comps"));
         LiveScheduler.saveNowBar(getContext(), call.getString("nb"));
         LiveScheduler.save(getContext(), on, games, jer);
+        // The app is open: a game on now gets its live card back, even if it was swiped away earlier in the game
+        LiveScheduler.undone(getContext());
         JSObject r = new JSObject();
         long now = LiveScheduler.current(getContext());
         if (LiveScheduler.allowed(getContext()) && now > 0) {

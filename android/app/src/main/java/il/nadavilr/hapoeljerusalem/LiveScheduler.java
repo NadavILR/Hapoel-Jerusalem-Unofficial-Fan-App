@@ -243,7 +243,34 @@ final class LiveScheduler {
     }
 
     static void dismissed(Context c, long t) {
-        done(c, t);
+        if (t > 0) done(c, t);
+    }
+
+    /**
+     * Opening the app during a game brings the live card back, even if it was swiped away (or stopped) earlier in that
+     * game: "done" only keeps it away until then. A game that has really ended is not in the app's list any more.
+     */
+    static void undone(Context c) {
+        prefs(c).edit().remove("done").apply();
+    }
+
+    /** For the app's notification test screen: why the live card is or isn't running now. */
+    static org.json.JSONObject state(Context c) {
+        org.json.JSONObject o = new org.json.JSONObject();
+        try {
+            long now = System.currentTimeMillis(), next = 0;
+            for (long t : times(c)) if (t > now - WINDOW_AFTER && (next == 0 || t < next)) next = t;
+            o.put("on", prefs(c).getBoolean("on", true));
+            o.put("notif", NotificationManagerCompat.from(c).areNotificationsEnabled());
+            o.put("current", current(c));
+            o.put("next", next);
+            o.put("done", prefs(c).getLong("done", 0));
+            o.put("games", times(c).size());
+            o.put("bg", background(c));
+            o.put("nb", nowBar(c));
+        } catch (Exception ignored) {
+        }
+        return o;
     }
 
     private static boolean handled(Context c, long t) {

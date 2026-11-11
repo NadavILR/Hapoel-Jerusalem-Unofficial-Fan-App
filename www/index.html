@@ -1154,6 +1154,13 @@ function NoteRow({n,i,out,onGone}){
 }
 /* מסך בדיקת התראות (3 לחיצות על הכותרת "מרכז התראות"): כל ההתראות שיש באפליקציה, עם הנוסח המדויק שלהן, וכפתור ששולח כל אחת למכשיר.
    התראות המשחק נשלחות דרך אותו קוד native שמשמש בזמן משחק (GameAlerts); הנתונים – מהמשחק הבא, התוצאות לדוגמה */
+/* מסך בדיקת ההתראות: מצב כרטיס התוצאה בלייב בטלפון – כדי לדעת למה הוא לא מופיע */
+function NatState({P}){const [x,setX]=useState(null);
+ const load=()=>P.state().then(setX).catch(e=>setX({error:String(e)}));useEffect(()=>{load();const i=setInterval(load,3000);return()=>clearInterval(i)},[]);
+ if(!x)return null;const t=v=>v?new Date(+v).toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'—';
+ const why=x.error?x.error:!x.notif?'ההתראות של האפליקציה חסומות בהגדרות המכשיר':!x.on?'כרטיס התוצאה כבוי בהגדרות האפליקציה':x.channel===0?'הערוץ "תוצאה בלייב" כבוי בהגדרות ההתראות של המכשיר':!x.games?'אין משחקים קרובים ברשימה של הטלפון':x.current?(x.shown?'פועל – הכרטיס מוצג':'משחק עכשיו, אבל הכרטיס לא מוצג'):x.done&&x.done===x.next?'הכרטיס הוסר במשחק הזה – ייפתח שוב כשפותחים את האפליקציה':'אין משחק עכשיו (מופעל 10 דקות לפני שריקת הפתיחה)';
+ return html`<div class="sf rounded-xl p-3 mb-2"><div class="font-bold text-sm">מצב כרטיס התוצאה בטלפון</div><div class="text-sm mt-1">${why}</div>
+  <div class="text-[11px] mu mt-1" dir="rtl">משחק עכשיו: ${t(x.current)} · המשחק הבא: ${t(x.next)} · משחקים ברשימה: ${x.games} · מוצג: ${x.shown?'כן':'לא'} · ערוץ: ${x.channel} · Now Bar: ${x.nb} · רקע: ${x.bg?'כן':'לא'}</div></div>`}
 function NotifTest({onClose}){
  const A=useContext(Ctx),P=plug('LiveActivity'),f=A.F.filter(x=>!x.r).sort((a,b)=>a.t-b.t)[0]||A.F[A.F.length-1]||{id:0,h:1,o:'יריבה',c:'league',t:Date.now()};
  const ME365='https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634';
@@ -1179,6 +1186,7 @@ function NotifTest({onClose}){
  return html`<div class="fixed inset-0 z-[60] flex" onClick=${e=>{e.stopPropagation();onClose()}}><div class="w-full h-full overflow-y-auto fade-in glass-sheet p-4" style=${{background:'var(--bg)',paddingTop:'calc(var(--sat) + 16px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}} onClick=${e=>e.stopPropagation()}>
  <div class="flex items-center justify-between mb-1"><div class="text-lg font-bold">בדיקת התראות</div><button onClick=${onClose} aria-label="סגירה"><${I} n="x"/></button></div>
  <div class="text-xs mu mb-3">כל ההתראות של האפליקציה, בנוסח המדויק שלהן. "שליחה" שולחת אותה עכשיו למכשיר. הנתונים מהמשחק הבא (${NT.match(f)}); התוצאות לדוגמה.</div>
+ ${P&&P.state?html`<${NatState} P=${P}/>`:null}
  ${P&&P.demo?html`<div class="sf rounded-xl p-3 mb-2"><div class="font-bold text-sm">התוצאה בלייב</div><div class="text-xs mu mb-2">כרטיס התוצאה של האפליקציה, או ב-Now Bar (אנדרואיד 16 ומעלה). אחרי הבחירה – "שליחה" בשורה "כרטיס התוצאה בלייב" למטה. זו אותה בחירה כמו בהגדרות.</div><${NbPick} A=${A}/></div>`:null}
  ${items.map(([sec,[m,go],l],i)=>html`<${React.Fragment} key=${i}>${sec?html`<div class="font-bold text-sm mt-3 mb-1">${sec}</div>`:null}
   <div class="sf rounded-xl p-3 mb-2 flex items-center gap-3"><div class="flex-1 min-w-0"><div class="text-[11px] mu">${l}</div><div class="font-bold text-sm">${m.title}</div>${m.l1?html`<div class="text-xs mu">${m.l1}</div>`:null}<div class="text-xs mu">${m.l2}</div></div>
