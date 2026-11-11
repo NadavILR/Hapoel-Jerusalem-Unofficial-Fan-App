@@ -1391,8 +1391,8 @@ function App(){
  /* 3 לחיצות מהירות על השורה שבתחתית מסך הבית מפעילות / מכבות את מצב הבדיקה */
  const tapFoot=()=>{if(pg!=='home'||gm)return;const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];if(demo){setDemo(null);toast('מצב בדיקה כובה')}else if(nx){const n=nx;setDemo(mkDemo(n,S.F));toast('מצב בדיקה: המשחק הבא מוצג כמשחק בלייב');demoSquad(n).then(sq=>setDemo(d=>d&&d.app===n.id?demoNames(d,sq):d)).catch(()=>{})}};
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg:demo||lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
- /* משחק בלייב: התוצאה מוצגת מעל סרגל הניווט בכל העמודים, חוץ מעמוד משחק */
- const dockL=!gm&&!upd&&A.lg&&A.lg.status==='live'?A.lg:null,dockG=dockL?S.F.find(f=>f.id===dockL.app):null,dockOn=!!(dockL&&dockG);
+ /* משחק בלייב: התוצאה מוצגת בסרגל הניווט בכל העמודים, גם בעמודים של משחקים אחרים – חוץ מעמוד המשחק שבלייב עצמו */
+ const dockL=!upd&&A.lg&&A.lg.status==='live'&&!(gm&&gm.id===A.lg.app)?A.lg:null,dockG=dockL?S.F.find(f=>f.id===dockL.app):null,dockOn=!!(dockL&&dockG);
  useEffect(()=>{if(pg==='tix'&&TK()&&!mo){const x=tixShow(false);if(x&&x.catch)x.catch(()=>{})}},[dockOn]);
  const navOn=mo||EXT[pg]?'more':pg,Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  /* גובה הכותרת (כולל פס הסטטוס), בשביל סרגלי הסינון וכפתורי החזרה שנצמדים מתחתיה */
