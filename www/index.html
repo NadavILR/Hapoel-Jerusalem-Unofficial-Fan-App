@@ -267,7 +267,8 @@ const openExt=u=>{if(NATIVE)location.href=u;else window.open(u,'_blank','noopene
 const HLN={euro:'יורוקאפ',league:'ליגת ווינר',wcup:'גביע ווינר',cup:'גביע המדינה',super:'',prep:''};
 /* תקצירים שהאפליקציה מצאה בעצמה בערוצי היוטיוב (לפי מספר המשחק), עד שהם מגיעים גם בקובץ הנתונים */
 let HLC0=null;const HLC=()=>HLC0||(HLC0=LS.get('hpj-hl',{}));
-const hlOf=g=>{if(typeof g.hl==='string'&&g.hl)return g.hl;const e=HLC()[g.id];return e&&e.u||''};
+/* קודם התקציר הרשמי מערוץ הפועל ירושלים (o:0) שהאפליקציה מצאה; אחריו הקישור מקובץ הנתונים; ואם אין – התקציר מערוץ המפעל (o:1) */
+const hlOf=g=>{const e=HLC()[g.id];if(e&&e.o===0&&e.u)return e.u;if(typeof g.hl==='string'&&g.hl)return g.hl;return e&&e.u||''};
 const ytId=g=>{const h=hlOf(g),m=/^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/.exec(h);return m?m[1]:''};
 /* תקציר בחלון קופץ בתוך האפליקציה (כפתור "חזור" של המכשיר סוגר אותו) */
 const VIDC={close:null};
@@ -282,7 +283,7 @@ function VideoPop({g,onClose}){
  </div></div>`,document.body);
 }
 const hlUrl=g=>ytId(g)?'https://www.youtube.com/watch?v='+ytId(g):'https://www.youtube.com/results?search_query='+encodeURIComponent(('תקציר '+(g.h?ME+' '+g.o:g.o+' '+ME)+' '+(HLN[g.c]||'')).trim());
-/* תקציר המשחק מיד כשהוא עולה: הפיד (RSS) של ערוץ המפעל הרשמי – ליגת ווינר סל (גם הגביעים) או היורוקאפ – ואם אין שם, של ערוץ הפועל ירושלים.
+/* תקציר המשחק מיד כשהוא עולה: הפיד (RSS) של ערוץ היוטיוב הרשמי של הפועל ירושלים; רק אם אין שם עדיין – של ערוץ המפעל (ליגת ווינר סל, גם הגביעים, או היורוקאפ).
    נבדק במשחקים שהסתיימו בשבוע האחרון ואין להם עדיין תקציר: בפתיחת האפליקציה, כל 10 דקות וכשמשחק מסתיים */
 const YTC={il:'UCNWMa_pdt1GIWH_zwbTldEQ',euro:'UCpFqOv5z4WKps64GlQS4ytw',club:'UCM2ng9CAAebh7NIK_CmcsxA'};
 const ytDec=x=>String(x).replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
@@ -293,20 +294,24 @@ async function ytFeed(ch){const x=await getText('https://www.youtube.com/feeds/v
 /* שם היריבה לחיפוש בכותרת: ב״ש ← באר שבע, ת״א ← תל אביב; בלי המילים הכלליות (הפועל, מכבי...) */
 const hlNorm=x=>String(x).replace(/ב[״"]ש/g,'באר שבע').replace(/ת[״"]א/g,'תל אביב').replace(/[״"׳']/g,'');
 const hlToks=o=>hlNorm(o).split(/[\s\/\-–]+/).filter(w=>w.length>=3&&!['הפועל','מכבי','בני','עירוני','אליצור'].includes(w));
-function hlFind(g,feeds,until){const ok=v=>v.p>=g.t&&v.p<=until,tk=hlToks(g.o||''),r=g.r||[],sc=t=>{const m=/(\d{2,3})\s*[-–]\s*(\d{2,3})/.exec(t);return m&&[+m[1],+m[2]].sort().join()===[r[0],r[1]].sort().join()};
- const of=g.c==='euro'?(feeds.euro||[]).find(v=>ok(v)&&/jerusalem/i.test(v.t)&&/ - /.test(v.t)&&/round|game|playoff|final/i.test(v.t)&&!/top \d|mvp/i.test(v.t))
-  :['league','wcup','cup','super'].includes(g.c)?(feeds.il||[]).find(v=>{const t=hlNorm(v.t);return ok(v)&&/תקציר/.test(t)&&/ירושלים/.test(t)&&(!tk.length||tk.some(w=>t.includes(w)))}):null;
- const cl=of?null:(feeds.club||[]).find(v=>ok(v)&&/נגד/.test(v.t)&&sc(v.t));
- const v=of||cl;return v?{u:'https://www.youtube.com/watch?v='+v.v,o:of?1:0}:null}
-async function hlScan(F){const now=Date.now(),m=HLC(),
-  /* בלי תקציר; או עם התקציר של ערוץ הפועל – ואז עוד 3 ימים מחפשים את התקציר של ערוץ המפעל, שמחליף אותו */
-  need=F.filter(f=>f.r&&!(typeof f.hl==='string'&&f.hl)&&f.c!=='prep'&&now>f.t&&(m[f.id]?!m[f.id].o&&now-f.t<3*D:now-f.t<7*D));if(!need.length)return 0;
- const chs=new Set(['club']);need.forEach(f=>chs.add(f.c==='euro'?'euro':'il'));const feeds={};
+function hlFind(g,feeds,until){const ok=(v,u)=>v.p>=g.t&&v.p<=u,tk=hlToks(g.o||''),r=g.r||[],sc=t=>{const m=/(\d{2,3})\s*[-–]\s*(\d{2,3})/.exec(t);return m&&[+m[1],+m[2]].sort().join()===[r[0],r[1]].sort().join()};
+ /* ערוץ הפועל ירושלים: "… | הפועל ירושלים נגד היריבה 84-73" – לפי התוצאה, עד 10 ימים אחרי המשחק */
+ const cl=(feeds.club||[]).find(v=>ok(v,g.t+10*D)&&/נגד/.test(v.t)&&sc(v.t));
+ if(cl)return{u:'https://www.youtube.com/watch?v='+cl.v,o:0};
+ const of=g.c==='euro'?(feeds.euro||[]).find(v=>ok(v,until)&&/jerusalem/i.test(v.t)&&/ - /.test(v.t)&&/round|game|playoff|final/i.test(v.t)&&!/top \d|mvp/i.test(v.t))
+  :['league','wcup','cup','super'].includes(g.c)?(feeds.il||[]).find(v=>{const t=hlNorm(v.t);return ok(v,until)&&/תקציר/.test(t)&&/ירושלים/.test(t)&&(!tk.length||tk.some(w=>t.includes(w)))}):null;
+ return of?{u:'https://www.youtube.com/watch?v='+of.v,o:1}:null}
+let hlAll=0;
+async function hlScan(F){const now=Date.now(),m=HLC(),club=f=>m[f.id]&&m[f.id].o===0,
+  /* משחקים שהסתיימו ואין להם עדיין התקציר של ערוץ הפועל: בבדיקה הראשונה מאז פתיחת האפליקציה – כל משחקי העונה (הפיד של הערוץ מכיל את 15 הסרטונים האחרונים);
+     אחר כך – משחקים מ-10 הימים האחרונים. עד שהוא עולה מוצג התקציר של ערוץ המפעל, והוא מוחלף כשהתקציר של הפועל מופיע */
+  need=F.filter(f=>f.r&&f.c!=='prep'&&now>f.t&&!club(f)&&(!hlAll||now-f.t<10*D));if(!need.length)return 0;
+ const chs=new Set(['club']);need.forEach(f=>{if(now-f.t<7*D&&!(typeof f.hl==='string'&&f.hl)&&!m[f.id])chs.add(f.c==='euro'?'euro':'il')});const feeds={};
  await Promise.all([...chs].map(k=>ytFeed(YTC[k]).then(x=>{feeds[k]=x}).catch(()=>{})));
- let n=0;
+ if(feeds.club)hlAll=1;let n=0;
  for(const f of need){const nx=F.filter(x=>x.t>f.t).sort((a,b)=>a.t-b.t)[0],e=hlFind(f,feeds,Math.min(f.t+7*D,nx?nx.t:Infinity)),p=m[f.id];
   if(e&&(!p||p.u!==e.u)){m[f.id]=e;n++}}
- if(n)LS.set('hpj-hl',Object.fromEntries(Object.entries(m).slice(-30)));return n}
+ if(n)LS.set('hpj-hl',Object.fromEntries(Object.entries(m).slice(-80)));return n}
 /* סטטיסטיקות מלאות מ-365scores, באותו מבנה של הסטטיסטיקות שבאפליקציה אחרי המשחק ([הפועל ירושלים, יריבה]) */
 const sv=(a,t)=>{const x=(a||[]).find(y=>y.type===t);return x?x.value:''},mk2=v=>{const m=/(\d+)\s*\/\s*(\d+)/.exec(v||'');return m?[+m[1],+m[2]]:[0,0]},int=v=>parseInt(v,10)||0;
 function gs365(d,ts){const jh=d.homeCompetitor.id===634,J=jh?d.homeCompetitor:d.awayCompetitor,O=jh?d.awayCompetitor:d.homeCompetitor,mem={},nm=x=>String(x||'').replace(/'/g,'׳');
@@ -412,7 +417,7 @@ const rnd=s=>()=>(s=(s*16807)%2147483647)/2147483647;
 const D_LG=[[ME,4,4,0,8],['הפועל תל אביב',4,3,1,7],['מכבי רמת גן',4,3,1,7],['מכבי תל אביב',4,2,2,6],['הפועל אילת',4,2,2,6],['עירוני נס ציונה',4,2,2,6],['בני הרצליה',4,2,2,6],['עירוני קריית אתא',4,2,2,6],['מכבי ראשון לציון',4,2,2,6],['גליל עליון',4,2,2,6],['הפועל העמק',4,1,3,5],['מכבי אשדוד',4,1,3,5],['הפועל חולון',4,1,3,5],['הפועל ב״ש/דימונה',4,1,3,5]].map(([n,g,w,l,p])=>({n,g,w,l,p}));
 const grp=p=>{const t=String(p[2]),r=[];if(/גארד|רכז/.test(t))r.push('G');if(/פורוורד/.test(t))r.push('F');if(/סנטר/.test(t))r.push('C');return r};
 const D_PL=[[0,"דבונטה קייקוק","פורוורד-סנטר","2.03","ארה״ב","08/10/1996","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/cacok.jpg",79423,"devontae-cacok-79423",26046],[2,"קנת׳ לופטון ג׳וניור","פורוורד","1.98","ארה״ב","14/08/2002","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/lofton.jpg",113229,"kenneth-lofton-jr-113229",26048],[3,"ג׳יילן סמית׳","גארד","1.93","ארה״ב","24/11/1994","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/smith.jpg",102986,"jaleen-smith-102986",26045],[4,"לורנזו בראון","גארד","1.96","ארה״ב, ספרד","26/08/1990","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/%D7%9C%D7%95%D7%A8%D7%A0%D7%96%D7%95%20copy.png",53397,"lorenzo-brown-53397",27222],[7,"שחר לוברבוים","גארד","1.92","ישראל","22/07/2008","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/luberbuim.jpg",248692,"shahar-luberboim-248692",26156],[8,"יותם חנוכי","פורוורד","2.04","ישראל","08/12/2000","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/hanochi.jpg",71164,"yotam-hanochi-71164",26042],[9,"שייק מילטון","גארד","1.96","ארה״ב","26/09/1996","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/miltonred.jpg",64205,"shake-milton-64205",26049],[11,"דושאן מילטיץ׳","סנטר","2.14","סרביה","30/07/1998","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/miletic.jpg",71211,"dusan-miletic-71211",26132],[13,"רועי הובר","רכז","1.88","ישראל","10/02/1997","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/huber.jpg",64738,"roi-huber-64738",26040],[15,"נמרוד לוי","פורוורד","2.08","ישראל, שבדיה","24/03/1995","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/levi.jpg",64722,"nimrod-levy-64722",26041],[21,"דייויד רודי","פורוורד","1.96","ארה״ב","27/03/2001","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/rooddy.jpg",109088,"david-roddy-109088",26047],[33,"גבריאל צאצאשוילי","פורוורד-סנטר","2.10","ישראל","08/12/1999","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/chachshvili.jpg",102948,"gabriel-chachashvili-102948",26039],[35,"איתן בורג","גארד","1.91","ישראל","04/09/2002","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/burg.jpg",147540,"ethan-burg-147540",26044],[50,"יובל זוסמן","פורוורד","2.00","ישראל","12/05/1998","https://basket.co.il/pics/2026-2027/%D7%9E%D7%93%D7%99%D7%94%20%D7%93%D7%99%D7%99%20%D7%94%D7%A4%D7%95%D7%A2%D7%9C%20%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D/zoosman.jpg",53874,"yovel-zoosman-53874",26043]];
-const D_PBP={"20260831": 407, "20260904": 409, "20260908": 395, "20260918": 404, "20261011": 418, "20261017": 424, "20261025": 433, "20": 439};
+const D_PBP={"20260831": 407, "20260904": 409, "20260908": 395, "20260918": 404, "20260925": 651, "20261004": 659, "1": 445, "20261011": 418, "20261017": 424, "20261025": 433, "20": 439};
 const D_M365={1:'winner-league-47/hapoel-haemek-hapoel-jerusalem-634-91167-47#id=4829945',2:'eurocup-329/derthona-basket-tortona-hapoel-jerusalem-634-24779-329#id=4771455',3:'winner-league-47/hapoel-jerusalem-maccabi-tel-aviv-631-634-47#id=4829954',4:'eurocup-329/hapoel-jerusalem-rostock-seawolves-634-21208-329#id=4771463',5:'winner-league-47/hapoel-jerusalem-maccabi-ashdod-634-652-47#id=4829959',6:'winner-league-47/bnei-hertzliya-hapoel-jerusalem-632-634-47#id=4829967',7:'eurocup-329/hapoel-jerusalem-kk-cedevita-olimpija-634-5510-329#id=4770085',8:'winner-league-47/hapoel-jerusalem-ironi-ness-ziona-634-686-47#id=4829973',9:'eurocup-329/hapoel-jerusalem-san-pablo-burgos-634-14051-329#id=4771483',10:'winner-league-47/hapoel-jerusalem-maccabi-ironi-ramat-gan-634-635-47#id=4843456',11:'eurocup-329/hapoel-jerusalem-rigas-zelli-634-96062-329#id=4771494',12:'winner-league-47/elizor-kiryat-ata-hapoel-jerusalem-634-641-47#id=4843460',20:'winner-league-47/hapoel-ironi-eilat-hapoel-jerusalem-634-9900-47#id=4829939',21:'eurocup-329/aris-bsa-hapoel-jerusalem-634-1043-329#id=4770056'};
 /* קישור ישיר לעמוד המשחק באתר המפעל (שדה ou בנתוני המשחק), אם קיים */
 const ofUrl=g=>g&&typeof g.ou==='string'&&/^https:\/\/[^\s"'<>]+$/.test(g.ou)?g.ou:'';
@@ -844,11 +849,24 @@ const lsBucket=()=>Math.floor(Date.now()/1e4);
 const isJls=t=>/ירושלים/.test(t&&t.nameLocal||'')||/JERUSALEM/i.test(t&&t.name||'');
 /* מספר המשחק ב-livestats (לפי השעה ברשימת המשחקים), נשמר בזיכרון */
 const LSID={};
-async function lsId(f){if(LSID[f.id])return LSID[f.id];const list=await getJSON('https://basket.co.il/livestats/data/games.json?w='+lsBucket()),isJ=isJls;
+let LSK0=null;const LSK=()=>LSK0||(LSK0=LS.get('hpj-lsid',{})),lsKeep=(f,id)=>{LSID[f.id]=id;const k=LSK();if(k[f.id]!==id){k[f.id]=id;LS.set('hpj-lsid',k)}return id};
+const lsTime=x=>{const m=/(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(x&&x.time||'');return m?ilToUtc(+m[1],+m[2],+m[3],+m[4],+m[5]):NaN};
+/* רשימת המשחקים באתר מכילה רק את המשחקים האחרונים. משחק שכבר ירד ממנה נמצא לפי קובצי המשחקים עצמם: המספרים עולים עם הזמן,
+   אז נבדקים עד 24 מספרים אחרי המספר של המשחק הקודם באותו מפעל (ואם לא נמצא – לא שוב ב-10 הדקות הבאות, ובמשחק ישן – ביממה הבאה) */
+let LSM0=null;const LSMISS=()=>LSM0||(LSM0=LS.get('hpj-lsmiss',{}));
+async function lsScan(f){const ms=LSMISS()[f.id];if(ms&&Date.now()-ms<(Date.now()-f.t<3*D?6e5:D))return null;
+ const kn=F0.filter(x=>x.t<f.t&&(PBP[x.id]||LSK()[x.id])).sort((x,y)=>y.t-x.t),pv=kn.find(x=>x.c===f.c)||kn[0],from=(pv?+(PBP[pv.id]||LSK()[pv.id]):390)+1;
+ for(let a=from;a<from+24;a+=6){const got=await Promise.all([0,1,2,3,4,5].map(i=>getJSON('https://basket.co.il/livestats/data/game-'+(a+i)+'.json').then(d=>({id:a+i,d})).catch(()=>null)));
+  const hit=got.find(x=>x&&x.d&&x.d.gameInfo&&(isJls(x.d.gameInfo.homeTeam)||isJls(x.d.gameInfo.awayTeam))&&Math.abs(lsTime(x.d.gameInfo)-f.t)<48*H);if(hit)return hit.id}
+ LSMISS()[f.id]=Date.now();LS.set('hpj-lsmiss',LSMISS());return null}
+async function lsId(f){if(LSID[f.id])return LSID[f.id];if(LSK()[f.id])return LSID[f.id]=LSK()[f.id];const list=await getJSON('https://basket.co.il/livestats/data/games.json?w='+lsBucket()),isJ=isJls;
  const tOf=x=>{const m=/(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(x.time||'');return m?ilToUtc(+m[1],+m[2],+m[3],+m[4],+m[5]):NaN},mine=(list.games||[]).filter(x=>isJ(x.homeTeam)||isJ(x.awayTeam));
  /* לפי השעה; ואם השעה באתר שגויה (כמו רבע גמר הגביע של 25.9 שמופיע שם ב-26.9) – המשחק של הפועל שמתנהל עכשיו (התחיל ולא הסתיים), עד יומיים מהמועד */
  const gm=mine.find(x=>Math.abs(tOf(x)-f.t)<4*H)||mine.find(x=>!x.gameFinished&&(+x.currentQuarter||0)>=1&&Math.abs(tOf(x)-f.t)<48*H);
- if(gm)LSID[f.id]=gm.id;return gm?gm.id:null}
+ if(gm)return lsKeep(f,gm.id);
+ /* משחק שהסתיים ואינו ברשימה */
+ if(f.r||Date.now()>f.t+4*H){const id=await lsScan(f).catch(()=>null);if(id)return lsKeep(f,id)}
+ return null}
 /* קובץ המשחק ב-livestats: תוצאה, רבע, שעון, מהלך המשחק */
 async function lsGame(f){const id=await lsId(f);return id?getJSON('https://basket.co.il/livestats/data/game-'+id+'.json?w='+lsBucket()):null}
 async function pbpSegev(f){const id=await lsId(f);return id?pbpSegevId(id,f):null}
@@ -900,7 +918,7 @@ function pbpSegevData(d,f){const isJ=isJls;
 const PBPC={};
 /* משחק שהסתיים בליגת ווינר / גביע ווינר: הקובץ שלו באתר ה-Live Stats של המפעל (תוצאה, תוצאה לפי רבעים, סטטיסטיקה, מהלך המשחק). נשמר בזיכרון */
 const LSPAST={},OFFC=c=>c==='league'||c==='wcup';
-function pastLs(f){if(!OFFC(f.c))return Promise.resolve(null);if(LSPAST[f.id])return LSPAST[f.id];const id=PBP[f.id];
+function pastLs(f){if(!OFFC(f.c))return Promise.resolve(null);if(LSPAST[f.id])return LSPAST[f.id];const id=PBP[f.id]||LSK()[f.id];
  const p=(id?getJSON('https://basket.co.il/livestats/data/game-'+id+'.json'):NATIVE?lsGame(f):Promise.resolve(null)).then(d=>d&&d.gameInfo&&d.boxscore?d:null).catch(()=>null);
  LSPAST[f.id]=p;p.then(x=>{if(!x)delete LSPAST[f.id]});return p}
 /* התוצאה הסופית מקובץ ה-livestats: הפועל ראשונה */

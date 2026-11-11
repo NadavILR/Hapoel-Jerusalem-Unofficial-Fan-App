@@ -78,7 +78,7 @@
    ],
    "cl": "גביע ווינר - שלב הבתים",
    "ou": "https://basket.co.il/game-zone.asp?GameId=26644",
-   "hl": "https://www.youtube.com/watch?v=URgFsnTzkiE"
+   "hl": "https://www.youtube.com/watch?v=_TLrzDuk11s"
   },
   {
    "id": 20260925,
@@ -108,7 +108,7 @@
    ],
    "cl": "יורוקאפ - בית א', מחזור 1",
    "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-rostock-seawolves/U2026/2",
-   "hl": "https://www.youtube.com/watch?v=heR0wFUQOHg"
+   "hl": "https://www.youtube.com/watch?v=1IfFkJvDmWw"
   },
   {
    "id": 20261004,
@@ -138,7 +138,7 @@
    ],
    "cl": "יורוקאפ - בית א', מחזור 2",
    "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/cedevita-olimpija-ljubljana-hapoel-midtown-jerusalem/U2026/20",
-   "hl": "https://www.youtube.com/watch?v=825eNJUlwA8"
+   "hl": "https://www.youtube.com/watch?v=dh0dDH2TK50"
   },
   {
    "id": 20261011,
@@ -154,7 +154,7 @@
    ],
    "cl": "ליגת ווינר, מחזור 1",
    "ou": "https://basket.co.il/game-zone.asp?GameId=26647",
-   "hl": "https://www.youtube.com/watch?v=9MYA-MYkUmI"
+   "hl": "https://www.youtube.com/watch?v=fT0lD9uWBT4"
   },
   {
    "id": 20261014,
@@ -169,7 +169,7 @@
    ],
    "cl": "יורוקאפ - בית א', מחזור 3",
    "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/recoletas-salud-san-pablo-burgos-hapoel-midtown-jerusalem/U2026/33",
-   "hl": "https://www.youtube.com/watch?v=M-enb3uBjUw"
+   "hl": "https://www.youtube.com/watch?v=zJkepCZdEmQ"
   },
   {
    "id": 20261017,
@@ -185,7 +185,7 @@
    ],
    "cl": "ליגת ווינר, מחזור 2",
    "ou": "https://basket.co.il/game-zone.asp?GameId=26653",
-   "hl": "https://www.youtube.com/watch?v=Xjqf9dyYfao"
+   "hl": "https://www.youtube.com/watch?v=49gourKBtnk"
   },
   {
    "id": 20261021,
@@ -200,7 +200,7 @@
    ],
    "cl": "יורוקאפ - בית א', מחזור 4",
    "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-riga-zelli/U2026/52",
-   "hl": "https://www.youtube.com/watch?v=2xjAKdzQrnM"
+   "hl": "https://www.youtube.com/watch?v=Ya0yti4iU4k"
   },
   {
    "id": 20261025,
@@ -216,7 +216,7 @@
    ],
    "cl": "ליגת ווינר, מחזור 3",
    "ou": "https://basket.co.il/game-zone.asp?GameId=26662",
-   "hl": "https://www.youtube.com/watch?v=Nvah7cAJTrY"
+   "hl": "https://www.youtube.com/watch?v=NrtEqUzxdY8"
   },
   {
    "id": 20261028,
@@ -247,7 +247,7 @@
    ],
    "cl": "ליגת ווינר, מחזור 4",
    "ou": "https://basket.co.il/game-zone.asp?GameId=26669",
-   "hl": "https://www.youtube.com/watch?v=solQsfaTZMI"
+   "hl": "https://www.youtube.com/watch?v=D4EglRZdfRk"
   },
   {
    "id": 21,
@@ -263,7 +263,7 @@
    "tp": "לופטון ג׳וניור 22 נק׳ ו-10 ריב׳",
    "cl": "יורוקאפ - בית א', מחזור 6",
    "ou": "https://www.euroleaguebasketball.net/eurocup/game-center/2026-27/hapoel-midtown-jerusalem-aris-thessaloniki/U2026/83",
-   "hl": "https://www.youtube.com/watch?v=f-vNv5wbznE"
+   "hl": "https://www.youtube.com/watch?v=DtvJmBaInoU"
   },
   {
    "id": 1,
@@ -9749,6 +9749,6 @@
   "20261011": 418,
   "20261017": 424,
   "20261025": 433,
-  "20": 439
+  "20": 439, "1": 445
  }
 }
