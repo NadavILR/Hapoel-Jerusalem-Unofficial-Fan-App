@@ -41,6 +41,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.jpg) center/cover no-repeat}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
 .score-dock{position:fixed;left:0;right:0;top:var(--hdh,64px);z-index:21;opacity:0;transform:translateY(-10px) scale(1.06);pointer-events:none;transition:opacity .2s var(--ease),transform .25s var(--ease)}.score-dock.on{opacity:1;transform:none;pointer-events:auto}
+/* התוצאה בלייב צמודה לסרגל הניווט התחתון, בכל העמודים חוץ מעמודי המשחק: אותה זכוכית, בלי קו ביניהם */
+.live-dock{position:fixed;left:0;right:0;bottom:var(--navh,70px);z-index:44;border-top:1px solid var(--gl-bd);animation:ldIn .28s var(--ease) both}@keyframes ldIn{from{opacity:0;transform:translateY(12px)}}
+html.ld-on #app-nav{border-top-color:transparent!important}html.ld-on main{padding-bottom:calc(7rem + var(--ldh,52px))}
 .back-stick{transition:translate .25s var(--ease),transform .18s var(--ease)}html.dock-on .back-stick{translate:0 var(--dockh,0px)}
 .pts-pop{transform:translateX(-50%);animation:hpjPts 2s var(--ease) both}@keyframes hpjPts{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}12%{opacity:1;transform:translate(-50%,0) scale(1.1)}22%{transform:translate(-50%,0) scale(1)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
 .cd-out{animation:hpjCdOut .42s var(--ease) both}@keyframes hpjCdOut{to{opacity:0;transform:scale(.9) translateY(10px);filter:blur(6px)}}
@@ -192,11 +195,24 @@ async function liveEuro(){
  F0=F0.map(f=>{const g=f.c==='euro'&&by[egCode(f)];if(!g)return f;const home=g.home.code==='JER',o={...f,t:Date.parse(g.date)||f.t};delete o.tbd;
   if(g.status==='result'){o.r=home?[g.home.score,g.away.score]:[g.away.score,g.home.score];lastRound=Math.max(lastRound,g.round&&g.round.round||0)}n++;return o});
  (j.data||[]).forEach(g=>{if(g.status==='result')lastRound=Math.max(lastRound,g.round&&g.round.round||0)});
- if(lastRound){const st=await getJSON('https://api-live.euroleague.net/v3/competitions/U/seasons/U2026/rounds/'+lastRound+'/basicstandings'),G={};
+ /* הטבלה העדכנית ביותר: גם של המחזור שמתנהל עכשיו (משחקים של קבוצות אחרות שכבר הסתיימו), לא רק עד המחזור האחרון שהפועל שיחקה בו */
+ const stOf=r=>getJSON('https://api-live.euroleague.net/v3/competitions/U/seasons/U2026/rounds/'+r+'/basicstandings').catch(()=>null),gp=x=>((x&&x.teams)||[]).reduce((a,t)=>a+(t.gamesWon||0)+(t.gamesLost||0),0);
+ {const [a,b]=await Promise.all([lastRound?stOf(lastRound):null,stOf(lastRound+1)]),st=gp(b)>gp(a)?b:a,G={};if(st){
   (st.teams||[]).forEach(t=>{(G[t.groupName]=G[t.groupName]||[]).push(t)});
   const ec=Object.keys(G).sort().map(k=>[ECG[k]||('בית '+k),G[k].sort((a,b)=>a.position-b.position).map(t=>[ECN[t.club.code]||t.club.name,t.gamesWon,t.gamesLost,parseInt(t.pointsDifference,10)||0])]);
-  if(ec.length)EC=ec}
+  if(ec.length)EC=ec}}
  return n}
+/* טבלת ליגת ווינר סל מ-365scores (בדפדפן, או כשאתר הליגה לא זמין / פחות מעודכן): המספרים מ-365scores, שמות הקבוצות כמו באפליקציה.
+   מוחלת רק כשכל הקבוצות זוהו ויש בה לפחות אותו מספר משחקים כמו בטבלה הקיימת */
+const tblKey=n=>{const t=hlNorm(n).split(/[\s\/\-–]+/).filter(Boolean),pre=t.find(w=>w==='הפועל'||w==='מכבי')||'';return{pre,tk:t.filter(w=>w.length>=3&&!['הפועל','מכבי','בני','עירוני','אליצור','קרית','קריית'].includes(w))}};
+async function live365League(){if(!LG.length)return 0;
+ const d=await getJSON(S365+'standings/?'+Q365+'&competitions=47'),rows=((d.standings||[])[0]||{}).rows||[];if(rows.length!==LG.length)return 0;
+ const keys=LG.map(r=>tblKey(r.n)),used=new Set(),out=[];
+ for(const r of rows.slice().sort((a,b)=>a.position-b.position)){const k=tblKey(r.competitor&&r.competitor.name||'');let best=-1,bs=0;
+  keys.forEach((q,i)=>{if(used.has(i)||(k.pre&&q.pre&&k.pre!==q.pre))return;const sc=q.tk.filter(w=>k.tk.includes(w)).length;if(sc>bs){bs=sc;best=i}});
+  if(best<0)return 0;used.add(best);
+  out.push({n:LG[best].n,g:r.gamePlayed,w:r.gamesWon,l:r.gamesLost,p:Math.round(r.points),d:Math.round(r.ratio),s:r.strike||null})}
+ const sum=a=>a.reduce((x,r)=>x+(r.g??(r.w+r.l)),0);if(sum(out)<sum(LG))return 0;LG=out;return 1}
 /* חדשות המועדון: הכתבות מארכיון האתר הרשמי (hapoel.co.il/archive) – כותרת, תאריך, קישור והתמונה הראשית.
    באנדרואיד נטען ישירות מהאתר בכל רענון; בדפדפן (שהאתר חוסם בו גישה ישירה) מוצגות הכתבות מקובץ הנתונים */
 const CLUB='https://hapoel.co.il/';
@@ -357,7 +373,7 @@ function useSportsData(){
   /* 1. קובץ הנתונים העדכני ביותר מהאתר (באנדרואיד – מהאתר, לא העותק שבתוך האפליקציה) */
   for(const u of NATIVE?[SITE+'data.json','data.json']:['data.json']){try{const r=await fetch(u+'?t='+Date.now(),{cache:'no-store'});if(r.ok&&applyLive(await r.json())){mode='Live';break}}catch(e){}}
   /* 2. תוצאות, מועדים וטבלאות מהמקורות הרשמיים, נכון לרגע הלחיצה */
-  const ok=await Promise.all([liveEuro().catch(()=>0),NATIVE?liveIsrael().catch(()=>0):0]);if(NATIVE)await liveNews().catch(()=>0);
+  const ok=await Promise.all([liveEuro().catch(()=>0),NATIVE?liveIsrael().catch(()=>0):0]);ok.push(await live365League().catch(()=>0));if(NATIVE)await liveNews().catch(()=>0);
   if(ok.some(n=>n>0)||mode==='Live')at=new Date();
   keepRes();setS({ld:0,up:new Date(),mode,F:F0,at});
  },[]);
@@ -628,7 +644,7 @@ function Sched(){
  <div key=${tab+fl} class="stg space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-2">${ls.length?ls.map((f,i)=>{const w=f.r&&f.r[0]>f.r[1],mo=monthOf(f.t),newMo=!i||monthOf(ls[i-1].t)!==mo;return html`<${React.Fragment} key=${f.id}>${newMo?html`<div class="md:col-span-2 pt-3 pb-1"><span class="on-glass text-sm font-bold">${mo}</span></div>`:null}<div onClick=${e=>{SCH.y=window.scrollY;openGame(A,f,e)}} class="sf rounded-xl p-3 flex items-center gap-3 cursor-pointer">
   <${DateTile} t=${f.t} home=${!!f.h}/>
   <${Cr} n=${f.o} s=${32}/>
-  <div class="flex-1 min-w-0"><div class="font-bold truncate">${f.o}</div><div class="text-xs mu truncate">${f.tbd?'שעה טרם נקבעה':hm(f.t)} · ${cmp(f)}</div><div class="text-xs mu truncate">${f.v||(f.h?'משחק בית':'משחק חוץ')}</div></div>
+  <div class="flex-1 min-w-0"><div class="font-bold truncate">${f.o}</div><div class="text-xs mu truncate">${f.tbd?'שעה טרם נקבעה':hm(f.t)} · ${cmp(f)}</div>${f.v?html`<div class="text-xs mu truncate flex items-center gap-1"><${I} n="pin" s=${12}/><span class="truncate">${f.v}</span></div>`:null}</div>
   ${f.r?html`<div class="text-center shrink-0"><div dir="rtl" class="font-semibold sb flex gap-1 justify-center"><span>${f.h?f.r[0]:f.r[1]}</span><span>–</span><span>${f.h?f.r[1]:f.r[0]}</span></div><span class=${'text-xs font-medium px-2 rounded '+(w?'text-green-700 bg-green-600/10':'text-[#D21919] bg-[#D21919]/10')}>${w?'W':'L'}</span></div>`
   :html`<div class="shrink-0"><button onClick=${e=>{e.stopPropagation();A.togRem(f)}} aria-label="תזכורת" class=${'p-2 rounded-full '+(A.rem[f.id]?'bg-[#D21919] text-white':'bx mu')}><${I} n="bell" s=${16}/></button></div>`}</div><//>`}):html`<div class="text-center mu py-10">אין משחקים להצגה במפעל הזה</div>`}</div></div>`;
 }
@@ -897,6 +913,18 @@ function Pbp({L,g}){
 
 /* עמוד משחק שהסתיים או בלייב: כשגוללים מעבר לכרטיס התוצאה, תוצאה מכווצת נצמדת לכותרת (על אותה שכבת זכוכית), וכפתור החזרה יורד מתחתיה.
    בלייב מופיעים בין התוצאות הרבע והשעון */
+/* התוצאה בלייב בכל העמודים (חוץ מעמודי המשחק): פס צמוד לסרגל הניווט, באותה תצוגה כמו הפס שבעמוד המשחק. לחיצה פותחת את עמוד המשחק */
+function LiveDock({L,g,onOpen}){
+ const r=useRef(null);
+ React.useLayoutEffect(()=>{const de=document.documentElement;de.classList.add('ld-on');de.style.setProperty('--ldh',(r.current?r.current.offsetHeight:52)+'px');return()=>{de.classList.remove('ld-on');de.style.removeProperty('--ldh')}},[]);
+ const hm=g.h?ME:g.o,aw=g.h?g.o:ME;
+ const num=(v,sd)=>html`<span class="text-[26px] leading-none sb tabular-nums font-extrabold"><${Pts} v=${v} k=${L.app} side=${sd}/></span>`;
+ const side=(n,v)=>html`<div class="flex items-center gap-2 min-w-0 flex-1 ${n===hm?'justify-start':'justify-end'}">${n===hm?html`<${Cr} n=${n} s=${30}/>${num(v,'l')}`:html`${num(v,'r')}<${Cr} n=${n} s=${30}/>`}</div>`;
+ return html`<button id="live-dock" ref=${r} onClick=${onOpen} aria-label=${'משחק בלייב: '+hm+' '+L.hs+' – '+L.as+' '+aw+'. לעמוד המשחק'} class="live-dock glass-bar block w-full text-inherit"><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto px-4 py-2 flex items-center gap-3" dir="rtl">
+  ${side(hm,L.hs)}
+  <div class="shrink-0 text-center leading-tight min-w-[64px]"><div class="text-[11px] font-bold text-[#D21919] flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#D21919] animate-pulse"></span>${qLbl(L.st)||'LIVE'}</div><div class="text-sm font-bold sb" dir="ltr">${L.clock||''}</div></div>
+  ${side(aw,L.as)}</div></button>`;
+}
 function ScoreDock({cardR,g,L,sc}){
  const [on,setOn]=useState(false),r=useRef(null);
  useEffect(()=>{const de=document.documentElement;
@@ -1298,9 +1326,10 @@ function App(){
   f();const v=()=>{if(document.visibilityState==='visible')f()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[]);
  const [mo,setMo0]=useState(false);
  /* תפריט "עוד": מסך הכרטיסים באנדרואיד הוא חלון נפרד מעל האפליקציה, ולכן הוא מוסתר בזמן שהתפריט פתוח ומוצג שוב אם סוגרים בלי לבחור */
- const tixShow=home=>{const T=TK(),n=document.getElementById('app-nav');if(T)return T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home})};
+ const botPx=()=>{const n=document.getElementById('app-nav'),d=document.getElementById('live-dock');return Math.round(((n?n.offsetHeight:56)+(d?d.offsetHeight:0))*(window.devicePixelRatio||1))};
+ const tixShow=home=>{const T=TK();if(T)return T.show({url:LINKS.tickets,bottom:botPx(),home})};
  const setMo=v=>{const T=TK();if(v&&pg==='tix'&&T)T.hide().catch(()=>{});if(!v&&mo&&pg==='tix'&&T)tixShow(false).catch(()=>{});setMo0(v)};
- const go=p=>{setMo0(false);/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */const n=document.getElementById('app-nav');T.show({url:LINKS.tickets,bottom:Math.round((n?n.offsetHeight:56)*(window.devicePixelRatio||1)),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}FR.n=0;FR.skip=0;setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
+ const go=p=>{setMo0(false);/* אתר הכרטיסים חוסם הצגה בתוך מסגרת, ולכן הוא נפתח כמסך מלא של האפליקציה (באפליקציית האנדרואיד – בתוך האפליקציה עצמה) */const T=TK();if(p==='tix'){if(T){/* באפליקציית האנדרואיד: מסך הכרטיסים נפתח מעל האפליקציה, וסרגל הניווט נשאר גלוי מתחתיו */T.show({url:LINKS.tickets,bottom:botPx(),home:pg==='tix'}).catch(()=>location.assign(LINKS.tickets));setPg('tix');setPl(null);setGm(null);return}location.assign(LINKS.tickets);return}if(T)T.hide().catch(()=>{});if(!INAPP&&EXT[p]){window.open(EXT[p],'_blank','noopener');return}FR.n=0;FR.skip=0;setPg(p);setPl(null);setGm(null);window.scrollTo(0,0)};
  /* כפתור "חזור" של המכשיר: חלון ההתראות ← עמוד משחק/שחקן ← המסך הראשי של הלשונית ← מסך הבית; במסך הבית יוצאים מהאפליקציה */
  const [st,setSt]=useState(false),[upd,setUpd]=useState(null);
  const checkUpd=useCallback(async()=>{if(!NATIVE)return 'none';try{const r=await latestRelease();if(r&&vcmp(r.v,window.APP_VERSION||'0.0.0')>0){setUpd(r);return 'new'}return 'none'}catch(e){return 'fail'}},[]);
@@ -1316,6 +1345,9 @@ function App(){
  /* 3 לחיצות מהירות על השורה שבתחתית מסך הבית מפעילות / מכבות את מצב הבדיקה */
  const tapFoot=()=>{if(pg!=='home'||gm)return;const t=Date.now();taps.current=taps.current.filter(x=>t-x<700).concat(t);if(taps.current.length<3)return;taps.current=[];if(demo){setDemo(null);toast('מצב בדיקה כובה')}else if(nx){const n=nx;setDemo(mkDemo(n,S.F));toast('מצב בדיקה: המשחק הבא מוצג כמשחק בלייב');demoSquad(n).then(sq=>setDemo(d=>d&&d.app===n.id?demoNames(d,sq):d)).catch(()=>{})}};
  const A={...S,st,setSt,checkUpd,go,pg,pl,setPl,gm,setGm,lg:demo||lg,rem,togRem,toast,notes,setNotes,pf,setPf,perm,setPerm,setDr,nf};
+ /* משחק בלייב: התוצאה מוצגת מעל סרגל הניווט בכל העמודים, חוץ מעמוד משחק */
+ const dockL=!gm&&!upd&&A.lg&&A.lg.status==='live'?A.lg:null,dockG=dockL?S.F.find(f=>f.id===dockL.app):null,dockOn=!!(dockL&&dockG);
+ useEffect(()=>{if(pg==='tix'&&TK()&&!mo){const x=tixShow(false);if(x&&x.catch)x.catch(()=>{})}},[dockOn]);
  const navOn=mo||EXT[pg]?'more':pg,Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  /* גובה הכותרת (כולל פס הסטטוס), בשביל סרגלי הסינון וכפתורי החזרה שנצמדים מתחתיה */
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const set=()=>document.documentElement.style.setProperty('--navh',n.getBoundingClientRect().height+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(n)}catch(e){}return()=>{ro&&ro.disconnect()}},[]);
@@ -1329,9 +1361,10 @@ function App(){
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(var(--sat) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
  <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-[11px] mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}נדב רובינסון © גרסה ${window.APP_VERSION||''} • <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="underline whitespace-nowrap">האתר הרשמי של הקבוצה</a></span></div></main>
  ${mo?html`<div class="fixed inset-0 z-[44]" onClick=${()=>setMo(false)}></div>
- <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass glass-menu" style=${{bottom:'calc(var(--navh,70px) + 10px)',transformOrigin:'bottom left'}}>
+ <div class="fixed z-[46] left-3 w-56 rounded-2xl overflow-hidden shadow-lg pop-in glass glass-menu" style=${{bottom:'calc(var(--navh,70px) + var(--ldh,0px) + 10px)',transformOrigin:'bottom left'}}>
   ${MORE.map(([k,l,ic,sub])=>html`<button key=${k} onClick=${()=>go(k)} class=${'w-full flex items-center gap-3 px-4 py-3 text-right border-b bd last:border-0 '+(pg===k?'text-[#D21919]':'')}><span class="w-9 h-9 rounded-full flex items-center justify-center bg-[#D21919] text-white shrink-0"><${I} n=${ic} s=${18}/></span><span class="min-w-0"><span class="block font-medium">${l}</span><span class="block text-[11px] mu truncate">${sub}</span></span></button>`)}
  </div>`:null}
+ ${dockOn?html`<${LiveDock} L=${dockL} g=${dockG} onOpen=${()=>openRef.current(dockG.t)}/>`:null}
  <nav id="app-nav" class="fixed bottom-0 inset-x-0 z-[45] border-t glass-bar" style=${{borderColor:'var(--gl-bd)',paddingBottom:'env(safe-area-inset-bottom,0px)'}}><div class="relative max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex"><${SegInd} k=${navOn} sel=".nav-pill" cls="nav-ind"/>${NAV.map(([k,l,ic])=>{const on=k===navOn;return html`<button key=${k} data-on=${on?'':undefined} onClick=${()=>k==='more'?setMo(!mo):go(k)} aria-expanded=${k==='more'?String(mo):undefined} class=${'flex-1 flex flex-col items-center gap-1 py-2 text-[11px] '+(on?'text-[#D21919] font-bold':'opacity-75')}><span class="nav-pill flex items-center justify-center h-8 w-14 rounded-full"><${I} n=${ic} s=${21}/></span>${l}</button>`})}</div></nav>
  ${dr&&html`<${Drawer}/>`}${st&&html`<${Settings}/>`}${upd&&html`<${UpdGate} u=${upd}/>`}<//>`;
 }
