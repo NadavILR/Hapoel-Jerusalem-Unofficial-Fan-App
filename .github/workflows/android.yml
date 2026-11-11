@@ -44,12 +44,6 @@ jobs:
             # app's releases.atom fallback only accepts tags like v1.132 / v1.2.3)
             echo "tag=$t-beta" >> "$GITHUB_OUTPUT"; echo "pre=true" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v (ניסיונית)" >> "$GITHUB_OUTPUT"
           fi
-      # One-off (requested 11.11.2026): 1.135 becomes a pre-release; 1.136 is the official release after 1.131
-      - name: Mark v1.135 as a pre-release
-        if: github.ref_name == 'main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release edit v1.135 --prerelease --title "גרסה 1.135 (ניסיונית)" --repo "$GITHUB_REPOSITORY" || true
       - name: Restore the signing key from GitHub secrets
         env:
           KS: ${{ secrets.HPJ_KEYSTORE_BASE64 }}

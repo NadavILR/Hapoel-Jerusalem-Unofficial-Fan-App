@@ -97,6 +97,55 @@ final class LivePlay {
         return null;
     }
 
+    // ---------- the live game itself from the EuroCup's official live API (live.euroleague.net) ----------
+
+    /** The game's header: score, quarter, clock, the two sides ({@code CodeTeamA} is the home team). */
+    static JSONObject euroHeader(int code) throws Exception {
+        return new JSONObject(get("https://live.euroleague.net/api/Header?gamecode=" + code + "&seasoncode=" + SEASON));
+    }
+
+    private static int num(JSONObject h, String key) {
+        try {
+            return Math.max(0, Integer.parseInt(h.optString(key, "0").trim()));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Fills the sides, score, quarter, clock and status of {@code x} from the EuroCup header and returns
+     * PRE / LIVE / FINAL. Final only when the feed is no longer live after 40 minutes of play with a decided score, so
+     * a short gap in the feed during the game never ends the card.
+     */
+    static int applyEuro(JSONObject h, LiveGame x) {
+        x.meHome = "JER".equals(h.optString("CodeTeamA", "").trim());
+        x.hs = num(h, "ScoreA");
+        x.as = num(h, "ScoreB");
+        boolean live = h.optBoolean("Live", false);
+        int q = num(h, "Quarter");
+        String rem = h.optString("RemainingPartialTime", "").trim();
+        if (!live && x.hs + x.as == 0) return PRE;
+        int played = 0;
+        try {
+            played = Integer.parseInt(h.optString("GameTime", "0").trim().split(":")[0]);
+        } catch (Exception ignored) {
+        }
+        if (!live && played >= 40 && x.hs != x.as) {
+            x.status = "סיום";
+            x.clock = "";
+            return FINAL;
+        }
+        if (q < 1) q = 1;
+        if ("00:00".equals(rem) || rem.isEmpty()) {
+            x.status = q == 2 ? "מחצית" : "הפסקה";
+            x.clock = "";
+        } else {
+            x.status = q <= 4 ? "רבע " + q : "הארכה" + (q > 5 ? " " + (q - 4) : "");
+            x.clock = rem;
+        }
+        return LIVE;
+    }
+
     private static String reverseName(String s) {
         String[] p = s.split(",");
         StringBuilder b = new StringBuilder();

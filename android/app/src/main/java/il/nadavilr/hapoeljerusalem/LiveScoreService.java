@@ -154,7 +154,10 @@ public class LiveScoreService extends Service {
         // Winner League / Winner Cup: everything (names, score, quarter, clock, status, play-by-play) from the
         // official live stats, basket.co.il/livestats; from 365scores only the crests (fetched once)
         boolean official = "league".equals(comp) || "wcup".equals(comp);
-        if (!official || (g365 == null && now - at365 >= 30_000L)) {
+        // EuroCup: everything from the competition's official live API (live.euroleague.net); from 365scores only the
+        // crests, the team names and the competition / stage text (fetched once)
+        int eg = "euro".equals(comp) ? meta.optInt("eg", 0) : 0;
+        if (!(official || eg > 0) || (g365 == null && now - at365 >= 30_000L)) {
             at365 = now;
             try {
                 JSONObject g = pick(new JSONObject(LivePlay.get(API)).optJSONArray("games"));
@@ -199,6 +202,38 @@ public class LiveScoreService extends Service {
                 }
             } catch (Exception e) {
                 x = null; // livestats did not answer: 365scores for this update
+            }
+        }
+        if (eg > 0) {
+            try {
+                JSONObject h = LivePlay.euroHeader(eg);
+                LiveGame e = new LiveGame();
+                state = LivePlay.applyEuro(h, e);
+                LiveGame c365 = g365 != null ? LiveGame.from365(g365) : null;
+                String opp = meta.optString("o", "");
+                if (c365 != null) {
+                    boolean same = c365.meHome == e.meHome;
+                    e.homeImg = same ? c365.homeImg : c365.awayImg;
+                    e.awayImg = same ? c365.awayImg : c365.homeImg;
+                    e.homeName = same ? c365.homeName : c365.awayName;
+                    e.awayName = same ? c365.awayName : c365.homeName;
+                } else {
+                    e.homeName = e.meHome ? LiveGame.TEAM : opp;
+                    e.awayName = e.meHome ? opp : LiveGame.TEAM;
+                }
+                String label = meta.optString("l", "");
+                e.comp = c365 != null && !c365.comp.isEmpty() ? c365.comp : !label.isEmpty() ? label : "יורוקאפ";
+                e.t = tipOff;
+                if (state == LivePlay.LIVE && (now - lastPlayAt >= 6_000L || (lastHs >= 0 && (e.hs != lastHs || e.as != lastAs)))) {
+                    lastPlayAt = now;
+                    String play = LivePlay.latest("euro", eg, tipOff, e, LiveScheduler.roster(this));
+                    if (play != null && !play.isEmpty()) lastPlay = play;
+                }
+                e.play = lastPlay;
+                x = e;
+            } catch (Exception e) {
+                x = null; // the EuroCup API did not answer: 365scores for this update
+                state = 0;
             }
         }
         if (x == null && g365 != null) {

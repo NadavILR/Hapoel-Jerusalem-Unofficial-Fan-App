@@ -772,7 +772,7 @@ function GmT({g,gs}){
  return html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה קבוצתית</div>
  <div class="flex items-center justify-between mb-1 text-sm font-medium"><div class="flex items-center gap-2"><${Cr} n=${hm} s=${22}/>${hm}</div><div class="flex items-center gap-2">${aw}<${Cr} n=${aw} s=${22}/></div></div>
  ${rows.map(([l,a,b])=>html`<${StRow} key=${l} l=${l} a=${a} b=${b} hj=${hj}/>`)}
- <div class="text-xs mu mt-2">הנתונים מ-365scores.</div></div>`;
+ <div class="text-xs mu mt-2">${gs&&gs.src==='el'?'הנתונים מהאתר הרשמי של היורוקאפ.':'הנתונים מ-365scores.'}</div></div>`;
 }
 const PH=['דק׳','נק׳','ריב׳','אס׳','חט׳','חס׳','מהשדה','שלוש','עונשין','ר״ה','ר״ג','איב׳','עב׳'];
 const prw=w=>[w[3],w[4],w[5],w[6],w[7],w[8],w[9]+'/'+w[10],w[11]+'/'+w[12],w[13]+'/'+w[14],w[15],w[16],w[17],w[18]];
@@ -791,7 +791,7 @@ function GmP({g,gs,pf}){
   name:html`${w[2]?html`<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>`:null}${w[1]!=null?html`<bdi class="inline-block mu font-normal text-[11px] ml-1">${w[1]}</bdi>`:null}<bdi>${w[0]}</bdi>`,
   cells:isDnp(w)?html`<td colSpan=13 class="text-right px-1.5 py-1.5 text-[11px]">לא שיחק</td>`:prw(w).map((v,j)=>html`<td key=${j} class=${'px-1.5 py-1.5 '+(j===1?'font-medium':'')}>${v}</td>`)})),
   {key:'tot',cls:'border-t-2 bd font-medium',name:'סה״כ',cells:tot.map((v,j)=>html`<td key=${j} class="px-1.5 py-1.5">${v}</td>`)}]}/>
- <div class="text-xs mu mt-2"><span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>חמישייה פותחת · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · הנתונים מ-365scores.</div></div>`;
+ <div class="text-xs mu mt-2"><span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>חמישייה פותחת · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · ${gs&&gs.src==='el'?'הנתונים מהאתר הרשמי של היורוקאפ.':'הנתונים מ-365scores.'}</div></div>`;
 }
 /* טבלת סטטיסטיקה עם עמודת שמות קבועה: השמות בטבלה נפרדת שהיא חלק מהכרטיס (בלי רקע משלה), והנתונים בטבלה שנגללת לידה –
    כך שבגלילה הצידה הנתונים נחתכים בדיוק בקצה עמודת השמות. גובה כל שורה מסונכרן בין שתי הטבלאות */
@@ -849,6 +849,38 @@ async function pbpEuro(code,f){const d=await getJSON('https://live.euroleague.ne
 /* ליגת ווינר וגביע ווינר: basket.co.il/livestats – מספר המשחק נמצא לפי רשימת המשחקים הנוכחיים */
 const lsBucket=()=>Math.floor(Date.now()/1e4);
 const isJls=t=>/ירושלים/.test(t&&t.nameLocal||'')||/JERUSALEM/i.test(t&&t.name||'');
+/* יורוקאפ בלייב: כל נתוני המשחק מה-API הרשמי של המפעל (live.euroleague.net) – התוצאה, הרבע, השעון, התוצאה לפי רבעים, נתוני הקבוצות,
+   הסטטיסטיקה האישית ומהלך המשחק. כמו ליגת ווינר וגביע ווינר מול ה-Live Stats; מ-365scores נשארים רק הסמלים, שמות הקבוצות והמפעל והמחזור.
+   Header – בכל בדיקה; Boxscore ומהלך המשחק – כל 10 שניות או מיד כשהתוצאה משתנה */
+const ELAPI='https://live.euroleague.net/api/';let elFull=0;
+const elMin=m=>{const x=/^(\d+):(\d\d)/.exec(String(m||''));return x?(+x[1])+':'+x[2]:'0:00'};
+function gsEl(bx,jh,q){const S=bx&&bx.Stats;if(!Array.isArray(S)||S.length<2)return null;const J=S[jh?0:1],O=S[jh?1:0],n=v=>+v||0;
+ const rows=(t,isJ)=>((t&&t.PlayersStats)||[]).map(p=>{const d=String(p.Dorsal||'').trim(),pl=isJ?(PL||[]).find(r=>String(r[0])===d):null;
+   return[isJ&&pl?pl[1]:titleCase(String(p.Player||'').split(',').reverse().join(' ').trim()),d===''?'':(isNaN(+d)?d:+d),p.IsStarter?1:0,elMin(p.Minutes),n(p.Points),n(p.TotalRebounds),n(p.Assistances),n(p.Steals),n(p.BlocksFavour),
+    n(p.FieldGoalsMade2)+n(p.FieldGoalsMade3),n(p.FieldGoalsAttempted2)+n(p.FieldGoalsAttempted3),n(p.FieldGoalsMade3),n(p.FieldGoalsAttempted3),n(p.FreeThrowsMade),n(p.FreeThrowsAttempted),n(p.OffensiveRebounds),n(p.DefensiveRebounds),n(p.Turnovers),n(p.FoulsCommited),isJ&&pl?pl[7]||0:0]})
+  .sort((a,b)=>(b[2]-a[2])||((a[3]==='0:00')-(b[3]==='0:00'))||((+a[1]||0)-(+b[1]||0)));
+ const T=t=>(t&&t.totr)||{},a=T(J),b=T(O),two=k=>[n(a[k]),n(b[k])],sh=(m,at)=>[[m(a),at(a)],[m(b),at(b)]];
+ return{q,fg:sh(x=>n(x.FieldGoalsMade2)+n(x.FieldGoalsMade3),x=>n(x.FieldGoalsAttempted2)+n(x.FieldGoalsAttempted3)),p3:sh(x=>n(x.FieldGoalsMade3),x=>n(x.FieldGoalsAttempted3)),ft:sh(x=>n(x.FreeThrowsMade),x=>n(x.FreeThrowsAttempted)),
+  t:{ast:two('Assistances'),reb:two('TotalRebounds'),or:two('OffensiveRebounds'),dr:two('DefensiveRebounds'),stl:two('Steals'),blk:two('BlocksFavour'),to:two('Turnovers'),pf:two('FoulsCommited')},pl:[rows(J,1),rows(O,0)],live:1,src:'el'}}
+const topEl=(gs,jh)=>{if(!gs||!gs.pl)return[];const best=(rows,k)=>{let b=null;rows.forEach(r=>{if(r[k]>0&&(!b||r[k]>b.v))b={p:r[0],v:r[k]}});return b},J=gs.pl[0],O=gs.pl[1];
+ return[['נקודות',4],['ריבאונדים',5],['אסיסטים',6]].map(([n,k])=>({n,h:best(jh?J:O,k),a:best(jh?O:J,k)})).filter(c=>c.h||c.a)};
+async function elLive(f,prev){const c=egCode(f);if(!c)return null;const qs='?gamecode='+c+'&seasoncode=U2026',h=await getJSON(ELAPI+'Header'+qs);if(!h||!h.CodeTeamA)return null;
+ const n=v=>parseInt(v,10)||0,jh=String(h.CodeTeamA).trim()==='JER',hs=n(h.ScoreA),as=n(h.ScoreB),live=!!h.Live,qn=n(h.Quarter),rem=String(h.RemainingPartialTime||'').trim(),played=n(String(h.GameTime||'').split(':')[0]);
+ const L={app:f.id,id:0,jh,hs,as,r:jh?[hs,as]:[as,hs],status:'pre',st:'',clock:'',q:[],top:[],url:url365(f),at:Date.now(),src:'el'};
+ if(!live&&hs+as===0)return L;
+ /* התוצאה לפי רבעים: ב-Header התוצאה המצטברת בסוף כל רבע */
+ const end=!live&&played>=40&&hs!==as,cum=[1,2,3,4].map(i=>[n(h['ScoreQuarter'+i+'A']),n(h['ScoreQuarter'+i+'B'])]),nq=end?4:Math.min(4,Math.max(1,qn||1)),per=[];
+ for(let i=0;i<nq;i++){const cur=i===nq-1&&!end&&nq===Math.max(1,qn)&&qn<=4?[hs,as]:cum[i],pv=i?cum[i-1]:[0,0];per.push([Math.max(0,cur[0]-pv[0]),Math.max(0,cur[1]-pv[1])])}
+ if(qn>4||n(h.ScoreExtraTimeA)+n(h.ScoreExtraTimeB)>0||(end&&(hs!==cum[3][0]||as!==cum[3][1])))per.push([Math.max(0,hs-cum[3][0]),Math.max(0,as-cum[3][1])]);
+ L.q=per.map((x,i)=>({n:i<4?'Q'+(i+1):'OT'+(i-3),h:x[0],a:x[1]}));
+ if(end){L.status='end';L.st='סיום'}
+ else{L.status='live';const k=Math.max(1,qn);if(!rem||rem==='00:00'){L.st=k===2?'מחצית':'הפסקה'}else{L.st=k<=4?'רבע '+k:'הארכה'+(k>5?' '+(k-4):'');L.clock=rem}}
+ const same=prev&&prev.app===f.id&&prev.src==='el',moved=!same||prev.r[0]!==L.r[0]||prev.r[1]!==L.r[1];
+ if(moved||end||Date.now()-elFull>=1e4||!prev.gs){elFull=Date.now();const [bx,pb]=await Promise.all([getJSON(ELAPI+'Boxscore'+qs).catch(()=>null),pbpEuro(c,f).catch(()=>null)]);
+  let gs=null;try{gs=gsEl(bx,jh,per.map(x=>jh?x:[x[1],x[0]]))}catch(e){}
+  L.gs=gs||(same?prev.gs:null);L.top=L.gs?topEl(L.gs,jh):[];L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}
+ else{L.gs=prev.gs?{...prev.gs,q:per.map(x=>jh?x:[x[1],x[0]])}:null;L.top=prev.top||[];L.pbp=prev.pbp}
+ return L}
 /* מספר המשחק ב-livestats (לפי השעה ברשימת המשחקים), נשמר בזיכרון */
 const LSID={};
 let LSK0=null;const LSK=()=>LSK0||(LSK0=LS.get('hpj-lsid',{})),lsKeep=(f,id)=>{LSID[f.id]=id;const k=LSK();if(k[f.id]!==id){k[f.id]=id;LS.set('hpj-lsid',k)}return id};
@@ -998,7 +1030,7 @@ function Game({g}){
  useEffect(()=>{setPp(null);if(!LG&&g.r){let on=true;pastPbp(g).then(x=>{if(on)setPp(x)});return()=>{on=false}}},[g.id,!!LG]);
  const PB=LG&&LG.pbp?LG:pp?{pbp:pp}:null;
  return html`<div>${LG||sc?html`<${ScoreDock} cardR=${cardR} g=${g} L=${LG} sc=${sc}/>`:null}<button onClick=${()=>A.setGm(null)} class="on-glass back-stick text-[#D21919] font-bold mb-3"><${I} n="back" s=${16}/>חזרה</button>
- ${LG?html`<div ref=${cardR} class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="mt-2 text-center"><span class="on-glass text-[11px] mu">${LG.status==='live'?'סטטיסטיקות בלייב מ-365scores · מתעדכן כל 20 שניות':'סטטיסטיקות סיום מ-365scores'}</span></div>`:html`<div ref=${cardR} class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
+ ${LG?html`<div ref=${cardR} class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div><${LiveScore} L=${LG} g=${g} big=${1}/></div><div class="mt-2 text-center"><span class="on-glass text-[11px] mu">${'סטטיסטיקות בלייב '+(LG.src==='el'?'מהאתר הרשמי של היורוקאפ':LG.src==='ls'?'מה-Live Stats הרשמי של המפעל':'מ-365scores')+' · מתעדכנות כל כמה שניות'}</span></div>`:html`<div ref=${cardR} class="rounded-2xl p-4 text-white" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}><div class="text-xs opacity-80 mb-3">${cmp(g)} · ${fdf(g)}</div>
  <div class="flex items-center justify-around text-center"><div><${Cr} n=${hm} s=${68}/><div class=${'text-sm mt-1'+(wn===0?' font-bold':'')}>${hm}</div></div>${sc?html`<div class="flex gap-2 text-4xl sb" dir="rtl"><span class=${wn===0?'font-extrabold':'font-normal'}>${sc[0]}</span><span class="opacity-60">–</span><span class=${wn===1?'font-extrabold':'font-normal'}>${sc[1]}</span></div>`:html`<div class="text-2xl font-semibold sb opacity-80">VS</div>`}<div><${Cr} n=${aw} s=${68}/><div class=${'text-sm mt-1'+(wn===1?' font-bold':'')}>${aw}</div></div></div>
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
  ${g.r&&!LG?(ytId(g)?html`<div class="mt-3 rounded-xl overflow-hidden bg-black fade-in" style=${{aspectRatio:'16/9'}}><iframe key=${ytId(g)} src=${'https://www.youtube-nocookie.com/embed/'+ytId(g)+'?rel=0&playsinline=1'} title="תקציר המשחק" class="w-full h-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
@@ -1331,7 +1363,10 @@ function App(){
      /* ליגת ווינר וגביע ווינר: כל נתוני המשחק בלייב מאתר ה-Live Stats הרשמי של המפעל – תוצאה, רבע, שעון, תוצאה לפי רבעים, מהלך המשחק,
         טבלת השחקנים ונתוני הקבוצות (בלי 365scores). אם האתר לא עונה – 365scores כמו בשאר המפעלים */
      const lsd=NATIVE&&['league','wcup'].includes(n.c)?await lsGame(n).catch(()=>null):null;
-     if(lsd){L={app:n.id,id:0,jh:!!n.h,hs:0,as:0,r:[0,0],status:'pre',st:'',clock:'',q:[],top:[],url:url365(n),at:Date.now()};applyLs(L,lsd);
+     /* יורוקאפ: כל נתוני המשחק בלייב מה-API הרשמי של המפעל; אם הוא לא עונה – 365scores */
+     const eld=!lsd&&n.c==='euro'?await elLive(n,prev).catch(()=>null):null;
+     if(eld)L=eld;
+     else if(lsd){L={app:n.id,src:'ls',id:0,jh:!!n.h,hs:0,as:0,r:[0,0],status:'pre',st:'',clock:'',q:[],top:[],url:url365(n),at:Date.now()};applyLs(L,lsd);
       if(L.status!=='pre'){try{L.gs=gsLs(lsd);L.top=topLs(lsd)}catch(e){}const pb=pbpSegevData(lsd,n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}}
      else{const cur=await getJSON(S365+'games/current/?'+Q365+'&competitors=634'),want=id365(n),gl=cur.games||[];
       const g=gl.find(x=>String(x.id)===want)||gl.find(x=>Math.abs(Date.parse(x.startTime)-n.t)<3*H);
@@ -1339,7 +1374,7 @@ function App(){
        const on=L.status!=='pre',moved=!same||prev.r[0]!==L.r[0]||prev.r[1]!==L.r[1],heavy=on&&(moved||L.status==='end'||Date.now()-full>=1e4);
        if(heavy){full=Date.now();const ts=await getJSON(S365+'game/stats/?'+Q365+'&games='+g.id).catch(()=>null);try{L.gs=gs365(det,ts)}catch(e){}const pb=await livePbp(n);L.pbp=pb&&pb.length?pb:(same?prev.pbp:null)}
        else if(same){L.gs=prev.gs;L.pbp=prev.pbp}}}
-     if(L&&!stop){if(L.status==='live')wait=3000;
+     if(L&&!stop){if(L.status==='live')wait=3000;/* סביב שריקת הפתיחה: בדיקה כל 5 שניות, כדי שהמשחק יעלה ללייב מיד */else if(L.status==='pre'&&Math.abs(Date.now()-n.t)<10*6e4)wait=5000;
       lgRef.current=L;setLg(L);lgSave(L,n);
       if(L.status==='live'&&(!prev||prev.app!==n.id||prev.status!=='live')){const m=NT.start(n);nf.current(NT.line(m),n.c,'quarter',m)}
       if(L.status==='end'){const fired=LS.get('hpj-final',{});if(!fired[n.id]){fired[n.id]=1;LS.set('hpj-final',fired);{const m=NT.fin(n,L.r,(L.q||[]).length>4);nf.current(NT.line(m),n.c,'quarter',m)}}if(L.gs){const lg=liveGS();lg[n.id]=L.gs;LS.set('hpj-livegs',lg)}S.markResult(n.id,L.r);return}}}
