@@ -865,12 +865,16 @@ function gsEl(bx,jh,q){const S=bx&&bx.Stats;if(!Array.isArray(S)||S.length<2)ret
 const topEl=(gs,jh)=>{if(!gs||!gs.pl)return[];const best=(rows,k)=>{let b=null;rows.forEach(r=>{if(r[k]>0&&(!b||r[k]>b.v))b={p:r[0],v:r[k]}});return b},J=gs.pl[0],O=gs.pl[1];
  return[['נקודות',4],['ריבאונדים',5],['אסיסטים',6]].map(([n,k])=>({n,h:best(jh?J:O,k),a:best(jh?O:J,k)})).filter(c=>c.h||c.a)};
 async function elLive(f,prev){const c=egCode(f);if(!c)return null;const qs='?gamecode='+c+'&seasoncode=U2026',h=await getJSON(ELAPI+'Header'+qs);if(!h||!h.CodeTeamA)return null;
- const n=v=>parseInt(v,10)||0,jh=String(h.CodeTeamA).trim()==='JER',hs=n(h.ScoreA),as=n(h.ScoreB),live=!!h.Live,qn=n(h.Quarter),rem=String(h.RemainingPartialTime||'').trim(),played=n(String(h.GameTime||'').split(':')[0]);
+ const n=v=>parseInt(v,10)||0,jh=String(h.CodeTeamA).trim()==='JER',hs=n(h.ScoreA),as=n(h.ScoreB),live=!!h.Live,rem=String(h.RemainingPartialTime||'').trim(),
+  gt=String(h.GameTime||'').split(':'),played=n(gt[0])+n(gt[1])/60,
+  /* הרבע: בהפסקות (בין רבעים, מחצית) השדה Quarter ריק – אז לפי זמן המשחק שעבר: 10 דקות לרבע, 5 להארכה (20:00 = סוף רבע 2) */
+  qn=n(h.Quarter)||(played<=0?1:played<=40?Math.min(4,Math.ceil(played/10-1e-9)):4+Math.ceil((played-40)/5-1e-9));
  const L={app:f.id,id:0,jh,hs,as,r:jh?[hs,as]:[as,hs],status:'pre',st:'',clock:'',q:[],top:[],url:url365(f),at:Date.now(),src:'el'};
  if(!live&&hs+as===0)return L;
  /* התוצאה לפי רבעים: ב-Header התוצאה המצטברת בסוף כל רבע */
  const end=!live&&played>=40&&hs!==as,cum=[1,2,3,4].map(i=>[n(h['ScoreQuarter'+i+'A']),n(h['ScoreQuarter'+i+'B'])]),nq=end?4:Math.min(4,Math.max(1,qn||1)),per=[];
- for(let i=0;i<nq;i++){const cur=i===nq-1&&!end&&nq===Math.max(1,qn)&&qn<=4?[hs,as]:cum[i],pv=i?cum[i-1]:[0,0];per.push([Math.max(0,cur[0]-pv[0]),Math.max(0,cur[1]-pv[1])])}
+ /* כל רבע = התוצאה המצטברת בסופו פחות זו של הרבע שלפניו; הרבע שמתנהל עכשיו – התוצאה הנוכחית פחות סוף הרבע הקודם */
+ for(let i=0;i<nq;i++){const cur=i===nq-1&&!end&&qn<=4?[hs,as]:cum[i],pv=i?cum[i-1]:[0,0];per.push([Math.max(0,cur[0]-pv[0]),Math.max(0,cur[1]-pv[1])])}
  if(qn>4||n(h.ScoreExtraTimeA)+n(h.ScoreExtraTimeB)>0||(end&&(hs!==cum[3][0]||as!==cum[3][1])))per.push([Math.max(0,hs-cum[3][0]),Math.max(0,as-cum[3][1])]);
  L.q=per.map((x,i)=>({n:i<4?'Q'+(i+1):'OT'+(i-3),h:x[0],a:x[1]}));
  if(end){L.status='end';L.st='סיום'}

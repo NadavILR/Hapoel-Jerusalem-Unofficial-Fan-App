@@ -122,14 +122,19 @@ final class LivePlay {
         x.hs = num(h, "ScoreA");
         x.as = num(h, "ScoreB");
         boolean live = h.optBoolean("Live", false);
-        int q = num(h, "Quarter");
         String rem = h.optString("RemainingPartialTime", "").trim();
         if (!live && x.hs + x.as == 0) return PRE;
-        int played = 0;
+        double played = 0;
         try {
-            played = Integer.parseInt(h.optString("GameTime", "0").trim().split(":")[0]);
+            String[] t = h.optString("GameTime", "0").trim().split(":");
+            played = Integer.parseInt(t[0]) + (t.length > 1 ? Integer.parseInt(t[1]) / 60.0 : 0);
         } catch (Exception ignored) {
         }
+        // At a break (between quarters, half-time) the feed leaves Quarter empty: then from the time played –
+        // 10 minutes a quarter, 5 an overtime (20:00 = the end of the 2nd quarter)
+        int q = num(h, "Quarter");
+        if (q < 1) q = played <= 0 ? 1 : played <= 40 ? Math.min(4, (int) Math.ceil(played / 10 - 1e-9))
+            : 4 + (int) Math.ceil((played - 40) / 5 - 1e-9);
         if (!live && played >= 40 && x.hs != x.as) {
             x.status = "סיום";
             x.clock = "";
