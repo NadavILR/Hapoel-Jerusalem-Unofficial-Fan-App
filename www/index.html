@@ -344,7 +344,9 @@ async function gsScan1(F){const now=Date.now(),m=GSX(),res=[];let n=0;
  if(n)LS.set('hpj-gs365',Object.fromEntries(Object.entries(m).slice(-40)));return[n,res]}
 /* המשחק בלייב שמור במכשיר משריקת הפתיחה ועד הסיום (עד 3 שעות מהעדכון האחרון), כדי שהכרטיס יופיע מיד כשפותחים את האפליקציה מחדש */
 const lgSaved=()=>{const x=LS.get('hpj-live-L',null);return x&&x.L&&x.L.app&&x.L.status!=='end'&&Date.now()-x.ts<3*H?x.L:null};
-const lgSave=(L,n)=>{if(L.status==='end'||(L.status==='pre'&&Date.now()<n.t)){if(LS.get('hpj-live-L',null))LS.set('hpj-live-L',null);return}
+let lgAt=0,lgSc='';
+const lgSave=(L,n)=>{if(L.status==='end'||(L.status==='pre'&&Date.now()<n.t)){if(lgAt||LS.get('hpj-live-L',null))LS.set('hpj-live-L',null);lgAt=0;return}
+ const sc=L.status+'|'+L.r.join('-')+'|'+L.st,now=Date.now();if(sc===lgSc&&now-lgAt<1e4)return;lgSc=sc;lgAt=now;
  LS.set('hpj-live-L',{ts:Date.now(),L:{...L,pbp:L.pbp?L.pbp.slice(0,40):null}})};
 /* תוצאות סיום שהגיעו מהלייב: נשמרות במכשיר עד שהן מגיעות גם מקובץ הנתונים, כדי שרענון לא יחזיר משחק שהסתיים לספירה לאחור */
 const keepRes=()=>{const rs=LS.get('hpj-res',{});if(!Object.keys(rs).length)return;F0=F0.map(f=>!f.r&&Array.isArray(rs[f.id])?{...f,r:rs[f.id]}:f)};
@@ -401,7 +403,7 @@ function useSportsData(){
   /* 1. קובץ הנתונים העדכני ביותר מהאתר (באנדרואיד – מהאתר, לא העותק שבתוך האפליקציה) */
   for(const u of NATIVE?[SITE+'data.json','data.json']:['data.json']){try{const r=await fetch(u+'?t='+Date.now(),{cache:'no-store'});if(r.ok&&applyLive(await r.json())){mode='Live';break}}catch(e){}}
   /* 2. תוצאות, מועדים וטבלאות מהמקורות הרשמיים, נכון לרגע הלחיצה */
-  const ok=await Promise.all([liveEuro().catch(()=>0),NATIVE?liveIsrael().catch(()=>0):0]);ok.push(await live365League().catch(()=>0),await live365Brackets().catch(()=>0));if(NATIVE)await liveNews().catch(()=>0);
+  const ok=await Promise.all([liveEuro().catch(()=>0),(NATIVE?liveIsrael().catch(()=>0):Promise.resolve(0)).then(async n=>n+(await live365League().catch(()=>0))),live365Brackets().catch(()=>0),NATIVE?liveNews().then(()=>0).catch(()=>0):0]);
   if(ok.some(n=>n>0)||mode==='Live')at=new Date();
   keepRes();setS({ld:0,up:new Date(),mode,F:F0,at});
  },[]);
@@ -534,7 +536,7 @@ async function loadLeaders(){const u=c=>S365+'stats/?'+Q365+'&competitors=634'+(
 function LPh({a,cls}){const p=PL.find(x=>x[7]===a.id),[bad,setBad]=useState(false);
  if(p&&p[6])return html`<${Ph} u=${p[6]} n=${p[0]} k=${p[9]} cls=${cls}/>`;
  return bad?html`<div class=${cls+' flex items-center justify-center text-white/40 text-2xl font-bold'}>${a.n.slice(0,1)}</div>`:html`<img src=${'https://imagecache.365scores.com/image/upload/f_png,w_160,h_200,c_limit,q_auto:eco,d_Athletes:default.png/v'+a.iv+'/Athletes/'+a.id} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${()=>setBad(true)} class=${cls}/>`}
-function Leaders(){
+const Leaders=React.memo(function Leaders(){
  const A=useContext(Ctx),[d,setD]=useState(()=>LS.get('hpj-ldr',null)),[ci,setCi]=useState(0);
  useEffect(()=>{let on=true;loadLeaders().then(x=>{if(on&&x){setD(x);LS.set('hpj-ldr',x)}}).catch(()=>{});return()=>{on=false}},[A.up]);
  if(!d||!d.comps.length)return null;
@@ -547,8 +549,8 @@ function Leaders(){
   ${a?html`<button onClick=${()=>open(a)} class="w-full rounded-xl overflow-hidden relative block" style=${{aspectRatio:'4/5',background:'linear-gradient(160deg,#D21919,var(--blk))'}}><${LPh} a=${a} cls="absolute inset-0 w-full h-full object-cover object-top"/>
    <div class="absolute inset-x-0 bottom-0 pt-6 pb-1.5 px-1 text-white" style=${{background:'linear-gradient(to top,rgb(0 0 0/.75),transparent)'}}><div class="text-2xl font-extrabold sb leading-none">${a.v}</div><div class="text-[11px] font-bold truncate mt-0.5">${a.n}</div></div></button>`:html`<div class="text-sm mu py-6">—</div>`}
   ${r.slice(1).map((x,i)=>html`<button key=${x.id} onClick=${()=>open(x)} class="w-full flex items-center justify-between gap-1 text-[11px] mt-1.5 px-0.5"><span class="truncate"><span class="mu">${i+2}.</span> ${x.n}</span><b class="sb shrink-0">${x.v}</b></button>`)}</div>`})}</div></div>`;
-}
-function News(){
+});
+const News=React.memo(function News(){
  const [all,setAll]=useState(false);
  if(!NEWS.length)return null;
  const L=all?NEWS:NEWS.slice(0,4),more=NEWS.length-4;
@@ -559,7 +561,7 @@ function News(){
     ${n.i?html`<${NImg} src=${n.i}/>`:null}
     <div class="min-w-0 flex-1"><div class="text-sm font-bold leading-snug line-clamp-3">${n.t}</div>${n.d||n.s?html`<div class="text-xs mu mt-1">${[n.s,dd(n.d)].filter(Boolean).join(' · ')}</div>`:null}</div><//>`})}
   ${more>0?html`<button onClick=${()=>setAll(!all)} class="w-full pt-2.5 border-t bd text-sm font-bold text-[#D21919]">${all?'הצג פחות':'עוד כתבות ('+more+')'}</button>`:null}</div>`;
-}
+});
 function NImg({src}){const [bad,setBad]=useState(false);return bad?null:html`<img src=${src} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${()=>setBad(true)} class="w-24 h-16 rounded-lg object-cover shrink-0 bg-[rgb(var(--blk-rgb)/0.1)]"/>`}
 /* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
 function GameCard({kind,g,now,L}){
@@ -617,8 +619,8 @@ function Home(){
  <${Carousel} key=${nx.id} start=${ls?1:0} items=${cards.map(([k,g])=>html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k==='next'?L:null}/>`)}/>
  <div class="flex items-center justify-between gap-2 text-xs mu md:col-span-2"><span class="on-glass">${A.ld?'נתוני האפליקציה מתעדכנים עכשיו…':A.at?'עודכן ב-'+A.at.toLocaleString('he-IL',{...ILT,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',',''):'אין חיבור · נתונים נכונים ל-'+ASOF}</span><button onClick=${A.refresh} class="on-glass text-[#D21919] font-bold"><${I} n="sync" s=${14} c=${A.ld?'animate-spin':''}/>רענן נתונים עכשיו</button></div>
  ${(me||em)&&html`<div class=${'grid gap-2 '+(me&&em?'grid-cols-2':'grid-cols-1')}>${me&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום בליגת ווינר סל</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${rk+1}</div><div class="text-xs mu mt-1">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></div>`}${em&&html`<div class="sf rounded-xl p-3"><div class="text-xs mu mb-1">מיקום ביורוקאפ</div><div class="text-2xl font-semibold sb text-[#D21919] leading-tight">מקום ${er+1}</div><div class="text-xs mu mt-1">${eg[0]} · ${em[1]} נצ׳ · ${em[2]} הפ׳</div></div>`}</div>`}
- <${Leaders}/>
- <${News}/>
+ <${Leaders} v=${A.up}/>
+ <${News} v=${A.up}/>
  </div>`;
 }
 
@@ -831,7 +833,7 @@ function LiveCard({L,g,intro}){
  return html`<div class=${'flex-1 flex items-center justify-center gap-3 pt-1 pb-4'+(intro?' lt-in':'')} aria-label="הפועל לייב"><span class="text-5xl leading-none font-extrabold tracking-tight">הפועל</span><span class=${'live-tag text-5xl leading-none font-extrabold tracking-tight px-4 pt-1.5 pb-2.5 rounded-2xl bg-white text-[#D21919] shadow-md'+(on?' on':'')}><span class="lt-clip" aria-hidden="true"></span>לייב</span></div>
  <div class=${intro?'lr-in':''}><${LiveScore} L=${L} g=${g}/>
  <button onClick=${e=>openGame(A,g,e)} class="mt-3 w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-white/15"><${I} n="cal" s=${16}/>לעמוד המשחק</button>
- <div class="text-[11px] opacity-75 mt-2 text-center">תוצאה בלייב מ-365scores · מתעדכן כל 20 שניות</div></div>`;
+ <div class="text-[11px] opacity-75 mt-2 text-center">תוצאה בלייב · מתעדכנת כל כמה שניות</div></div>`;
 }
 /* ---------- מהלך המשחק (Play by Play) בלייב ---------- */
 const PBQ=q=>q<=4?'Q'+q:'OT'+(q-4),titleCase=x=>String(x||'').toLowerCase().replace(/(^|[\s'-])\S/g,c=>c.toUpperCase());
@@ -1231,7 +1233,10 @@ const NAV=[['home','בית','home'],['sched','משחקים','cal'],['stand','ט�
 const MORE=[['tix','כרטיסים','tix','רכישת כרטיסים למשחקים'],['shop','חנות','bag','החנות הרשמית'],['mem','מנוי','phone','אזור המנויים']];
 const PG={home:Home,sched:Sched,stand:Stand,roster:Roster,tix:()=>NATIVE?html`<div class="p-8 text-center mu">טוען את אתר הכרטיסים…</div>`:html`<${Embed} k="tix"/>`,shop:()=>html`<${Embed} k="shop"/>`,mem:()=>html`<${Embed} k="mem"/>`};
 /* ---------- שמירה מקומית, זמן יחסי והתראות מכשיר ---------- */
-const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+/* מה שנשמר לפי מספר משחק נשמר לכל עונה בנפרד (מספרי המשחקים חוזרים בין עונות): בלי זה, תוצאה / תקציר / תזכורת של משחק מהעונה הקודמת היו נדבקים למשחק עם אותו מספר בעונה הבאה.
+   מה שנשמר לפני השינוי (בלי עונה) שייך לעונת 2026/27 */
+const LSS=['hpj-res','hpj-hl','hpj-gs365','hpj-lsid','hpj-lsmiss','hpj-livegs','hpj-final','hpj-fired','hpj-rem'],lsKey=k=>LSS.includes(k)?k+':'+SEASON:k;
+const LS={get(k,d){try{let v=localStorage.getItem(lsKey(k));if(v==null&&SEASON==='2026/27'&&LSS.includes(k))v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(lsKey(k),JSON.stringify(v))}catch(e){}}};
 const ago=ts=>{const m=Math.floor(Math.max(0,Date.now()-ts)/6e4);if(m<1)return'עכשיו';if(m<60)return m===1?'לפני דקה':'לפני '+m+' דקות';const h=Math.floor(m/60);if(h<24)return h===1?'לפני שעה':h===2?'לפני שעתיים':'לפני '+h+' שעות';const d=Math.floor(h/24);return d===1?'אתמול':d===2?'לפני יומיים':'לפני '+d+' ימים'};
 /* התראה במגש ההתראות של המכשיר. באנדרואיד חובה דרך ה-service worker (new Notification לא נתמך שם) */
 /* באפליקציית האנדרואיד (Capacitor) ההתראות עוברות דרך מערכת ההתראות של הטלפון */
