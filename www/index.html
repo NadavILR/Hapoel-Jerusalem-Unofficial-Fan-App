@@ -976,7 +976,7 @@ function Pbp({L,g}){
  const shown=cur||(list[0]&&list[0].q);
  return html`<div class="sf rounded-xl mt-3 overflow-hidden flex flex-col" style=${{height:'min(68vh,560px)'}}>
  <div class="pbp-hd px-3 pt-3 pb-2 shrink-0">
-  <div class="flex items-center justify-between mb-2"><div class="font-bold">מהלך המשחק</div><span class="text-[11px] mu">התוצאה: ${ME} – יריבה</span></div>
+  <div class="flex items-center justify-between mb-2"><div class="font-bold">מהלך המשחק</div><span class="text-[11px] mu">התוצאה: ${g.h?ME:'יריבה'} – ${g.h?'יריבה':ME}</span></div>
   <div class="segc grid gap-1 p-1 rounded-xl seg" style=${{gridTemplateColumns:'auto repeat('+qs.length+',minmax(0,1fr))'}}><${SegInd} k=${qf}/>${[[0,'כל המשחק'],...qs.map(q=>[q,qn(q)])].map(([k,l])=>html`<button key=${k} data-on=${qf===k?'':undefined} onClick=${()=>setQf(k)} class=${'py-1.5 px-2.5 rounded-lg text-[12px] font-bold whitespace-nowrap '+(qf===k?'text-white':'mu')}>${l}</button>`)}</div>
   ${!qf&&shown?html`<div class="text-center text-sm font-bold mt-2"><span key=${shown} class="fade-in inline-block">${PBQ(shown)}</span></div>`:null}
  </div>
@@ -985,7 +985,7 @@ function Pbp({L,g}){
   <span class="shrink-0 text-[11px] mu leading-5 tabular-nums" dir="ltr">${x.clock}</span>
   <span class="w-5 h-5 shrink-0 flex items-center justify-center">${x.side?html`<${Cr} n=${x.side==='j'?ME:g.o} s=${18}/>`:null}</span>
   <span class=${'flex-1 '+(x.side==='j'?'font-bold':'')+(x.side?'':' mu')}>${x.text}</span>
-  ${x.sc?html`<span class="inline-flex items-baseline gap-px text-xs tabular-nums shrink-0 leading-5" dir="rtl">${[0,1].map(k=>{const hot=(k===0)===(x.side==='j');return html`<${React.Fragment} key=${k}>${k?html`<span class="mu">-</span>`:null}<span class=${hot?'text-[15px] font-extrabold'+(x.side==='j'?' text-[#D21919]':''):'mu'}>${x.sc[k]}</span><//>`})}</span>`:null}</div><//>`})}
+  ${x.sc?html`<span class="inline-flex items-baseline gap-px text-xs tabular-nums shrink-0 leading-5" dir="rtl">${(g.h?[0,1]:[1,0]).map((k,i)=>{const hot=(k===0)===(x.side==='j');return html`<${React.Fragment} key=${k}>${i?html`<span class="mu">-</span>`:null}<span class=${hot?'text-[15px] font-extrabold'+(x.side==='j'?' text-[#D21919]':''):'mu'}>${x.sc[k]}</span><//>`})}</span>`:null}</div><//>`})}
  ${!list.length?html`<div class="text-center text-sm mu py-4">אין מהלכים ברבע הזה</div>`:null}
  </div></div>`;
 }
