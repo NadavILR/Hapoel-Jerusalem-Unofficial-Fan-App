@@ -95,6 +95,35 @@ public class LiveActivityPlugin extends Plugin {
         call.resolve(r);
     }
 
+    /**
+     * Share to a story: shareImage({data: base64 PNG, text}) – saves the image in the app's cache and opens Android's
+     * share sheet (Instagram / Facebook / WhatsApp story or status, and any other app).
+     */
+    @PluginMethod
+    public void shareImage(PluginCall call) {
+        Context c = getContext();
+        try {
+            byte[] png = android.util.Base64.decode(call.getString("data", ""), android.util.Base64.DEFAULT);
+            java.io.File dir = new java.io.File(c.getCacheDir(), "share");
+            dir.mkdirs();
+            java.io.File f = new java.io.File(dir, "hapoel-story.png");
+            try (java.io.FileOutputStream o = new java.io.FileOutputStream(f)) {
+                o.write(png);
+            }
+            android.net.Uri u = androidx.core.content.FileProvider.getUriForFile(c, c.getPackageName() + ".fileprovider", f);
+            Intent send = new Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, u)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            String text = call.getString("text", "");
+            if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);
+            Intent ch = Intent.createChooser(send, "שיתוף לסטורי").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            if (getActivity() != null) getActivity().startActivity(ch);
+            else c.startActivity(ch);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("share failed", e);
+        }
+    }
+
     @PluginMethod
     public void takeOpen(PluginCall call) {
         JSObject r = new JSObject();
@@ -115,6 +144,7 @@ public class LiveActivityPlugin extends Plugin {
         LiveScheduler.save(getContext(), on, games, jer);
         // The app is open: a game on now gets its live card back, even if it was swiped away earlier in the game
         LiveScheduler.undone(getContext());
+        NextGameWidget.refresh(getContext());
         JSObject r = new JSObject();
         long now = LiveScheduler.current(getContext());
         if (LiveScheduler.allowed(getContext()) && now > 0) {

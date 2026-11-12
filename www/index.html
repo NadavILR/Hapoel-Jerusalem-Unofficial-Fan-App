@@ -101,7 +101,7 @@ button,a{-webkit-tap-highlight-color:transparent;transition:transform .18s var(-
 <script>
 const {useState,useEffect,useRef,useCallback,useContext}=React;
 const html=htm.bind((t,p,...c)=>React.createElement(t,p&&p.class?{...p,className:p.class,class:undefined}:p,...c));
-const IC={cog:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',home:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',cal:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',users:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',tix:'M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM13 5v2M13 17v2M13 11v2',bag:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0',phone:'M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 18h.01',bell:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',back:'M5 12h14M12 5l7 7-7 7',x:'M18 6L6 18M6 6l12 12',pin:'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',sync:'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15',play:'M5 3l14 9-14 9V3z',menu:'M3 12h18M3 6h18M3 18h18',check:'M20 6L9 17l-5-5',ext:'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3'};
+const IC={share:'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13',cog:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',home:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',cal:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',users:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',tix:'M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM13 5v2M13 17v2M13 11v2',bag:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0',phone:'M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 18h.01',bell:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',back:'M5 12h14M12 5l7 7-7 7',x:'M18 6L6 18M6 6l12 12',pin:'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',sync:'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15',play:'M5 3l14 9-14 9V3z',menu:'M3 12h18M3 6h18M3 18h18',check:'M20 6L9 17l-5-5',ext:'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3'};
 const I=({n,s=20,c=''})=>html`<svg width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class=${c}><path d=${IC[n]}/></svg>`;
 
 /* ---------- API layer ---------- */
@@ -351,7 +351,7 @@ const lgSave=(L,n)=>{if(L.status==='end'||(L.status==='pre'&&Date.now()<n.t)){if
 /* תוצאות סיום שהגיעו מהלייב: נשמרות במכשיר עד שהן מגיעות גם מקובץ הנתונים, כדי שרענון לא יחזיר משחק שהסתיים לספירה לאחור */
 const keepRes=()=>{const rs=LS.get('hpj-res',{});if(!Object.keys(rs).length)return;F0=F0.map(f=>!f.r&&Array.isArray(rs[f.id])?{...f,r:rs[f.id]}:f)};
 /* שמות רבעים אחידים: Q1–Q4 והארכות OT1, OT2… (גם כשהמקור כותב "ר1", "רבע 1", "הא1" או "הארכה") */
-const qLbl=s=>{s=String(s||'');const n=(/(\d+)/.exec(s)||[])[1];if(/הארכה|הא|OT/i.test(s))return 'OT'+(n||1);if(n&&/רבע|ר|Q/i.test(s))return 'Q'+n;return s};
+const qLbl=s=>{s=String(s||'');if(/סיום|מחצית|הפסקה/.test(s))return s;const n=(/(\d+)/.exec(s)||[])[1];if(/הארכה|הא|OT/i.test(s))return 'OT'+(n||1);if(n&&/רבע|ר|Q/i.test(s))return 'Q'+n;return s};
 /* מצב המשחק לפי 365scores: pre / live / end */
 const mkLive=(d,f)=>{const jh=d.homeCompetitor&&d.homeCompetitor.id===634,num=x=>x>=0?Math.round(x):0,hs=num(d.homeCompetitor.score),as=num(d.awayCompetitor.score),
  pt=d.preciseGameTime,clock=d.gameTimeDisplay||(pt&&pt.minutes>=0&&d.statusGroup===3?String(pt.minutes).padStart(2,'0')+':'+String(pt.seconds||0).padStart(2,'0'):'');
@@ -564,6 +564,49 @@ const News=React.memo(function News(){
 });
 function NImg({src}){const [bad,setBad]=useState(false);return bad?null:html`<img src=${src} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${()=>setBad(true)} class="w-24 h-16 rounded-lg object-cover shrink-0 bg-[rgb(var(--blk-rgb)/0.1)]"/>`}
 /* כרטיס משחק בקרוסלה של מסך הבית: next – המשחק הבא (רקע אדום), prev / after – המשחק הקודם והמשחק שאחריו (רקע לפי מצב בהיר / כהה של המכשיר) */
+/* ---------- שיתוף לסטורי (אינסטגרם / פייסבוק / וואטסאפ): הכרטיס של המשחק הבא או של המשחק בלייב כתמונה 9:16 (1080×1920) ---------- */
+const imgLoad=src=>new Promise(res=>{if(!src)return res(null);const i=new Image();i.crossOrigin='anonymous';i.referrerPolicy='no-referrer';i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src});
+async function crestImg(n){if(n===ME)return imgLoad(LOGO);for(const s of crestSrcs(n)){const i=await imgLoad(s);if(i)return i}const j=await crGet().catch(()=>null),v=j&&j[n];return crOk(v)?imgLoad(v):null}
+async function storyCanvas(g,L){
+ const W=1080,Hh=1920,c=document.createElement('canvas');c.width=W;c.height=Hh;const x=c.getContext('2d');
+ try{await document.fonts.load('800 80px "Noto Sans Hebrew"');await document.fonts.load('400 40px "Noto Sans Hebrew"')}catch(e){}
+ const F=(w,s)=>w+' '+s+'px "Noto Sans Hebrew", sans-serif',T=(t,y,w,s,col='#fff',al='center',xx=W/2)=>{x.font=F(w,s);x.fillStyle=col;x.textAlign=al;x.direction='rtl';x.fillText(t,xx,y)};
+ const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
+ /* הרקע: האדום של הכרטיס שנבלע בשחור, עם הארה רכה מלמעלה */
+ const bg=x.createLinearGradient(0,0,W,Hh);bg.addColorStop(0,'#D21919');bg.addColorStop(1,'#140f0f');x.fillStyle=bg;x.fillRect(0,0,W,Hh);
+ const gl=x.createRadialGradient(W*.7,Hh*.18,0,W*.7,Hh*.18,W);gl.addColorStop(0,'rgba(255,255,255,.18)');gl.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gl;x.fillRect(0,0,W,Hh);
+ const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia,lg]=await Promise.all([crestImg(hm),crestImg(aw),imgLoad(LOGO)]);
+ /* למעלה: הסמל והשם של האפליקציה */
+ if(lg)x.drawImage(lg,W/2-60,120,120,120);T('הפועל ירושלים',300,'800',44);
+ /* הכרטיס עצמו */
+ const cy=420,ch=1160;rr(70,cy,W-140,ch,64);x.fillStyle='rgba(255,255,255,.10)';x.fill();x.strokeStyle='rgba(255,255,255,.22)';x.lineWidth=3;x.stroke();
+ const live=L&&L.status==='live';
+ if(live){T('הפועל',cy+170,'800',110,'#fff','left',W/2+20);
+  x.font=F('800',110);const lw=x.measureText('לייב').width+70;rr(W/2-20-lw,cy+70,lw,140,36);x.fillStyle='#fff';x.fill();T('לייב',cy+175,'800',110,'#D21919','center',W/2-20-lw/2)}
+ else{T('המשחק הבא',cy+120,'400',44,'rgba(255,255,255,.85)');T(cmp(g),cy+185,'400',40,'rgba(255,255,255,.85)')}
+ /* הקבוצות: המארחת מימין */
+ const top=cy+(live?290:260),cs=live?190:230,xr=W-(live?90:110)-cs,xl=live?90:110;
+ const crest=(im,X,n)=>{if(im){const k=Math.min(cs/im.width,cs/im.height),w=im.width*k,h=im.height*k;x.drawImage(im,X+(cs-w)/2,top+(cs-h)/2,w,h)}else{x.beginPath();x.arc(X+cs/2,top+cs/2,cs/2,0,7);x.fillStyle='rgba(255,255,255,.2)';x.fill();T(n[0],top+cs/2+40,'800',110,'#fff','center',X+cs/2)}};
+ crest(ih,xr,hm);crest(ia,xl,aw);
+ const nm=(t,X,me)=>{x.font=F(me?'800':'400',46);let s=t;while(x.measureText(s).width>330&&s.length>3)s=s.slice(0,-2)+'…';T(s,top+cs+80,me?'800':'400',46,'#fff','center',X)};
+ nm(hm,xr+cs/2,hm===ME);nm(aw,xl+cs/2,aw===ME);
+ if(live){T(String(L.hs),top+cs/2+45,'800',130,'#fff','center',W/2+160);T(String(L.as),top+cs/2+45,'800',130,'#fff','center',W/2-160);T('–',top+cs/2+35,'400',90,'rgba(255,255,255,.7)');
+  const st=(qLbl(L.st)||'LIVE')+(L.clock?' • '+L.clock:'');x.font=F('800',46);const sw=x.measureText(st).width+80;rr(W/2-sw/2,top+cs+120,sw,84,42);x.fillStyle='rgba(255,255,255,.18)';x.fill();T(st,top+cs+178,'800',46);
+  T(cmp(g),top+cs+300,'400',40,'rgba(255,255,255,.85)');T(fdLong(g),top+cs+360,'400',40,'rgba(255,255,255,.85)');
+  if(L.pbp&&L.pbp[0]){const e=L.pbp[0],t=(e.clock?e.clock+' · ':'')+e.text;x.font=F('400',38);let q=t;while(x.measureText(q).width>820&&q.length>3)q=q.slice(0,-2)+'…';T(q,top+cs+450,'400',38,'rgba(255,255,255,.9)')}}
+ else{T('VS',top+cs/2+30,'400',64,'rgba(255,255,255,.8)');
+  T(fdLong(g),top+cs+190,'400',44);T(g.v||(g.h?'משחק בית':'משחק חוץ'),top+cs+255,'400',40,'rgba(255,255,255,.85)');
+  /* הספירה לאחור – נכון לרגע השיתוף */
+  const df=Math.max(0,g.t-Date.now()),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]],bw=190,gap=26,y0=top+cs+330,tw=4*bw+3*gap,x0=(W-tw)/2;
+  u.forEach(([l,v],i)=>{const X=x0+i*(bw+gap);rr(X,y0,bw,190,36);x.fillStyle=i===0?'rgba(210,25,25,.85)':'rgba(255,255,255,.14)';x.fill();T(String(v).padStart(2,'0'),y0+112,'800',84,'#fff','center',X+bw/2);T(l,y0+165,'400',34,'rgba(255,255,255,.8)','center',X+bw/2)})}
+ /* למטה */
+ T(live?'עוקבים בלייב באפליקציית האוהדים':'מחכים למשחק! · אפליקציית האוהדים',cy+ch+170,'400',38,'rgba(255,255,255,.75)');
+ return c}
+async function shareStory(A,g,L){try{A.toast('מכין תמונה לשיתוף…');const c=await storyCanvas(g,L),data=c.toDataURL('image/png'),txt=(L&&L.status==='live'?'הפועל לייב! ':'המשחק הבא של הפועל ירושלים: ')+NT.match(g);
+  const P=plug('LiveActivity');if(P&&P.shareImage){await P.shareImage({data:data.split(',')[1],text:txt});return}
+  const blob=await (await fetch(data)).blob(),file=new File([blob],'hapoel-story.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:txt});return}
+  const a=document.createElement('a');a.href=data;a.download='hapoel-story.png';a.click();A.toast('התמונה נשמרה – אפשר להעלות אותה לסטורי')}catch(e){if(!(e&&e.name==='AbortError'))A.toast('לא ניתן לשתף כרגע')}}
 function GameCard({kind,g,now,L}){
  const A=useContext(Ctx),[vid,setVid]=useState(false),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
  const box=red?'bg-white/10 glass-in':'tint-glass',btn=red?'bg-white/15 glass-in':'tint-glass',op=red?'opacity-80':'mu';
@@ -574,7 +617,8 @@ function GameCard({kind,g,now,L}){
  const [ph,setPh]=useState(L?'live':'cd'),cd0=useRef(g.t>Date.now());
  useEffect(()=>{if(L&&ph==='cd'){/* המשחק כבר התחיל כשהכרטיס הופיע (למשל פתיחה מחדש של האפליקציה באמצע משחק): בלי אנימציה */if(!cd0.current){setPh('live');return}setPh('out');const t1=setTimeout(()=>setPh('in'),420),t2=setTimeout(()=>setPh('live'),2200);return()=>{clearTimeout(t1);clearTimeout(t2)}}if(!L&&ph!=='cd')setPh('cd')},[!!L]);
  const LV=L&&(ph==='in'||ph==='live');
- return html`<div class=${'rounded-2xl p-4 flex flex-col '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ return html`<div class=${'relative rounded-2xl p-4 flex flex-col '+(red?'text-white red-card':'sf')} style=${red?{background:'linear-gradient(135deg,#D21919,var(--blk))'}:null}>
+ ${red?html`<button onClick=${e=>{e.stopPropagation();shareStory(A,g,L)}} aria-label="שיתוף לסטורי" class="absolute top-3 left-3 z-10 w-9 h-9 rounded-full bg-white/15 glass-in flex items-center justify-center"><${I} n="share" s=${17}/></button>`:null}
  ${LV?html`<${LiveCard} L=${L} g=${g} intro=${ph==='in'}/>`:html`<div class=${'flex-1 flex flex-col'+(ph==='out'?' cd-out':'')}>
   <div class=${'text-sm mb-3 text-center '+op}>${kind==='prev'?'המשחק הקודם':kind==='after'?'המשחק שאחריו':'המשחק הבא'} · ${cmp(g)}</div>
   <div class="flex items-center justify-between gap-2 mb-3"><div class="shrink-0"><${Cr} n=${hm} s=${60}/></div>
@@ -878,7 +922,7 @@ async function elLive(f,prev){const c=egCode(f);if(!c)return null;const qs='?gam
  if(qn>4||n(h.ScoreExtraTimeA)+n(h.ScoreExtraTimeB)>0||(end&&(hs!==cum[3][0]||as!==cum[3][1])))per.push([Math.max(0,hs-cum[3][0]),Math.max(0,as-cum[3][1])]);
  L.q=per.map((x,i)=>({n:i<4?'Q'+(i+1):'OT'+(i-3),h:x[0],a:x[1]}));
  if(end){L.status='end';L.st='סיום'}
- else{L.status='live';const k=Math.max(1,qn);if(!rem||rem==='00:00'){L.st=k===2?'מחצית':'הפסקה'}else{L.st=k<=4?'רבע '+k:'הארכה'+(k>5?' '+(k-4):'');L.clock=rem}}
+ else{L.status='live';const k=Math.max(1,qn);if(!rem||rem==='00:00'){L.st=k===2?'מחצית':'סיום '+(k<=4?'Q'+k:'OT'+(k-4))}else{L.st=k<=4?'רבע '+k:'הארכה'+(k>5?' '+(k-4):'');L.clock=rem}}
  const same=prev&&prev.app===f.id&&prev.src==='el',moved=!same||prev.r[0]!==L.r[0]||prev.r[1]!==L.r[1];
  if(moved||end||Date.now()-elFull>=1e4||!prev.gs){elFull=Date.now();const [bx,pb]=await Promise.all([getJSON(ELAPI+'Boxscore'+qs).catch(()=>null),pbpEuro(c,f).catch(()=>null)]);
   let gs=null;try{gs=gsEl(bx,jh,per.map(x=>jh?x:[x[1],x[0]]))}catch(e){}
@@ -917,7 +961,7 @@ function applyLs(L,d){const gi=d.gameInfo||{},bg=(d.boxscore&&d.boxscore.gameInf
  L.q=hq.map((h,i)=>({n:i<4?"ר'"+(i+1):'OT'+(i-3),h:same?+h||0:+aq[i]||0,a:same?+aq[i]||0:+h||0})).filter((x,i)=>i<Math.max(q,4)&&(i<q||x.h||x.a));
  if(gi.gameFinished){L.status='end';L.st='סיום';L.clock='';return L}
  if(!real.length){L.status='pre';return L}
- L.status='live';if(brk){L.st=q===2?'מחצית':'הפסקה';L.clock=''}else{L.st=q<=4?'רבע '+q:'הארכה'+(q>5?' '+(q-4):'');const la=acts[acts.length-1],t=gi.currentQuarterTime||{};/* השעון העדכני ביותר: הפעולה האחרונה ברבע (currentQuarterTime מתעדכן לעיתים רחוקות יותר) */
+ L.status='live';if(brk){L.st=q===2?'מחצית':'סיום '+PBQ(q);L.clock=''}else{L.st=q<=4?'רבע '+q:'הארכה'+(q>5?' '+(q-4):'');const la=acts[acts.length-1],t=gi.currentQuarterTime||{};/* השעון העדכני ביותר: הפעולה האחרונה ברבע (currentQuarterTime מתעדכן לעיתים רחוקות יותר) */
   L.clock=la&&(+la.quarter||q)===q&&la.quarterTime?la.quarterTime:String(t.m||0).padStart(2,'0')+':'+String(t.s||0).padStart(2,'0')}
  return L}
 /* סטטיסטיקת המשחק (טבלת השחקנים, נתוני הקבוצות והתוצאה לפי רבעים) מה-boxscore של livestats, באותו מבנה של gs365. הפועל תמיד ראשונה */
@@ -1398,7 +1442,7 @@ function App(){
     ואת שמות השחקנים של הפועל, והוא מפעיל בשריקת הפתיחה כרטיס שמתעדכן עד הסיום (תוצאה ומהלך המשחק) – גם כשהאפליקציה סגורה.
     רק כשההתראות מאושרות במכשיר ופעילות באפליקציה */
  useEffect(()=>{const P=plug('LiveActivity');if(!P)return;
-  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f),o:f.o||''})),jer={};
+  const sync=()=>{const gs=S.F.filter(f=>!f.r&&!f.tbd&&f.t>Date.now()-3*H&&(!f.c||!pf.comps||pf.comps[f.c])).sort((a,b)=>a.t-b.t).slice(0,8).map(f=>({t:f.t,c:f.c||'',eg:f.c==='euro'?egCode(f)||0:0,l:cmp(f),o:f.o||'',h:f.h?1:0,v:f.v||'',img:crestSrcs(f.o)[0]||''})),jer={};
    (PL||[]).forEach(r=>{if(r&&r[0]!=null&&r[1])jer[String(r[0])]=String(r[1])});
    P.sync({on:pf.on!==0&&pf.live!==0,games:gs,jer,bg:pf.bg===1,quarter:!!pf.quarter,comps:pf.comps||{},nb:nbMode(pf)}).then(()=>P.group&&P.group()).catch(()=>{})};
   sync();const v=()=>{if(document.visibilityState==='visible')sync()};document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[S.F,pf]);

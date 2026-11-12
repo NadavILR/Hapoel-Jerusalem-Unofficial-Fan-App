@@ -30,6 +30,13 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Live score of the basketball game in progress, shown as an ongoing notification until the final buzzer" />
         </service>
+        <!-- Home-screen widget: the next game with a countdown, and the live score during a game -->
+        <receiver android:name=".NextGameWidget" android:exported="true" android:label="המשחק הבא · הפועל ירושלים">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/hpj_widget_info" />
+        </receiver>
         <receiver android:name=".LiveAlarmReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -343,6 +343,7 @@ public class LiveScoreService extends Service {
         PendingIntent del = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         current = LiveGame.card(this, x, LiveGame.crestFor(this, x.homeName, x.homeImg), LiveGame.crestFor(this, x.awayName, x.awayImg), false, del);
         notify(NOTIF_ID, current);
+        NextGameWidget.live(this, x);
     }
 
     /** Ends following the game; with a final game, the card stays for 30 minutes with the final score. */
@@ -355,6 +356,7 @@ public class LiveScoreService extends Service {
         }
         LiveScheduler.done(this, tipOff);
         LiveScheduler.cancelWatchdog(this);
+        NextGameWidget.clearLive(this);
         finished = true;
         NotifGroup.refresh(this);
         stopSelf();

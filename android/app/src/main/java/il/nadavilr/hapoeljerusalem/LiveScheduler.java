@@ -85,12 +85,15 @@ final class LiveScheduler {
      */
     static void saveFetched(Context c, org.json.JSONArray games) {
         // Keep the app's own competition / round text ("l") of games it already sent
+        // ... and the opponent's name, home / away, venue and crest the app sent (the widget shows them)
         java.util.Map<Long, String> labels = new java.util.HashMap<>();
+        java.util.Map<Long, org.json.JSONObject> olds = new java.util.HashMap<>();
         try {
             org.json.JSONArray old = new org.json.JSONArray(prefs(c).getString("games", "[]"));
             for (int i = 0; i < old.length(); i++) {
                 org.json.JSONObject o = old.optJSONObject(i);
                 if (o != null && !o.optString("l", "").isEmpty()) labels.put(o.optLong("t", 0), o.optString("l"));
+                if (o != null) olds.put(o.optLong("t", 0), o);
             }
         } catch (Exception ignored) {
         }
@@ -106,12 +109,20 @@ final class LiveScheduler {
                 } catch (Exception ignored) {
                 }
             }
+            org.json.JSONObject o = olds.get(g.optLong("t", 0));
+            for (String k : new String[] {"o", "h", "v", "img"}) {
+                try {
+                    if (o != null && o.has(k) && !"".equals(o.optString(k))) g.put(k, o.get(k));
+                } catch (Exception ignored) {
+                }
+            }
             keep.put(g);
             if (sb.length() > 0) sb.append(',');
             sb.append(g.optLong("t", 0));
         }
         prefs(c).edit().putString("games", keep.toString()).putString("times", sb.toString()).apply();
         reschedule(c);
+        NextGameWidget.refresh(c);
     }
 
     /**
@@ -240,6 +251,11 @@ final class LiveScheduler {
 
     static void done(Context c, long t) {
         prefs(c).edit().putLong("done", t).apply();
+    }
+
+    /** The next games as saved (for the home-screen widget). */
+    static String gamesJson(Context c) {
+        return prefs(c).getString("games", "[]");
     }
 
     static void dismissed(Context c, long t) {

@@ -142,7 +142,7 @@ final class LivePlay {
         }
         if (q < 1) q = 1;
         if ("00:00".equals(rem) || rem.isEmpty()) {
-            x.status = q == 2 ? "מחצית" : "הפסקה";
+            x.status = q == 2 ? "מחצית" : "סיום " + q(q);
             x.clock = "";
         } else {
             x.status = q <= 4 ? "רבע " + q : "הארכה" + (q > 5 ? " " + (q - 4) : "");
@@ -372,7 +372,7 @@ final class LivePlay {
         if (!started) return PRE;
         int q = gi.optInt("currentQuarter", 1);
         if (onBreak) {
-            x.status = q == 2 ? "מחצית" : "הפסקה";
+            x.status = q == 2 ? "מחצית" : "סיום " + q(q);
             x.clock = "";
         } else {
             x.status = q <= 4 ? "רבע " + q : "הארכה" + (q > 5 ? " " + (q - 4) : "");

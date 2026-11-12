@@ -91,6 +91,15 @@ public class LiveFixtures extends Worker {
             if (t <= 0 || t > now + 45L * 24 * HOUR) continue;
             String key = comp(g.optInt("competitionId"));
             JSONObject x = new JSONObject().put("t", t).put("c", key);
+            JSONObject hc = g.optJSONObject("homeCompetitor"), ac = g.optJSONObject("awayCompetitor");
+            if (hc != null && ac != null) {
+                boolean home = hc.optInt("id") == LiveGame.HAPOEL;
+                JSONObject op = home ? ac : hc;
+                x.put("h", home ? 1 : 0).put("o", op.optString("name", ""));
+                if (op.optInt("id", 0) > 0)
+                    x.put("img", "https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v"
+                        + Math.max(1, op.optInt("imageVersion", 1)) + "/Competitors/" + op.optInt("id"));
+            }
             if ("euro".equals(key)) {
                 if (euro == null) {
                     try {

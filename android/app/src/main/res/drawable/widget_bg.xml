@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen widget: the app's red next-game card (red to near-black, like the card on the home screen) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="315" android:startColor="#D21919" android:endColor="#1A1414" android:type="linear" />
+    <corners android:radius="22dp" />
+</shape>
