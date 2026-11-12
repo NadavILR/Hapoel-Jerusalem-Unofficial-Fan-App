@@ -634,6 +634,9 @@ async function storyVideo(g,L,prog){
  await jsLoad('vendor/mp4-muxer.js');const M=window.Mp4Muxer;if(!M)return null;
  const dec=new ImageDecoder({data:await (await fetch(dark?'bg/pattern-dark.webp':'bg/pattern-light.webp')).arrayBuffer(),type:'image/webp'});
  await dec.tracks.ready;const fc=Math.max(1,dec.tracks.selectedTrack.frameCount||1);
+ /* משך כל פריים ברקע (פריימים זהים מאוחדים, כך שהמשכים שונים) – כדי שהרקע ינוע בסרטון בקצב האמיתי שלו */
+ const du=[];for(let k=0;k<fc;k++){const {image:f}=await dec.decode({frameIndex:k});du.push(f.duration||40000);f.close()}
+ const cum=[];du.reduce((t,d,k)=>(cum[k]=t+d),0);const TT=cum[fc-1]||1,at=t=>{t%=TT;let k=0;while(k<fc-1&&cum[k]<=t)k++;return k};
  const mux=new M.Muxer({target:new M.ArrayBufferTarget(),video:{codec:'avc',width:W,height:Hh,frameRate:fps},fastStart:'in-memory'});
  let err=null;const enc=new VideoEncoder({output:(c,m)=>mux.addVideoChunk(c,m),error:e=>{err=e}});enc.configure(cfg);
  const cv=document.createElement('canvas');cv.width=W;cv.height=Hh;const x=cv.getContext('2d');
@@ -641,7 +644,7 @@ async function storyVideo(g,L,prog){
  try{for(let i=0;i<N;i++){if(err)throw err;
    const s=Math.floor(i/fps);if(!card||(!live&&s!==sec)){sec=s;card=await storyCanvas(g,L,{bg:false,now:t0+s*1000})}
    x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh);
-   const {image:fr}=await dec.decode({frameIndex:i%fc});const iw=fr.displayWidth,ih=fr.displayHeight,k=Math.max(W/iw,Hh/ih);
+   const {image:fr}=await dec.decode({frameIndex:at(i*us)});const iw=fr.displayWidth,ih=fr.displayHeight,k=Math.max(W/iw,Hh/ih);
    x.drawImage(fr,(W-iw*k)/2,(Hh-ih*k)/2,iw*k,ih*k);fr.close();x.drawImage(card,0,0);
    const vf=new VideoFrame(cv,{timestamp:Math.round(i*us),duration:Math.round(us)});enc.encode(vf,{keyFrame:i%(fps*2)===0});vf.close();
    while(enc.encodeQueueSize>6)await new Promise(r=>setTimeout(r,4));
