@@ -46,7 +46,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 html.ld-on main{padding-bottom:calc(7rem + var(--ldh,52px))}
 .back-stick{transition:translate .25s var(--ease),transform .18s var(--ease)}html.dock-on .back-stick{translate:0 var(--dockh,0px)}
 .pts-pop{transform:translateX(-50%);animation:hpjPts 2s var(--ease) both}@keyframes hpjPts{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}12%{opacity:1;transform:translate(-50%,0) scale(1.1)}22%{transform:translate(-50%,0) scale(1)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
-.cd-out{animation:hpjCdOut .42s var(--ease) both}@keyframes hpjCdOut{to{opacity:0;transform:scale(.9) translateY(10px);filter:blur(6px)}}
+.cd-out{animation:hpjCdOut .42s var(--ease) both}@keyframes hpjCdOut{to{opacity:0;transform:scale(.9) translateY(10px)}}
 .lt-in{animation:hpjLtIn .75s var(--ease) both}@keyframes hpjLtIn{0%{opacity:0;transform:scale(.55)}60%{opacity:1;transform:scale(1.08)}100%{transform:none}}
 .lr-in{animation:hpjLrIn .55s var(--ease) .8s both}@keyframes hpjLrIn{from{opacity:0;transform:translateY(14px)}}
 .pts-side{transform:translateY(-50%);animation:hpjPtsS 2s var(--ease) both}@keyframes hpjPtsS{0%{opacity:0;transform:translateY(-50%) scale(.6)}12%{opacity:1;transform:translateY(-50%) scale(1.12)}22%{transform:translateY(-50%) scale(1)}80%{opacity:1;transform:translateY(-50%)}100%{opacity:0;transform:translateY(-50%) scale(.9)}}
@@ -69,6 +69,8 @@ html.ld-on main{padding-bottom:calc(7rem + var(--ldh,52px))}
 .glass-bar{background:var(--bar);color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
 .glass-sheet{background:var(--bar)!important;color:var(--bar-tx);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid var(--gl-bd);box-shadow:var(--gl-hi)}
 .glass-in{border:1px solid var(--gl-bd);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255/.14)}
+/* בכרטיס האדום אין מה לטשטש מאחורי התיבות (הרקע שלו אטום): בלי backdrop-filter – אותו מראה, בלי עלות ציור בכל שנייה ובכל החלקה */
+.red-card .glass-in{-webkit-backdrop-filter:none;backdrop-filter:none}
 .on-photo .sf{background:var(--glass);border-color:var(--gl-bd);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
 .home-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,#000 25%,transparent 70%);mask-image:linear-gradient(to bottom,#000 25%,transparent 70%)}.home-bg img{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);object-fit:cover;filter:blur(32px) saturate(1.3);opacity:.7}.home-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgb(var(--bg-rgb)/.25),rgb(var(--bg-rgb)/.75) 60%,var(--bg))}.mu{color:var(--mu)}.bd{border-color:var(--bd)}.bx{background:var(--bg)}
 :root{--ease:cubic-bezier(.22,1,.36,1)}
@@ -93,7 +95,7 @@ button,a{-webkit-tap-highlight-color:transparent;transition:transform .18s var(-
 .seg-ind{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;z-index:0;pointer-events:none;border-radius:11px;background:#D21919;box-shadow:0 2px 8px rgb(210 25 25/.3);transition:opacity .2s}.seg>.seg-ind{border-radius:8px}
 .nav-ind{border-radius:999px;background:rgb(210 25 25/.12);box-shadow:none}#app-nav button{position:relative;z-index:1}#app-nav button:active{transform:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-ind{background:rgb(210 25 25/.25)}}:root[data-theme="dark"] .nav-ind{background:rgb(210 25 25/.25)}
-.car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;padding:6px 12px;margin:-6px 0;scroll-padding:0 12px}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center}.car .sf{box-shadow:var(--gl-hi)}
+.car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;padding:6px 12px;margin:-6px 0;scroll-padding:0 12px}.car::-webkit-scrollbar{display:none}.car>*{flex:0 0 100%;min-width:0;scroll-snap-align:center;contain:layout paint;transform:translateZ(0)}.car .sf{box-shadow:var(--gl-hi)}
 </style>
 </head>
 <body>
@@ -653,7 +655,8 @@ function Carousel({items,start}){
  const mid=e=>{const b=e.getBoundingClientRect();return b.left+b.width/2};
  const to=(k,sm)=>{const el=r.current,c=el&&el.children[k];if(!c)return;el.scrollBy({left:mid(c)-mid(el),behavior:sm?'smooth':'auto'})};
  React.useLayoutEffect(()=>{to(start)},[]);
- const onScroll=()=>{const el=r.current;if(!el)return;const x=mid(el);let b=0,bd=1e9;[...el.children].forEach((c,k)=>{const d=Math.abs(mid(c)-x);if(d<bd){bd=d;b=k}});if(b!==i)setI(b)};
+ const iRef=useRef(start);iRef.current=i;
+ const onScroll=useRef(rafT(()=>{const el=r.current;if(!el)return;const x=mid(el);let b=0,bd=1e9;[...el.children].forEach((c,k)=>{const d=Math.abs(mid(c)-x);if(d<bd){bd=d;b=k}});if(b!==iRef.current)setI(b)})).current;
  return html`<div class="md:col-span-2 -mx-3"><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
  ${items.length>1?html`<div class="flex justify-center gap-2 mt-2">${items.map((_,k)=>html`<button key=${k} aria-label=${'כרטיס '+(k+1)} onClick=${()=>to(k,1)} style=${k===i?null:{background:'var(--mu)'}} class=${'h-2 rounded-full transition-colors '+(k===i?'w-5 bg-[#D21919]':'w-2 opacity-40')}></button>`)}</div>`:null}</div>`;
 }
