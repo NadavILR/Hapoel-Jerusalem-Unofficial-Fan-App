@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Noto Sans Hebrew (SIL Open Font License 1.1) – the app's font, for the widget and the live notification -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+    <font android:fontStyle="normal" android:fontWeight="400" android:font="@font/noto_sans_hebrew_regular" />
+    <font android:fontStyle="normal" android:fontWeight="700" android:font="@font/noto_sans_hebrew_bold" />
+</font-family>

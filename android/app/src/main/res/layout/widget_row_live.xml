@@ -4,18 +4,25 @@
      as in the app, and a box with the quarter above the game clock. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/widget_bg" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="6dp" android:paddingBottom="6dp" android:layoutDirection="rtl">
   <ImageView android:id="@+id/w_home_crest" android:layout_width="58dp" android:layout_height="58dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
-  <TextView android:id="@+id/w_hs" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
+  <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_hs" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
   <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:paddingStart="6dp" android:paddingEnd="6dp">
-    <TextView android:id="@+id/w_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#FFFFFF" android:textSize="12dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" />
+    <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#FFFFFF" android:textSize="12dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" />
     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="3dp">
-      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16dp" android:textStyle="bold" android:includeFontPadding="false" android:text="הפועל" />
-      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:background="@drawable/widget_live" android:paddingStart="7dp" android:paddingEnd="7dp" android:paddingTop="1dp" android:paddingBottom="2dp" android:textColor="#D21919" android:textSize="15dp" android:textStyle="bold" android:includeFontPadding="false" android:text="לייב" />
+      <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16dp" android:textStyle="bold" android:includeFontPadding="false" android:text="הפועל" />
+      <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:background="@drawable/widget_live" android:paddingStart="7dp" android:paddingEnd="7dp" android:paddingTop="1dp" android:paddingBottom="2dp" android:textColor="#D21919" android:textSize="15dp" android:textStyle="bold" android:includeFontPadding="false" android:text="לייב" />
     </LinearLayout>
     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="96dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/widget_box" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_marginTop="5dp">
-      <TextView android:id="@+id/w_qlabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E6FFFFFF" android:textSize="11dp" android:textStyle="bold" android:includeFontPadding="false" />
-      <TextView android:id="@+id/w_clock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="20dp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" android:maxLines="1" />
+      <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_qlabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E6FFFFFF" android:textSize="11dp" android:textStyle="bold" android:includeFontPadding="false" />
+      <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_clock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="20dp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" android:maxLines="1" />
     </LinearLayout>
   </LinearLayout>
-  <TextView android:id="@+id/w_as" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
+  <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_as" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
   <ImageView android:id="@+id/w_away_crest" android:layout_width="58dp" android:layout_height="58dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
 </LinearLayout>

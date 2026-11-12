@@ -1,30 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Home-screen widget (NextGameWidget): the next game with a countdown, or the game live. Right to left: home team on the right -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:background="@drawable/widget_bg" android:padding="12dp" android:layoutDirection="rtl">
-<TextView android:id="@+id/w_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
+<TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
 <FrameLayout android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
   <ImageView android:id="@+id/w_home_crest" android:layout_width="42dp" android:layout_height="42dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
   <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-    <TextView android:id="@+id/w_mid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" android:text="VS" android:layoutDirection="rtl" android:fontFeatureSettings="tnum"/>
-    <TextView android:id="@+id/w_live" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/widget_live" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#D21919" android:textSize="10sp" android:textStyle="bold" android:text="LIVE" android:visibility="gone" android:maxLines="1" />
+    <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_mid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" android:text="VS" android:layoutDirection="rtl" android:fontFeatureSettings="tnum"/>
+    <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_live" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/widget_live" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#D21919" android:textSize="10sp" android:textStyle="bold" android:text="LIVE" android:visibility="gone" android:maxLines="1" />
   </LinearLayout>
   <ImageView android:id="@+id/w_away_crest" android:layout_width="42dp" android:layout_height="42dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
 </LinearLayout>
-<TextView android:id="@+id/w_names" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
+<TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_names" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
 <FrameLayout android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
-<TextView android:id="@+id/w_when" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#E6FFFFFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
+<TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_when" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#E6FFFFFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
 
-<TextView android:id="@+id/w_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
+<TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
 <FrameLayout android:layout_width="1dp" android:layout_height="8dp" />
 <LinearLayout android:id="@+id/w_count" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
   <LinearLayout android:id="@+id/w_days_box" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/widget_box" android:paddingTop="6dp" android:paddingBottom="6dp" android:layout_marginEnd="6dp">
-    <TextView android:id="@+id/w_days" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:fontFeatureSettings="tnum"/>
-    <TextView android:id="@+id/w_days_l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:text="ימים"/>
+    <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_days" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:fontFeatureSettings="tnum"/>
+    <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_days_l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:text="ימים"/>
   </LinearLayout>
   <LinearLayout android:layout_width="0dp" android:layout_weight="2" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/widget_box" android:paddingTop="6dp" android:paddingBottom="6dp">
-    <Chronometer android:id="@+id/w_chrono" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" />
-    <TextView android:id="@+id/w_chrono_l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:text="שעות · דקות · שניות"/>
+    <Chronometer
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_chrono" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" />
+    <TextView
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_chrono_l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:text="שעות · דקות · שניות"/>
   </LinearLayout>
 </LinearLayout>
 </LinearLayout>
