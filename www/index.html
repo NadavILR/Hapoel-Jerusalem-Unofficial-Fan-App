@@ -603,13 +603,14 @@ async function storyCanvas(g,L){
   T(cmp(g)+' · '+fdLong(g).split(' · ').slice(0,2).join(' · '),top+cs+290,'400',36,'rgba(255,255,255,.85)');
   /* התוצאה לפי רבעים: שורה לכל קבוצה (הסמל שלה מימין), עמודה לכל רבע וסה״כ */
   const qs=(L.q||[]).filter(q=>q&&q.n).slice(0,8),ty=top+cs+350,row=78;
-  if(qs.length){const cols=qs.length+1,cw=Math.min(130,640/cols),rx=W-150,tx=rx-90;
-   rr(120,ty,W-240,row*3+20,32);x.fillStyle='rgba(255,255,255,.10)';x.fill();
-   [...qs.map(q=>q.n),'סה״כ'].forEach((n,i)=>T(n,ty+58,'800',30,'rgba(255,255,255,.75)','center',tx-cw/2-i*cw));
+  if(qs.length){/* עמודות ברוחב שווה בתוך הטבלה (עם שוליים פנימיים): הסמל, כל רבע, וסה״כ – מימין לשמאל */
+   const bx=120,bw=W-240,pad=44,n=qs.length+2,cw=(bw-2*pad)/n,cx=k=>bx+bw-pad-cw*(k+.5);
+   rr(bx,ty,bw,row*3+20,32);x.fillStyle='rgba(255,255,255,.10)';x.fill();
+   [...qs.map(q=>q.n),'סה״כ'].forEach((n,i)=>T(n,ty+58,'800',30,'rgba(255,255,255,.75)','center',cx(i+1)));
    [[ih,'h',L.hs],[ia,'a',L.as]].forEach(([im,k,tot],r)=>{const y=ty+row*(r+1)+10;
-    if(im){const kk=Math.min(56/im.width,56/im.height);x.drawImage(im,rx-28-im.width*kk/2+28,y-im.height*kk/2+26,im.width*kk,im.height*kk)}
-    qs.forEach((q,i)=>T(String(q[k]??''),y+44,'400',38,'#fff','center',tx-cw/2-i*cw));
-    T(String(tot),y+44,'800',40,'#fff','center',tx-cw/2-qs.length*cw)})}
+    if(im){const kk=Math.min(56/im.width,56/im.height),w=im.width*kk,h=im.height*kk;x.drawImage(im,cx(0)-w/2,y+26-h/2,w,h)}
+    qs.forEach((q,i)=>T(String(q[k]??''),y+44,'400',38,'#fff','center',cx(i+1)));
+    T(String(tot),y+44,'800',40,'#fff','center',cx(qs.length+1))})}
   }
  else{T('VS',top+cs/2+30,'400',64,'rgba(255,255,255,.8)');
   T(fdLong(g),top+cs+190,'400',44);T(g.v||(g.h?'משחק בית':'משחק חוץ'),top+cs+255,'400',40,'rgba(255,255,255,.85)');
