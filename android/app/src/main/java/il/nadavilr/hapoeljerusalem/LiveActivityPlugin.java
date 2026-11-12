@@ -96,7 +96,7 @@ public class LiveActivityPlugin extends Plugin {
     }
 
     /**
-     * Share to a story: shareImage({data: base64 PNG, text}) – saves the image in the app's cache and opens Android's
+     * Share to a story: shareImage({data: base64 file, text, mime?, name?}) – a PNG image or an MP4 video (default PNG) – saves the image in the app's cache and opens Android's
      * share sheet (Instagram / Facebook / WhatsApp story or status, and any other app).
      */
     @PluginMethod
@@ -104,14 +104,17 @@ public class LiveActivityPlugin extends Plugin {
         Context c = getContext();
         try {
             byte[] png = android.util.Base64.decode(call.getString("data", ""), android.util.Base64.DEFAULT);
+            String mime = call.getString("mime", "image/png");
+            if (!"video/mp4".equals(mime)) mime = "image/png";
+            String name = "video/mp4".equals(mime) ? "hapoel-story.mp4" : "hapoel-story.png";
             java.io.File dir = new java.io.File(c.getCacheDir(), "share");
             dir.mkdirs();
-            java.io.File f = new java.io.File(dir, "hapoel-story.png");
+            java.io.File f = new java.io.File(dir, name);
             try (java.io.FileOutputStream o = new java.io.FileOutputStream(f)) {
                 o.write(png);
             }
             android.net.Uri u = androidx.core.content.FileProvider.getUriForFile(c, c.getPackageName() + ".fileprovider", f);
-            Intent send = new Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, u)
+            Intent send = new Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, u)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             String text = call.getString("text", "");
             if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);

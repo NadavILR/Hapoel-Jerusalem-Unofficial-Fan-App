@@ -570,7 +570,7 @@ function NImg({src}){const [bad,setBad]=useState(false);return bad?null:html`<im
 /* ---------- שיתוף לסטורי (אינסטגרם / פייסבוק / וואטסאפ): הכרטיס של המשחק הבא או של המשחק בלייב כתמונה 9:16 (1080×1920) ---------- */
 const imgLoad=src=>new Promise(res=>{if(!src)return res(null);const i=new Image();i.crossOrigin='anonymous';i.referrerPolicy='no-referrer';i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src});
 async function crestImg(n){if(n===ME)return imgLoad(LOGO);for(const s of crestSrcs(n)){const i=await imgLoad(s);if(i)return i}const j=await crGet().catch(()=>null),v=j&&j[n];return crOk(v)?imgLoad(v):null}
-async function storyCanvas(g,L){
+async function storyCanvas(g,L,o={}){
  const W=1080,Hh=1920,c=document.createElement('canvas');c.width=W;c.height=Hh;
  /* כיוון הטקסט מימין לשמאל: הקנבס מקבל dir="rtl" ונמצא במסמך בזמן הציור (אחרת חלק מהדפדפנים מתעלמים מהכיוון) */
  c.setAttribute('dir','rtl');c.style.cssText='position:fixed;left:-99999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';document.body.appendChild(c);const x=c.getContext('2d');
@@ -579,8 +579,9 @@ async function storyCanvas(g,L){
  const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
  /* הרקע: הרקע של האפליקציה (התבנית), בהיר או כהה לפי מצב התצוגה של המכשיר / האפליקציה */
  const th=document.documentElement.getAttribute('data-theme'),dark=th?th==='dark':!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
- x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh);
- const pat=await imgLoad(dark?'bg/pattern-dark.jpg':'bg/pattern-light.jpg');
+ /* בסרטון (o.bg===false) הכרטיס מצויר על שקוף, והרקע המונפש מתחתיו בכל פריים */
+ if(o.bg!==false){x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh)}
+ const pat=o.bg===false?null:await imgLoad(dark?'bg/pattern-dark.jpg':'bg/pattern-light.jpg');
  if(pat){const k=Math.max(W/pat.width,Hh/pat.height),w=pat.width*k,h=pat.height*k;x.drawImage(pat,W-w,(Hh-h)/2,w,h)}
  const blk=(getComputedStyle(document.documentElement).getPropertyValue('--blk')||'').trim()||'#111';
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia]=await Promise.all([crestImg(hm),crestImg(aw)]);
@@ -616,14 +617,53 @@ async function storyCanvas(g,L){
  else{T('VS',top+cs/2+30,'400',64,'rgba(255,255,255,.8)');
   T(fdLong(g),top+cs+190,'400',44);T(g.v||(g.h?'משחק בית':'משחק חוץ'),top+cs+255,'400',40,'rgba(255,255,255,.85)');
   /* הספירה לאחור – נכון לרגע השיתוף */
-  const df=Math.max(0,g.t-Date.now()),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]],bw=190,gap=26,y0=top+cs+330,tw=4*bw+3*gap,x0=(W-tw)/2;
+  const df=Math.max(0,g.t-(o.now||Date.now())),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]],bw=190,gap=26,y0=top+cs+330,tw=4*bw+3*gap,x0=(W-tw)/2;
   u.forEach(([l,v],i)=>{const X=x0+i*(bw+gap);rr(X,y0,bw,190,36);x.fillStyle='rgba(255,255,255,.12)';x.fill();T(String(v).padStart(2,'0'),y0+112,'800',84,'#fff','center',X+bw/2);T(l,y0+165,'400',34,'rgba(255,255,255,.8)','center',X+bw/2)})}
  c.remove();return c}
-async function shareStory(A,g,L){try{A.toast('מכין תמונה לשיתוף…');const c=await storyCanvas(g,L),data=c.toDataURL('image/png'),txt=(L&&L.status==='live'?'הפועל לייב! ':'המשחק הבא של הפועל ירושלים: ')+NT.match(g);
-  const P=plug('LiveActivity');if(P&&P.shareImage){await P.shareImage({data:data.split(',')[1],text:txt});return}
-  const blob=await (await fetch(data)).blob(),file=new File([blob],'hapoel-story.png',{type:'image/png'});
+/* סרטון לסטורי: 20 שניות, 1080×1920, 25 פריימים לשנייה – הכרטיס מעל הרקע המונפש של האפליקציה (בהיר / כהה).
+   מקודד בטלפון עצמו (WebCodecs – H.264, נארז ל-MP4 ב-mp4-muxer). בספירה לאחור השניות יורדות בזמן הסרטון. אם המכשיר
+   לא תומך – null, ומשתפים תמונה כמו קודם. */
+const jsLoad=src=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)});
+async function storyVideo(g,L,prog){
+ if(!window.VideoEncoder||!window.VideoFrame||!window.ImageDecoder)return null;
+ const W=1080,Hh=1920,fps=25,N=fps*20,us=1e6/fps;
+ const th=document.documentElement.getAttribute('data-theme'),dark=th?th==='dark':!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+ const base={codec:'avc1.640028',width:W,height:Hh,bitrate:4e6,framerate:fps,avc:{format:'avc'}};let cfg=null;
+ for(const codec of ['avc1.640028','avc1.4d0028','avc1.42e028','avc1.640032','avc1.420032'])try{const r=await VideoEncoder.isConfigSupported({...base,codec});if(r&&r.supported){cfg={...base,codec};break}}catch(e){}
+ if(!cfg)return null;
+ await jsLoad('vendor/mp4-muxer.js');const M=window.Mp4Muxer;if(!M)return null;
+ const dec=new ImageDecoder({data:await (await fetch(dark?'bg/pattern-dark.webp':'bg/pattern-light.webp')).arrayBuffer(),type:'image/webp'});
+ await dec.tracks.ready;const fc=Math.max(1,dec.tracks.selectedTrack.frameCount||1);
+ const mux=new M.Muxer({target:new M.ArrayBufferTarget(),video:{codec:'avc',width:W,height:Hh,frameRate:fps},fastStart:'in-memory'});
+ let err=null;const enc=new VideoEncoder({output:(c,m)=>mux.addVideoChunk(c,m),error:e=>{err=e}});enc.configure(cfg);
+ const cv=document.createElement('canvas');cv.width=W;cv.height=Hh;const x=cv.getContext('2d');
+ const t0=Date.now(),live=L&&L.status==='live';let card=null,sec=-1;
+ try{for(let i=0;i<N;i++){if(err)throw err;
+   const s=Math.floor(i/fps);if(!card||(!live&&s!==sec)){sec=s;card=await storyCanvas(g,L,{bg:false,now:t0+s*1000})}
+   x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh);
+   const {image:fr}=await dec.decode({frameIndex:i%fc});const iw=fr.displayWidth,ih=fr.displayHeight,k=Math.max(W/iw,Hh/ih);
+   x.drawImage(fr,W-iw*k,(Hh-ih*k)/2,iw*k,ih*k);fr.close();x.drawImage(card,0,0);
+   const vf=new VideoFrame(cv,{timestamp:Math.round(i*us),duration:Math.round(us)});enc.encode(vf,{keyFrame:i%(fps*2)===0});vf.close();
+   while(enc.encodeQueueSize>6)await new Promise(r=>setTimeout(r,4));
+   if(prog&&i%10===0)prog(i/N)}
+  await enc.flush();if(err)throw err;mux.finalize();prog&&prog(1);
+  return new Blob([mux.target.buffer],{type:'video/mp4'})}
+ finally{try{enc.state!=='closed'&&enc.close()}catch(e){}try{dec.close()}catch(e){}}}
+/* חיווי התקדמות קטן בזמן הכנת הסרטון */
+function storyBusy(){const d=document.createElement('div');d.setAttribute('dir','rtl');d.style.cssText='position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;padding:10px 18px;border-radius:999px;background:rgba(20,20,20,.9);color:#fff;font:600 14px "Noto Sans Hebrew",sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3);pointer-events:none';
+ d.textContent='מכין סרטון לסטורי…';document.body.appendChild(d);return{set:p=>{d.textContent='מכין סרטון לסטורי… '+Math.round(p*100)+'%'},done:()=>d.remove()}}
+const b64=blob=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(blob)});
+async function shareStory(A,g,L){let bz=null;try{const txt=(L&&L.status==='live'?'הפועל לייב! ':'המשחק הבא של הפועל ירושלים: ')+NT.match(g);
+  let blob=null,mime='image/png',name='hapoel-story.png';
+  bz=storyBusy();try{blob=await storyVideo(g,L,bz.set)}catch(e){console.warn('story video',e);blob=null}
+  if(blob){mime='video/mp4';name='hapoel-story.mp4'}
+  else{bz.done();bz=null;A.toast('מכין תמונה לשיתוף…');const c=await storyCanvas(g,L);blob=await new Promise(r=>c.toBlob(r,'image/png'))}
+  if(bz){bz.done();bz=null}
+  const P=plug('LiveActivity');if(P&&P.shareImage){await P.shareImage({data:await b64(blob),text:txt,mime,name});return}
+  const file=new File([blob],name,{type:mime});
   if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:txt});return}
-  const a=document.createElement('a');a.href=data;a.download='hapoel-story.png';a.click();A.toast('התמונה נשמרה – אפשר להעלות אותה לסטורי')}catch(e){if(!(e&&e.name==='AbortError'))A.toast('לא ניתן לשתף כרגע')}}
+  const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),6e4);A.toast(mime==='video/mp4'?'הסרטון נשמר – אפשר להעלות אותו לסטורי':'התמונה נשמרה – אפשר להעלות אותה לסטורי')}
+ catch(e){if(!(e&&e.name==='AbortError'))A.toast('לא ניתן לשתף כרגע')}finally{bz&&bz.done()}}
 function GameCard({kind,g,now,L}){
  const A=useContext(Ctx),[vid,setVid]=useState(false),red=kind==='next',hm=g.h?ME:g.o,aw=g.h?g.o:ME,res=kind==='prev'&&g.r,w=res&&g.r[0]>g.r[1];
  const box=red?'bg-white/10 glass-in':'tint-glass',btn=red?'bg-white/15 glass-in':'tint-glass',op=red?'opacity-80':'mu';
