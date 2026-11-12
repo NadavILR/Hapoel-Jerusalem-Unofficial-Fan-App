@@ -214,23 +214,7 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     private static RemoteViews build(Context c, int size, Model d, Bitmap[] cr) {
-        if (d != null && d.live && (size == ROW || size == WIDE)) {
-            // One row / the wide strip during the game: the live score card itself, without the play-by-play line
-            RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_row_live);
-            LiveGame g = new LiveGame();
-            g.t = d.t;
-            g.homeName = d.home;
-            g.awayName = d.away;
-            g.hs = d.hs;
-            g.as = d.as;
-            g.status = d.status;
-            g.clock = d.clock;
-            g.comp = d.comp;
-            g.play = "";
-            LiveGame.fill(v, g, cr[0], cr[1], false);
-            v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
-            return v;
-        }
+        if (size == ROW || size == WIDE) return row(c, d, cr);
         RemoteViews v = new RemoteViews(c.getPackageName(), LAYOUTS[size]);
         if (d == null) {
             v.setTextViewText(R.id.w_mid, "");
@@ -256,8 +240,6 @@ public class NextGameWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.w_venue, d.venue.isEmpty() ? "" : rlm + d.venue);
         v.setViewVisibility(R.id.w_venue, d.venue.isEmpty() ? View.GONE : View.VISIBLE);
         v.setTextViewText(R.id.w_when, rlm + when(d.t));
-        // One row: the competition and the day / time in one line above the countdown
-        v.setTextViewText(R.id.w_line, rlm + (d.comp.isEmpty() ? "" : d.comp + " · ") + when(d.t));
         if (d.live) {
             // Live: the score (home on the right), the LIVE pill, the quarter and clock
             v.setTextViewText(R.id.w_mid, rlm + d.hs + " – " + d.as);
@@ -303,6 +285,70 @@ public class NextGameWidget extends AppWidgetProvider {
         return v;
     }
 
+    /** One row and the wide strip – the user's design: the countdown in four boxes, or the live score. */
+    private static RemoteViews row(Context c, Model d, Bitmap[] cr) {
+        String rlm = "\u200F";
+        boolean live = d != null && d.live;
+        RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
+        if (d == null) {
+            v.setTextViewText(R.id.w_comp, "");
+            v.setTextViewText(R.id.w_when, "אין משחקים קרובים");
+            v.setViewVisibility(R.id.w_count, View.GONE);
+            v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, 0));
+            return v;
+        }
+        if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]);
+        if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]);
+        v.setContentDescription(R.id.w_home_crest, d.home);
+        v.setContentDescription(R.id.w_away_crest, d.away);
+        v.setTextViewText(R.id.w_comp, rlm + (d.comp.isEmpty() ? d.home + " – " + d.away : d.comp));
+        v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
+        if (live) {
+            v.setTextViewText(R.id.w_hs, String.valueOf(d.hs));
+            v.setTextViewText(R.id.w_as, String.valueOf(d.as));
+            // the box: the quarter above the clock; at a break ("סיום Q1", "מחצית") the status itself
+            boolean clock = !d.clock.isEmpty();
+            v.setTextViewText(R.id.w_qlabel, rlm + d.status);
+            v.setViewVisibility(R.id.w_qlabel, clock && !d.status.isEmpty() ? View.VISIBLE : View.GONE);
+            v.setTextViewText(R.id.w_clock, clock ? d.clock : rlm + (d.status.isEmpty() ? "בלייב" : d.status));
+            return v;
+        }
+        v.setTextViewText(R.id.w_when, rlm + when(d.t));
+        if (d.started) {
+            // Tip-off has passed and the live score card has no score (yet)
+            v.setViewVisibility(R.id.w_count, View.GONE);
+            v.setTextViewText(R.id.w_status, rlm + "המשחק התחיל · לחצו לתוצאה");
+            v.setViewVisibility(R.id.w_status, View.VISIBLE);
+            return v;
+        }
+        long left = Math.max(0, d.t - System.currentTimeMillis()), days = left / DAY, hours = (left % DAY) / HOUR, rest = left % HOUR;
+        v.setTextViewText(R.id.w_days, String.format(Locale.US, "%02d", days));
+        v.setTextViewText(R.id.w_hours, String.format(Locale.US, "%02d", hours));
+        // minutes and seconds: the same "MM:SS" countdown in both boxes, each clipped to its own two digits
+        long base = SystemClock.elapsedRealtime() + rest;
+        v.setChronometer(R.id.w_chrono, base, null, true);
+        v.setChronometer(R.id.w_chrono2, base, null, true);
+        if (Build.VERSION.SDK_INT >= 24) {
+            v.setChronometerCountDown(R.id.w_chrono, true);
+            v.setChronometerCountDown(R.id.w_chrono2, true);
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            float w = twoDigits(c);
+            v.setViewLayoutWidth(R.id.w_mm_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
+            v.setViewLayoutWidth(R.id.w_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
+        }
+        return v;
+    }
+
+    /** The width of two digits in the countdown's font (22dp bold, tabular digits), so a clip shows just "MM" / "SS". */
+    private static float twoDigits(Context c) {
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setTextSize(22 * c.getResources().getDisplayMetrics().density);
+        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
+        return (float) Math.ceil(p.measureText("00")) + 1f;
+    }
+
     private static String when(long t) {
         SimpleDateFormat f = new SimpleDateFormat("EEEE · d.M · HH:mm", new Locale("he"));
         f.setTimeZone(TimeZone.getTimeZone("Asia/Jerusalem"));
@@ -346,8 +392,8 @@ public class NextGameWidget extends AppWidgetProvider {
         if (d != null && !d.live) {
             long left = d.t - now;
             if (left > 0) {
-                long rest = left % DAY;
-                at = Math.min(at, now + (rest > 0 ? rest : DAY) + 1_000L); // the day count goes down
+                long rest = left % HOUR;
+                at = Math.min(at, now + (rest > 0 ? rest : HOUR) + 1_000L); // the hours (and days) go down
                 at = Math.min(at, d.t + 1_000L);
             }
         }
