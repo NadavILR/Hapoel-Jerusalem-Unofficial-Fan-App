@@ -582,7 +582,7 @@ async function storyCanvas(g,L){
  const blk=(getComputedStyle(document.documentElement).getPropertyValue('--blk')||'').trim()||'#111';
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia]=await Promise.all([crestImg(hm),crestImg(aw)]);
  /* הכרטיס עצמו, במרכז התמונה */
- const live=L&&L.status==='live',ch=live?1540:1160,cy=(Hh-ch)/2;
+ const live=L&&L.status==='live',ch=live?1200:1160,cy=(Hh-ch)/2;
  /* הכרטיס האדום של האפליקציה (מאדום לשחור), עם צל רך */
  x.save();x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=60;x.shadowOffsetY=20;rr(70,cy,W-140,ch,64);const cg=x.createLinearGradient(70,cy,W-70,cy+ch);cg.addColorStop(0,'#D21919');cg.addColorStop(1,blk);x.fillStyle=cg;x.fill();x.restore();
  if(live){T('הפועל',cy+170,'800',110,'#fff','left',W/2+20);
@@ -608,10 +608,7 @@ async function storyCanvas(g,L){
     if(im){const kk=Math.min(56/im.width,56/im.height);x.drawImage(im,rx-28-im.width*kk/2+28,y-im.height*kk/2+26,im.width*kk,im.height*kk)}
     qs.forEach((q,i)=>T(String(q[k]??''),y+44,'400',38,'#fff','center',tx-cw/2-i*cw));
     T(String(tot),y+44,'800',40,'#fff','center',tx-cw/2-qs.length*cw)})}
-  /* מהלך המשחק: השורות האחרונות */
-  const pl=(L.pbp||[]).filter(e=>e&&e.text).slice(0,qs.length?4:6),py=qs.length?ty+row*3+110:ty+40;
-  if(pl.length){T('מהלך המשחק',py,'800',34,'rgba(255,255,255,.75)');
-   pl.forEach((e,i)=>{const t=(e.clock?e.clock+' · ':'')+e.text;x.font=F(i?'400':'800',36);let q=t;while(x.measureText(q).width>820&&q.length>3)q=q.slice(0,-2)+'…';T(q,py+62+i*58,i?'400':'800',36,i?'rgba(255,255,255,.8)':'#fff')})}}
+  }
  else{T('VS',top+cs/2+30,'400',64,'rgba(255,255,255,.8)');
   T(fdLong(g),top+cs+190,'400',44);T(g.v||(g.h?'משחק בית':'משחק חוץ'),top+cs+255,'400',40,'rgba(255,255,255,.85)');
   /* הספירה לאחור – נכון לרגע השיתוף */
