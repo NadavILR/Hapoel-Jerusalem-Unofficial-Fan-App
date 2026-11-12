@@ -6,7 +6,7 @@ name: Build Android app (APK)
 on:
   push:
     branches: [main, ccr-14a15d85-izwe4r]
-    paths: ['www/**', 'android/**', 'VERSION', 'capacitor.config.json', 'package.json', '.github/workflows/android.yml']
+    paths: ['www/**', 'android/**', 'VERSION', 'CHANNEL', 'capacitor.config.json', 'package.json', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -39,10 +39,14 @@ jobs:
           t="v$v"
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "tag=$t" >> "$GITHUB_OUTPUT"; echo "pre=false" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v" >> "$GITHUB_OUTPUT"
+          elif [ "$(tr -d '[:space:]' < CHANNEL 2>/dev/null)" = "alpha" ]; then
+            # Alpha: the earliest builds, a channel of their own (tag vX.Y-alpha). Only users who chose "גם אלפא" in the
+            # app's settings are offered it; the beta channel never sees it
+            echo "tag=$t-alpha" >> "$GITHUB_OUTPUT"; echo "pre=true" >> "$GITHUB_OUTPUT"; echo "chan=alpha" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v (אלפא)" >> "$GITHUB_OUTPUT"
           else
             # Pre-release: the "-beta" tag is never offered as an update (releases/latest skips pre-releases, and the
             # app's releases.atom fallback only accepts tags like v1.132 / v1.2.3)
-            echo "tag=$t-beta" >> "$GITHUB_OUTPUT"; echo "pre=true" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v (ניסיונית)" >> "$GITHUB_OUTPUT"
+            echo "tag=$t-beta" >> "$GITHUB_OUTPUT"; echo "pre=true" >> "$GITHUB_OUTPUT"; echo "chan=beta" >> "$GITHUB_OUTPUT"; echo "title=גרסה $v (ניסיונית)" >> "$GITHUB_OUTPUT"
           fi
       - name: Restore the signing key from GitHub secrets
         env:
@@ -72,7 +76,9 @@ jobs:
       - name: Write the release notes (what's new, from CHANGELOG.md)
         run: |
           node scripts/release-notes.js "${{ steps.ver.outputs.version }}" > release-notes.md || printf 'אפליקציית האנדרואיד של הפועל ירושלים – גרסה %s.\n' "${{ steps.ver.outputs.version }}" > release-notes.md
-          if [ "${{ steps.ver.outputs.pre }}" = "true" ]; then
+          if [ "${{ steps.ver.outputs.chan }}" = "alpha" ]; then
+            sed -i 's/ מי שהאפליקציה כבר מותקנת אצלו יקבל את העדכון גם מתוך האפליקציה\./ זו גרסת אלפא – המוקדמת ביותר, לפני גרסאות הבטא: היא מוצעת כעדכון בתוך האפליקציה רק למי שבחר בהגדרות לקבל גם גרסאות אלפא./' release-notes.md
+          elif [ "${{ steps.ver.outputs.pre }}" = "true" ]; then
             # A pre-release is not offered inside the app
             sed -i 's/ מי שהאפליקציה כבר מותקנת אצלו יקבל את העדכון גם מתוך האפליקציה\./ זו גרסה ניסיונית: היא מוצעת כעדכון בתוך האפליקציה רק למי שבחר בהגדרות לקבל גם גרסאות ניסיון (בטא)./' release-notes.md
           fi
