@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The next game / live game widget: resizable from 1x2 up to the full width (layouts per size in NextGameWidget) -->
+<!-- The next game / live game widget: resizable from one cell row / column up to the full width (layouts per size in NextGameWidget) -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="110dp"
     android:minHeight="110dp"
     android:minResizeWidth="40dp"
-    android:minResizeHeight="90dp"
+    android:minResizeHeight="40dp"
     android:targetCellWidth="2"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"

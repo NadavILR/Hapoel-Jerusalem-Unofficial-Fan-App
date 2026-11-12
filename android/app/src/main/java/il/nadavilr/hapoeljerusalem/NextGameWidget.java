@@ -101,9 +101,13 @@ public class NextGameWidget extends AppWidgetProvider {
 
     // ---------- building the widget ----------
 
-    private static final int TINY = 0, SMALL = 1, TALL = 2, XTALL = 3, WIDE = 4;
+    private static final int TINY = 0, SMALL = 1, TALL = 2, XTALL = 3, WIDE = 4, ROW2 = 5, ROW = 6, COL = 7, COLX = 8;
     private static final int[] LAYOUTS = {R.layout.widget_tiny, R.layout.widget_small, R.layout.widget_tall,
-        R.layout.widget_xtall, R.layout.widget_wide};
+        R.layout.widget_xtall, R.layout.widget_wide, R.layout.widget_row2, R.layout.widget_row, R.layout.widget_col,
+        R.layout.widget_colx};
+    /** The smallest size (dp) for each layout; Android picks the biggest one that fits the widget. */
+    private static final float[][] SIZES = {{40f, 90f}, {100f, 90f}, {100f, 160f}, {100f, 230f}, {230f, 90f},
+        {100f, 40f}, {170f, 40f}, {40f, 160f}, {40f, 250f}};
 
     static synchronized void update(Context c) {
         AppWidgetManager m = AppWidgetManager.getInstance(c);
@@ -122,11 +126,7 @@ public class NextGameWidget extends AppWidgetProvider {
                 if (Build.VERSION.SDK_INT >= 31) {
                     // Android picks the biggest layout that fits the widget's size
                     Map<SizeF, RemoteViews> map = new HashMap<>();
-                    map.put(new SizeF(40f, 90f), build(c, TINY, d, crests));
-                    map.put(new SizeF(100f, 90f), build(c, SMALL, d, crests));
-                    map.put(new SizeF(100f, 160f), build(c, TALL, d, crests));
-                    map.put(new SizeF(100f, 230f), build(c, XTALL, d, crests));
-                    map.put(new SizeF(230f, 90f), build(c, WIDE, d, crests));
+                    for (int k = 0; k < LAYOUTS.length; k++) map.put(new SizeF(SIZES[k][0], SIZES[k][1]), build(c, k, d, crests));
                     v = new RemoteViews(map);
                 } else {
                     v = build(c, pick(m.getAppWidgetOptions(id)), d, crests);
@@ -142,11 +142,16 @@ public class NextGameWidget extends AppWidgetProvider {
     private static int pick(Bundle o) {
         int w = o != null ? o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 110) : 110;
         int h = o != null ? o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110) : 110;
-        if (w >= 230 && h < 160) return WIDE;
-        if (w < 100) return TINY;
-        if (h >= 230) return XTALL;
-        if (h >= 160) return TALL;
-        return w >= 230 ? WIDE : SMALL;
+        // the biggest layout (by area) whose smallest size fits, as Android 12+ does
+        int best = SMALL;
+        float area = -1;
+        for (int k = 0; k < SIZES.length; k++) {
+            if (SIZES[k][0] <= w && SIZES[k][1] <= h && SIZES[k][0] * SIZES[k][1] > area) {
+                area = SIZES[k][0] * SIZES[k][1];
+                best = k;
+            }
+        }
+        return best;
     }
 
     /** What the widget shows: the game (next or live). */

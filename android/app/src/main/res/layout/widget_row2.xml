@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget (NextGameWidget). Right to left: home team on the right / on top -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center" android:background="@drawable/widget_bg" android:padding="6dp" android:layoutDirection="rtl">
+<ImageView android:id="@+id/w_opp_crest" android:layout_width="30dp" android:layout_height="30dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
+<FrameLayout android:layout_width="6dp" android:layout_height="1dp" />
+<LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+  <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
+    <TextView android:id="@+id/w_mid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" android:text="VS" android:layoutDirection="rtl" android:fontFeatureSettings="tnum"/>
+    <FrameLayout android:layout_width="4dp" android:layout_height="1dp" />
+    <TextView android:id="@+id/w_live" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/widget_live" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:textColor="#D21919" android:textSize="8sp" android:textStyle="bold" android:text="LIVE" android:visibility="gone" android:maxLines="1" />
+  </LinearLayout>
+  <TextView android:id="@+id/w_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
+  <LinearLayout android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:background="@drawable/widget_box" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="3dp" android:paddingBottom="3dp">
+  <TextView android:id="@+id/w_days" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:layout_marginEnd="3dp"/>
+  <Chronometer android:id="@+id/w_chrono" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" />
+</LinearLayout>
+</LinearLayout>
+</LinearLayout>
