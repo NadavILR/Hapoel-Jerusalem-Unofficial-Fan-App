@@ -27,8 +27,8 @@ html,body{overscroll-behavior:none}html{scroll-padding-top:var(--sat);touch-acti
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 /* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
 /* רקע לכל המסכים: פסים אדומים – על #282828 במצב כהה, ועל לבן במצב בהיר */
-body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:#fff url(bg/pattern-light.webp) right center/cover no-repeat}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#000 url(bg/pattern-dark.webp) right center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#000 url(bg/pattern-dark.webp) right center/cover no-repeat}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:#fff url(bg/pattern-light.webp) center/cover no-repeat}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#000 url(bg/pattern-dark.webp) center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#000 url(bg/pattern-dark.webp) center/cover no-repeat}
 .sf{background:rgb(var(--sf-rgb)/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid var(--gl-bd);box-shadow:var(--gl-hi),0 6px 20px rgb(0 0 0/.06)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .15s var(--ease),transform .18s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
 .me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.tint-glass{border:1px solid var(--gl-bd);background:rgb(0 0 0/.09);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
@@ -39,8 +39,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .bscroll{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.bscroll .sf{box-shadow:var(--gl-hi)}
 .chips{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.chips>*{box-shadow:none!important}
 @media (prefers-reduced-motion:reduce){body::before,.upd-bg{background-image:url(bg/pattern-light.jpg)!important}:root[data-theme="dark"] body::before,:root[data-theme="dark"] .upd-bg{background-image:url(bg/pattern-dark.jpg)!important}}@media (prefers-reduced-motion:reduce) and (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before,:root:not([data-theme="light"]) .upd-bg{background-image:url(bg/pattern-dark.jpg)!important}}
-.upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.webp) right center/cover no-repeat}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.webp) right center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.webp) right center/cover no-repeat}
+.upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.webp) center/cover no-repeat}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.webp) center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.webp) center/cover no-repeat}
 .score-dock{position:fixed;left:0;right:0;top:var(--hdh,64px);z-index:21;opacity:0;transform:translateY(-10px) scale(1.06);pointer-events:none;transition:opacity .2s var(--ease),transform .25s var(--ease)}.score-dock.on{opacity:1;transform:none;pointer-events:auto}
 /* התוצאה בלייב בתוך סרגל הניווט התחתון עצמו (בכל העמודים חוץ מעמודי המשחק): הסרגל גדל כלפי מעלה, כך שהתוצאה והניווט הם אותה שכבת זכוכית אחת */
 .live-dock{position:relative;z-index:1;animation:ldIn .28s var(--ease) both}@keyframes ldIn{from{opacity:0}}
@@ -582,7 +582,7 @@ async function storyCanvas(g,L,o={}){
  /* בסרטון (o.bg===false) הכרטיס מצויר על שקוף, והרקע המונפש מתחתיו בכל פריים */
  if(o.bg!==false){x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh)}
  const pat=o.bg===false?null:await imgLoad(dark?'bg/pattern-dark.jpg':'bg/pattern-light.jpg');
- if(pat){const k=Math.max(W/pat.width,Hh/pat.height),w=pat.width*k,h=pat.height*k;x.drawImage(pat,W-w,(Hh-h)/2,w,h)}
+ if(pat){const k=Math.max(W/pat.width,Hh/pat.height),w=pat.width*k,h=pat.height*k;x.drawImage(pat,(W-w)/2,(Hh-h)/2,w,h)}
  const blk=(getComputedStyle(document.documentElement).getPropertyValue('--blk')||'').trim()||'#111';
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia]=await Promise.all([crestImg(hm),crestImg(aw)]);
  /* הכרטיס עצמו, במרכז התמונה */
@@ -642,7 +642,7 @@ async function storyVideo(g,L,prog){
    const s=Math.floor(i/fps);if(!card||(!live&&s!==sec)){sec=s;card=await storyCanvas(g,L,{bg:false,now:t0+s*1000})}
    x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh);
    const {image:fr}=await dec.decode({frameIndex:i%fc});const iw=fr.displayWidth,ih=fr.displayHeight,k=Math.max(W/iw,Hh/ih);
-   x.drawImage(fr,W-iw*k,(Hh-ih*k)/2,iw*k,ih*k);fr.close();x.drawImage(card,0,0);
+   x.drawImage(fr,(W-iw*k)/2,(Hh-ih*k)/2,iw*k,ih*k);fr.close();x.drawImage(card,0,0);
    const vf=new VideoFrame(cv,{timestamp:Math.round(i*us),duration:Math.round(us)});enc.encode(vf,{keyFrame:i%(fps*2)===0});vf.close();
    while(enc.encodeQueueSize>6)await new Promise(r=>setTimeout(r,4));
    if(prog&&i%10===0)prog(i/N)}
