@@ -620,13 +620,13 @@ async function storyCanvas(g,L,o={}){
   const df=Math.max(0,g.t-(o.now||Date.now())),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]],bw=190,gap=26,y0=top+cs+330,tw=4*bw+3*gap,x0=(W-tw)/2;
   u.forEach(([l,v],i)=>{const X=x0+i*(bw+gap);rr(X,y0,bw,190,36);x.fillStyle='rgba(255,255,255,.12)';x.fill();T(String(v).padStart(2,'0'),y0+112,'800',84,'#fff','center',X+bw/2);T(l,y0+165,'400',34,'rgba(255,255,255,.8)','center',X+bw/2)})}
  c.remove();return c}
-/* סרטון לסטורי: 20 שניות, 1080×1920, 25 פריימים לשנייה – הכרטיס מעל הרקע המונפש של האפליקציה (בהיר / כהה).
+/* סרטון לסטורי: 20 שניות, 1080×1920, 30 פריימים לשנייה (כמו קבצי הרקע) – הכרטיס מעל הרקע המונפש של האפליקציה (בהיר / כהה).
    מקודד בטלפון עצמו (WebCodecs – H.264, נארז ל-MP4 ב-mp4-muxer). בספירה לאחור השניות יורדות בזמן הסרטון. אם המכשיר
    לא תומך – null, ומשתפים תמונה כמו קודם. */
 const jsLoad=src=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)});
 async function storyVideo(g,L,prog){
  if(!window.VideoEncoder||!window.VideoFrame||!window.ImageDecoder)return null;
- const W=1080,Hh=1920,fps=25,N=fps*20,us=1e6/fps;
+ const W=1080,Hh=1920,fps=30,N=fps*20,us=1e6/fps;
  const th=document.documentElement.getAttribute('data-theme'),dark=th?th==='dark':!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
  const base={codec:'avc1.640028',width:W,height:Hh,bitrate:4e6,framerate:fps,avc:{format:'avc'}};let cfg=null;
  for(const codec of ['avc1.640028','avc1.4d0028','avc1.42e028','avc1.640032','avc1.420032'])try{const r=await VideoEncoder.isConfigSupported({...base,codec});if(r&&r.supported){cfg={...base,codec};break}}catch(e){}
