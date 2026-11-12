@@ -1,0 +1,416 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T23:27:45.860680+00:00",
+  "title": "Design System: הפועל ירושלים – אפליקציית האוהדים",
+  "extensions": {
+    "colorMeta": {
+      "jerusalem-red": {
+        "role": "primary",
+        "displayName": "Jerusalem Red",
+        "canonical": "#D21919",
+        "tonalRamp": [
+          "#381515",
+          "#631d1d",
+          "#932020",
+          "#c81e1e",
+          "#e13737",
+          "#e07b7b",
+          "#e7bbbb",
+          "#f7eeee"
+        ]
+      },
+      "jerusalem-red-deep": {
+        "role": "primary",
+        "displayName": "Jerusalem Red Deep",
+        "canonical": "#b31515",
+        "tonalRamp": [
+          "#381515",
+          "#631c1c",
+          "#931f1f",
+          "#c81e1e",
+          "#e13737",
+          "#e07b7b",
+          "#e7bbbb",
+          "#f7eeee"
+        ]
+      },
+      "jerusalem-red-bright": {
+        "role": "primary",
+        "displayName": "Jerusalem Red Bright",
+        "canonical": "#ff5c5c",
+        "tonalRamp": [
+          "#3c1010",
+          "#6c1313",
+          "#a21010",
+          "#df0707",
+          "#f82020",
+          "#ed6d6d",
+          "#edb5b5",
+          "#f8ecec"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#282828",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#adadad",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#adadad",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "mist": {
+        "role": "neutral",
+        "displayName": "Mist",
+        "canonical": "#f4f4f5",
+        "tonalRamp": [
+          "#252527",
+          "#3e3e42",
+          "#56565d",
+          "#6e6e78",
+          "#878791",
+          "#aaaab0",
+          "#d0d0d2",
+          "#f2f2f3"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#adadad",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#333333",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#adadad",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "muted-light": {
+        "role": "neutral",
+        "displayName": "Muted Light",
+        "canonical": "#71717a",
+        "tonalRamp": [
+          "#252527",
+          "#3e3e41",
+          "#56565c",
+          "#6f6f77",
+          "#888890",
+          "#ababb0",
+          "#d0d0d2",
+          "#f2f2f2"
+        ]
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Muted Dark",
+        "canonical": "#a1a1aa",
+        "tonalRamp": [
+          "#252527",
+          "#3e3e42",
+          "#56565d",
+          "#6d6d78",
+          "#878792",
+          "#aaaab1",
+          "#d0d0d3",
+          "#f2f2f3"
+        ]
+      },
+      "hairline-light": {
+        "role": "neutral",
+        "displayName": "Hairline Light",
+        "canonical": "#e4e4e7",
+        "tonalRamp": [
+          "#252528",
+          "#3d3d42",
+          "#55555e",
+          "#6c6c79",
+          "#868693",
+          "#aaaab1",
+          "#cfcfd3",
+          "#f2f2f3"
+        ]
+      },
+      "hairline-dark": {
+        "role": "neutral",
+        "displayName": "Hairline Dark",
+        "canonical": "#444444",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#adadad",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "win-green": {
+        "role": "status",
+        "displayName": "Win Green",
+        "canonical": "#16a34a",
+        "tonalRamp": [
+          "#153722",
+          "#1e6237",
+          "#21914b",
+          "#21c55d",
+          "#3ade77",
+          "#7ddea1",
+          "#bce7cb",
+          "#eef7f1"
+        ]
+      },
+      "win-green-bright": {
+        "role": "status",
+        "displayName": "Win Green Bright",
+        "canonical": "#4ade80",
+        "tonalRamp": [
+          "#173622",
+          "#215f37",
+          "#278c4c",
+          "#28bd5f",
+          "#42d778",
+          "#81daa1",
+          "#bee5cc",
+          "#eef6f1"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Scores and countdown numerals."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Team names on the hero card, page titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and section titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Rows, descriptions, news, play-by-play."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Captions, chips, tab labels, stamps."
+      }
+    },
+    "shadows": [
+      {
+        "name": "glass-highlight-light",
+        "value": "inset 0 1px 0 rgb(255 255 255/.85)",
+        "purpose": "Top edge of glass panes, light theme."
+      },
+      {
+        "name": "glass-highlight-dark",
+        "value": "inset 0 1px 0 rgb(255 255 255/.07)",
+        "purpose": "Top edge of glass panes, dark theme."
+      },
+      {
+        "name": "floating-menu",
+        "value": "inset 0 1px 0 rgb(255 255 255/.85), 0 12px 32px rgb(0 0 0/.18)",
+        "purpose": "Menus and popovers."
+      },
+      {
+        "name": "red-indicator",
+        "value": "0 2px 8px rgb(210 25 25/.3)",
+        "purpose": "Sliding segmented-control indicator."
+      },
+      {
+        "name": "red-card-edge",
+        "value": "inset 0 1px 0 rgb(255 255 255/.18)",
+        "purpose": "Top highlight of the red card."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.22,1,.36,1)",
+        "purpose": "The single easing curve for all transitions."
+      },
+      {
+        "name": "press",
+        "value": "scale(.96) in 60ms",
+        "purpose": "Every button and link on press."
+      },
+      {
+        "name": "page-in",
+        "value": "translateY(4px)→0, 200ms",
+        "purpose": "Page and list entrance."
+      },
+      {
+        "name": "sheet-in",
+        "value": "translateY(100%)→0, 240ms",
+        "purpose": "Bottom sheets."
+      },
+      {
+        "name": "live-beat",
+        "value": "scale 1→1.06→1 over 1.8s, infinite",
+        "purpose": "Live tag only while a game is live."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action: Jerusalem Red fill, white text.",
+      "html": "<button class=\"ds-btn-primary\">לעמוד המשחק</button>",
+      "css": ".ds-btn-primary{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;background:#D21919;color:#fff;border:0;border-radius:12px;padding:8px 16px;font-size:14px;font-weight:700;transition:transform .18s cubic-bezier(.22,1,.36,1),background-color .15s cubic-bezier(.22,1,.36,1);}.ds-btn-primary:hover{background:#b31515}.ds-btn-primary:focus-visible{outline:2px solid #D21919;outline-offset:2px}.ds-btn-primary:active{transform:scale(.96);transition-duration:.06s}"
+    },
+    {
+      "name": "Glass Button on Red",
+      "kind": "button",
+      "refersTo": "red-card",
+      "description": "Translucent button inside the red card.",
+      "html": "<div class=\"ds-red-wrap\"><button class=\"ds-btn-glass\">הגדר תזכורת למשחק</button></div>",
+      "css": ".ds-red-wrap{background:linear-gradient(135deg,#D21919,#282828);padding:16px;border-radius:20px}.ds-btn-glass{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;width:100%;background:rgb(255 255 255/.15);color:#fff;border:1px solid rgb(0 0 0/.3);box-shadow:inset 0 1px 0 rgb(255 255 255/.14);border-radius:12px;padding:10px 16px;font-size:14px;font-weight:700;transition:transform .18s cubic-bezier(.22,1,.36,1),background-color .15s cubic-bezier(.22,1,.36,1);}.ds-btn-glass:hover{background:rgb(255 255 255/.22)}.ds-btn-glass:focus-visible{outline:2px solid #fff;outline-offset:2px}.ds-btn-glass:active{transform:scale(.96)}"
+    },
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card-glass",
+      "description": "Standard content card on frosted glass.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-t\">מיקום בליגת ווינר סל</div><div class=\"ds-card-n\">מקום 1</div><div class=\"ds-card-s\">5 נצ׳ · 0 הפ׳</div></div>",
+      "css": ".ds-card{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;background:rgb(255 255 255/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid rgb(0 0 0/.3);box-shadow:inset 0 1px 0 rgb(255 255 255/.85);border-radius:16px;padding:12px;color:#282828;direction:rtl;max-width:220px}.ds-card-t{font-size:12px;color:#71717a}.ds-card-n{font-size:24px;font-weight:800;color:#D21919;font-variant-numeric:tabular-nums}.ds-card-s{font-size:12px;color:#71717a}"
+    },
+    {
+      "name": "Red Card",
+      "kind": "custom",
+      "refersTo": "red-card",
+      "description": "Signature hero card: next game with countdown.",
+      "html": "<div class=\"ds-red\"><div class=\"ds-red-l\">המשחק הבא · ליגת ווינר</div><div class=\"ds-red-m\"><b>הפועל ירושלים</b><span>VS</span><span>מכבי תל אביב</span></div><div class=\"ds-red-cd\"><div><b>02</b><i>ימים</i></div><div><b>06</b><i>שעות</i></div><div><b>14</b><i>דקות</i></div><div><b>09</b><i>שניות</i></div></div></div>",
+      "css": ".ds-red{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;direction:rtl;background:linear-gradient(135deg,#D21919,#282828);color:#fff;border-radius:20px;padding:16px;border:1px solid rgb(0 0 0/.3);box-shadow:inset 0 1px 0 rgb(255 255 255/.18);max-width:340px}.ds-red-l{font-size:12px;opacity:.85;text-align:center}.ds-red-m{display:flex;justify-content:space-between;align-items:center;margin:12px 0;font-size:16px}.ds-red-m span:nth-child(2){opacity:.7;font-size:12px}.ds-red-cd{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ds-red-cd div{background:rgb(255 255 255/.1);border:1px solid rgb(0 0 0/.3);border-radius:12px;padding:8px 0;text-align:center}.ds-red-cd b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}.ds-red-cd i{font-style:normal;font-size:11px;opacity:.8}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented-active",
+      "description": "Tabs with a red sliding indicator.",
+      "html": "<div class=\"ds-seg\"><button class=\"on\">ליגת ווינר</button><button>יורוקאפ</button><button>גביע ווינר</button></div>",
+      "css": ".ds-seg{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;direction:rtl;display:flex;gap:4px;padding:4px;border-radius:16px;background:rgb(0 0 0/.06);border:1px solid rgb(0 0 0/.3)}.ds-seg button{flex:1;border:0;background:transparent;border-radius:11px;padding:6px 10px;font-size:13px;font-weight:700;color:#282828;transition:color .22s cubic-bezier(.22,1,.36,1),background-color .22s}.ds-seg button.on{background:#D21919;color:#fff;box-shadow:0 2px 8px rgb(210 25 25/.3)}.ds-seg button:hover:not(.on){background:rgb(210 25 25/.08)}.ds-seg button:focus-visible{outline:2px solid #D21919;outline-offset:1px}"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Glass bar; active item gets a red-tinted pill.",
+      "html": "<nav class=\"ds-nav\"><a class=\"on\">בית</a><a>משחקים</a><a>טבלאות</a><a>סגל</a><a>עוד</a></nav>",
+      "css": ".ds-nav{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;direction:rtl;display:flex;justify-content:space-around;padding:8px;background:rgb(255 255 255/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border-top:1px solid rgb(0 0 0/.3)}.ds-nav a{font-size:12px;color:#282828;padding:6px 12px;border-radius:9999px;cursor:pointer;transition:background-color .15s cubic-bezier(.22,1,.36,1)}.ds-nav a.on{background:rgb(210 25 25/.12);color:#D21919;font-weight:700}.ds-nav a:hover:not(.on){background:rgb(0 0 0/.05)}.ds-nav a:focus-visible{outline:2px solid #D21919}"
+    },
+    {
+      "name": "Live Tag",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Red pill that beats only while a game is live.",
+      "html": "<span class=\"ds-live\">לייב</span>",
+      "css": ".ds-live{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;display:inline-block;background:#D21919;color:#fff;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:800;animation:ds-beat 1.8s cubic-bezier(.22,1,.36,1) infinite}@keyframes ds-beat{0%{transform:scale(1)}12%{transform:scale(1.06)}24%{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.ds-live{animation:none}}"
+    },
+    {
+      "name": "My-Team Table Row",
+      "kind": "custom",
+      "refersTo": "my-team-row",
+      "description": "Standings row highlighting Hapoel Jerusalem.",
+      "html": "<div class=\"ds-tbl\"><div class=\"ds-row me\"><span>1</span><span>הפועל ירושלים</span><span>5-0</span></div><div class=\"ds-row\"><span>2</span><span>מכבי תל אביב</span><span>4-1</span></div></div>",
+      "css": ".ds-tbl{font-family:\"Noto Sans Hebrew\",system-ui,sans-serif;direction:rtl;font-size:14px;max-width:320px}.ds-row{display:grid;grid-template-columns:28px 1fr 48px;padding:8px 10px;border-radius:12px;color:#282828;font-variant-numeric:tabular-nums}.ds-row.me{background:rgb(210 25 25/.08);color:#b31515;font-weight:700}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Glass Over the Arena",
+    "overview": "The app is a stack of frosted glass panes floating over a living, blurred red arena. The background is never still: a soft animated field of red bands (light or dark with the phone's theme) moves behind everything, and every surface above it – the header, the bottom navigation, cards, menus, sheets – is glass that lets that motion glow through. Content sits on the glass; the club's red is the one loud voice, reserved for what matters on game day: the next game, the live score, the selected tab, your own team.\n\nIt should feel energetic and alive, but read precise and clean: numbers are big, tabular and instantly readable, and the hierarchy is calm so the live score can be loud. It is warm and fan-like (the red, the crests, Hebrew throughout, home team on the right) and finished with a premium touch (glass highlights, gentle depth, springy motion), without ever pretending to be the club's official product.",
+    "keyCharacteristics": [
+      "Frosted glass surfaces (24px blur, 1.8 saturation) over an animated, blurred red background.",
+      "One accent: Jerusalem Red, used for the hero card, live state, selection and \"my team\".",
+      "Big tabular numbers for scores, clocks and countdowns.",
+      "Right-to-left Hebrew layout, Noto Sans Hebrew everywhere – app, widget and live card.",
+      "Light and dark themes with the same structure; only the tints and the background clip change.",
+      "Quick, springy motion on one easing curve; motion is removed for reduced-motion users."
+    ],
+    "rules": [
+      {
+        "name": "The One Red Rule",
+        "body": "Jerusalem Red is the only brand color. A screen has one red hero at most; everything else uses red only as a tint or a small indicator.",
+        "section": "colors"
+      },
+      {
+        "name": "The Crest Speaks Rule",
+        "body": "Team colors come from the crests themselves, never from extra accent colors in the chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Score Rule",
+        "body": "Every number that changes – score, clock, countdown, stat – uses tabular figures, so updates never shift the layout.",
+        "section": "typography"
+      },
+      {
+        "name": "The Bold Is Ours Rule",
+        "body": "In a matchup, Hapoel Jerusalem's name is bold (800) and the opponent's is regular (400).",
+        "section": "typography"
+      },
+      {
+        "name": "The Glass Needs Something Behind It Rule",
+        "body": "Blur only where content or the animated background shows through. Inside the opaque red card, inner boxes drop the blur and keep only the translucent fill and edge.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep Jerusalem Red (#D21919) as the single brand accent, and keep the club crest as the identity.",
+      "Do put content on glass (blur 24px, saturation 1.8, 1px edge, inner top highlight) over the animated background.",
+      "Do use tabular numbers for scores, clocks, countdowns and stats.",
+      "Do place the home team on the right and lay everything out right-to-left.",
+      "Do design every screen for both light and dark themes.",
+      "Do use the shared easing curve (cubic-bezier(.22,1,.36,1)) with short durations (120–280ms), and disable motion for reduced-motion users."
+    ],
+    "donts": [
+      "Don't add a second brand color to the chrome; team colors come only from crests.",
+      "Don't present anything as official club material; the app is a fan app and says so.",
+      "Don't blur inside opaque surfaces (like the red card) where nothing shows through.",
+      "Don't animate the live tag or pulse anything when a game isn't live.",
+      "Don't use fonts other than Noto Sans Hebrew, or letter-spaced uppercase labels."
+    ]
+  }
+}
