@@ -27,8 +27,8 @@ html,body{overscroll-behavior:none}html{scroll-padding-top:var(--sat);touch-acti
 body{background:var(--bg);color:var(--tx);font-family:"Noto Sans Hebrew",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0}
 /* פס הסטטוס שקוף: הכותרת (זכוכית חלבית) נמשכת מתחתיו */
 /* רקע לכל המסכים: פסים אדומים – על #282828 במצב כהה, ועל לבן במצב בהיר */
-body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:#fff url(bg/pattern-light.jpg) center/cover no-repeat}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:#fff url(bg/pattern-light.jpg) right center/cover no-repeat}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:#000 url(bg/pattern-dark.jpg) right center/cover no-repeat}}:root[data-theme="dark"] body::before{background:#000 url(bg/pattern-dark.jpg) right center/cover no-repeat}
 .sf{background:rgb(var(--sf-rgb)/.62);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);border:1px solid var(--gl-bd);box-shadow:var(--gl-hi),0 6px 20px rgb(0 0 0/.06)}.sf.rounded-xl{border-radius:16px}.sf.rounded-2xl{border-radius:20px}
 .nav-pill{transition:background-color .15s var(--ease),transform .18s var(--ease)}.nav-pill.on{background:rgb(210 25 25/.12)}
 .me-row{background:rgb(210 25 25/.08);color:#b31515}.dt-home{background:#D21919;color:#fff}.dt-away{background:var(--tx);color:var(--bg)}.tint-glass{border:1px solid var(--gl-bd);background:rgb(0 0 0/.09);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8)}
@@ -38,8 +38,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;ba
 .glass-sheet button:active,.glass-sheet a:active{transform:none}
 .bscroll{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.bscroll .sf{box-shadow:var(--gl-hi)}
 .chips{padding-top:6px;padding-bottom:12px;margin-top:-6px;margin-bottom:-4px}.chips>*{box-shadow:none!important}
-.upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.jpg) center/cover no-repeat}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.jpg) center/cover no-repeat}
+.upd-gate{background:#fff}.upd-bg{background:#fff url(bg/pattern-light.jpg) right center/cover no-repeat}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .upd-gate{background:#000}:root:not([data-theme="light"]) .upd-bg{background:#000 url(bg/pattern-dark.jpg) right center/cover no-repeat}}:root[data-theme="dark"] .upd-gate{background:#000}:root[data-theme="dark"] .upd-bg{background:#000 url(bg/pattern-dark.jpg) right center/cover no-repeat}
 .score-dock{position:fixed;left:0;right:0;top:var(--hdh,64px);z-index:21;opacity:0;transform:translateY(-10px) scale(1.06);pointer-events:none;transition:opacity .2s var(--ease),transform .25s var(--ease)}.score-dock.on{opacity:1;transform:none;pointer-events:auto}
 /* התוצאה בלייב בתוך סרגל הניווט התחתון עצמו (בכל העמודים חוץ מעמודי המשחק): הסרגל גדל כלפי מעלה, כך שהתוצאה והניווט הם אותה שכבת זכוכית אחת */
 .live-dock{position:relative;z-index:1;animation:ldIn .28s var(--ease) both}@keyframes ldIn{from{opacity:0}}
@@ -580,7 +580,7 @@ async function storyCanvas(g,L){
  const th=document.documentElement.getAttribute('data-theme'),dark=th?th==='dark':!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
  x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,W,Hh);
  const pat=await imgLoad(dark?'bg/pattern-dark.jpg':'bg/pattern-light.jpg');
- if(pat){const k=Math.max(W/pat.width,Hh/pat.height),w=pat.width*k,h=pat.height*k;x.drawImage(pat,(W-w)/2,(Hh-h)/2,w,h)}
+ if(pat){const k=Math.max(W/pat.width,Hh/pat.height),w=pat.width*k,h=pat.height*k;x.drawImage(pat,W-w,(Hh-h)/2,w,h)}
  const blk=(getComputedStyle(document.documentElement).getPropertyValue('--blk')||'').trim()||'#111';
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia]=await Promise.all([crestImg(hm),crestImg(aw)]);
  /* הכרטיס עצמו, במרכז התמונה */
