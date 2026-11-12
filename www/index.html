@@ -568,7 +568,9 @@ function NImg({src}){const [bad,setBad]=useState(false);return bad?null:html`<im
 const imgLoad=src=>new Promise(res=>{if(!src)return res(null);const i=new Image();i.crossOrigin='anonymous';i.referrerPolicy='no-referrer';i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src});
 async function crestImg(n){if(n===ME)return imgLoad(LOGO);for(const s of crestSrcs(n)){const i=await imgLoad(s);if(i)return i}const j=await crGet().catch(()=>null),v=j&&j[n];return crOk(v)?imgLoad(v):null}
 async function storyCanvas(g,L){
- const W=1080,Hh=1920,c=document.createElement('canvas');c.width=W;c.height=Hh;const x=c.getContext('2d');
+ const W=1080,Hh=1920,c=document.createElement('canvas');c.width=W;c.height=Hh;
+ /* כיוון הטקסט מימין לשמאל: הקנבס מקבל dir="rtl" ונמצא במסמך בזמן הציור (אחרת חלק מהדפדפנים מתעלמים מהכיוון) */
+ c.setAttribute('dir','rtl');c.style.cssText='position:fixed;left:-99999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';document.body.appendChild(c);const x=c.getContext('2d');
  try{await document.fonts.load('800 80px "Noto Sans Hebrew"');await document.fonts.load('400 40px "Noto Sans Hebrew"')}catch(e){}
  const F=(w,s)=>w+' '+s+'px "Noto Sans Hebrew", sans-serif',T=(t,y,w,s,col='#fff',al='center',xx=W/2)=>{x.font=F(w,s);x.fillStyle=col;x.textAlign=al;x.direction='rtl';x.fillText(t,xx,y)};
  const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
@@ -580,10 +582,9 @@ async function storyCanvas(g,L){
  const blk=(getComputedStyle(document.documentElement).getPropertyValue('--blk')||'').trim()||'#111';
  const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia]=await Promise.all([crestImg(hm),crestImg(aw)]);
  /* הכרטיס עצמו, במרכז התמונה */
- const ch=1160,cy=(Hh-ch)/2;
+ const live=L&&L.status==='live',ch=live?1540:1160,cy=(Hh-ch)/2;
  /* הכרטיס האדום של האפליקציה (מאדום לשחור), עם צל רך */
  x.save();x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=60;x.shadowOffsetY=20;rr(70,cy,W-140,ch,64);const cg=x.createLinearGradient(70,cy,W-70,cy+ch);cg.addColorStop(0,'#D21919');cg.addColorStop(1,blk);x.fillStyle=cg;x.fill();x.restore();
- const live=L&&L.status==='live';
  if(live){T('הפועל',cy+170,'800',110,'#fff','left',W/2+20);
   x.font=F('800',110);const lw=x.measureText('לייב').width+70;rr(W/2-20-lw,cy+70,lw,140,36);x.fillStyle='#fff';x.fill();T('לייב',cy+175,'800',110,'#D21919','center',W/2-20-lw/2)}
  else{T('המשחק הבא',cy+120,'400',44,'rgba(255,255,255,.85)');T(cmp(g),cy+185,'400',40,'rgba(255,255,255,.85)')}
@@ -597,14 +598,26 @@ async function storyCanvas(g,L){
  nm(hm,xr+cs/2,hm===ME);nm(aw,xl+cs/2,aw===ME);
  if(live){T(String(L.hs),top+cs/2+45,'800',130,'#fff','center',W/2+160);T(String(L.as),top+cs/2+45,'800',130,'#fff','center',W/2-160);T('–',top+cs/2+35,'400',90,'rgba(255,255,255,.7)');
   const st=(qLbl(L.st)||'LIVE')+(L.clock?' • '+L.clock:'');x.font=F('800',46);const sw=x.measureText(st).width+80;rr(W/2-sw/2,top+cs+120,sw,84,42);x.fillStyle='rgba(255,255,255,.18)';x.fill();T(st,top+cs+178,'800',46);
-  T(cmp(g),top+cs+300,'400',40,'rgba(255,255,255,.85)');T(fdLong(g),top+cs+360,'400',40,'rgba(255,255,255,.85)');
-  if(L.pbp&&L.pbp[0]){const e=L.pbp[0],t=(e.clock?e.clock+' · ':'')+e.text;x.font=F('400',38);let q=t;while(x.measureText(q).width>820&&q.length>3)q=q.slice(0,-2)+'…';T(q,top+cs+450,'400',38,'rgba(255,255,255,.9)')}}
+  T(cmp(g)+' · '+fdLong(g).split(' · ').slice(0,2).join(' · '),top+cs+290,'400',36,'rgba(255,255,255,.85)');
+  /* התוצאה לפי רבעים: שורה לכל קבוצה (הסמל שלה מימין), עמודה לכל רבע וסה״כ */
+  const qs=(L.q||[]).filter(q=>q&&q.n).slice(0,8),ty=top+cs+350,row=78;
+  if(qs.length){const cols=qs.length+1,cw=Math.min(130,640/cols),rx=W-150,tx=rx-90;
+   rr(120,ty,W-240,row*3+20,32);x.fillStyle='rgba(255,255,255,.10)';x.fill();
+   [...qs.map(q=>q.n),'סה״כ'].forEach((n,i)=>T(n,ty+58,'800',30,'rgba(255,255,255,.75)','center',tx-cw/2-i*cw));
+   [[ih,'h',L.hs],[ia,'a',L.as]].forEach(([im,k,tot],r)=>{const y=ty+row*(r+1)+10;
+    if(im){const kk=Math.min(56/im.width,56/im.height);x.drawImage(im,rx-28-im.width*kk/2+28,y-im.height*kk/2+26,im.width*kk,im.height*kk)}
+    qs.forEach((q,i)=>T(String(q[k]??''),y+44,'400',38,'#fff','center',tx-cw/2-i*cw));
+    T(String(tot),y+44,'800',40,'#fff','center',tx-cw/2-qs.length*cw)})}
+  /* מהלך המשחק: השורות האחרונות */
+  const pl=(L.pbp||[]).filter(e=>e&&e.text).slice(0,qs.length?4:6),py=qs.length?ty+row*3+110:ty+40;
+  if(pl.length){T('מהלך המשחק',py,'800',34,'rgba(255,255,255,.75)');
+   pl.forEach((e,i)=>{const t=(e.clock?e.clock+' · ':'')+e.text;x.font=F(i?'400':'800',36);let q=t;while(x.measureText(q).width>820&&q.length>3)q=q.slice(0,-2)+'…';T(q,py+62+i*58,i?'400':'800',36,i?'rgba(255,255,255,.8)':'#fff')})}}
  else{T('VS',top+cs/2+30,'400',64,'rgba(255,255,255,.8)');
   T(fdLong(g),top+cs+190,'400',44);T(g.v||(g.h?'משחק בית':'משחק חוץ'),top+cs+255,'400',40,'rgba(255,255,255,.85)');
   /* הספירה לאחור – נכון לרגע השיתוף */
   const df=Math.max(0,g.t-Date.now()),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]],bw=190,gap=26,y0=top+cs+330,tw=4*bw+3*gap,x0=(W-tw)/2;
   u.forEach(([l,v],i)=>{const X=x0+i*(bw+gap);rr(X,y0,bw,190,36);x.fillStyle='rgba(255,255,255,.12)';x.fill();T(String(v).padStart(2,'0'),y0+112,'800',84,'#fff','center',X+bw/2);T(l,y0+165,'400',34,'rgba(255,255,255,.8)','center',X+bw/2)})}
- return c}
+ c.remove();return c}
 async function shareStory(A,g,L){try{A.toast('מכין תמונה לשיתוף…');const c=await storyCanvas(g,L),data=c.toDataURL('image/png'),txt=(L&&L.status==='live'?'הפועל לייב! ':'המשחק הבא של הפועל ירושלים: ')+NT.match(g);
   const P=plug('LiveActivity');if(P&&P.shareImage){await P.shareImage({data:data.split(',')[1],text:txt});return}
   const blob=await (await fetch(data)).blob(),file=new File([blob],'hapoel-story.png',{type:'image/png'});

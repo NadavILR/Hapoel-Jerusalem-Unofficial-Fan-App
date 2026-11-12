@@ -208,6 +208,7 @@ public class LiveActivityPlugin extends Plugin {
             demoClear = null;
             nm.cancel(LiveScoreService.NOTIF_ID);
             NotifGroup.refresh(c);
+            NextGameWidget.clearLive(c);
             r.put("shown", false);
             call.resolve(r);
             return;
@@ -237,6 +238,9 @@ public class LiveActivityPlugin extends Plugin {
         }
         demoHs = g.hs;
         demoAs = g.as;
+        // The home-screen widget shows the simulated game too
+        g.meHome = g.homeName.contains(LiveGame.TEAM);
+        NextGameWidget.live(c, g);
         LiveScoreService.ensureChannel(c);
         try {
             android.graphics.Bitmap hc = LiveGame.crestFor(c, g.homeName, g.homeImg), ac = LiveGame.crestFor(c, g.awayName, g.awayImg);

@@ -106,7 +106,7 @@ public class NextGameWidget extends AppWidgetProvider {
         R.layout.widget_xtall, R.layout.widget_wide, R.layout.widget_row2, R.layout.widget_row, R.layout.widget_col,
         R.layout.widget_colx};
     /** The smallest size (dp) for each layout; Android picks the biggest one that fits the widget. */
-    private static final float[][] SIZES = {{40f, 90f}, {100f, 90f}, {100f, 160f}, {100f, 230f}, {230f, 90f},
+    private static final float[][] SIZES = {{40f, 110f}, {100f, 110f}, {100f, 160f}, {100f, 230f}, {230f, 120f},
         {100f, 40f}, {170f, 40f}, {40f, 160f}, {40f, 250f}};
 
     static synchronized void update(Context c) {
