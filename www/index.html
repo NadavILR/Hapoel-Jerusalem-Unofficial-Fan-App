@@ -575,11 +575,9 @@ async function storyCanvas(g,L){
  /* הרקע: האדום של הכרטיס שנבלע בשחור, עם הארה רכה מלמעלה */
  const bg=x.createLinearGradient(0,0,W,Hh);bg.addColorStop(0,'#D21919');bg.addColorStop(1,'#140f0f');x.fillStyle=bg;x.fillRect(0,0,W,Hh);
  const gl=x.createRadialGradient(W*.7,Hh*.18,0,W*.7,Hh*.18,W);gl.addColorStop(0,'rgba(255,255,255,.18)');gl.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gl;x.fillRect(0,0,W,Hh);
- const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia,lg]=await Promise.all([crestImg(hm),crestImg(aw),imgLoad(LOGO)]);
- /* למעלה: הסמל והשם של האפליקציה */
- if(lg)x.drawImage(lg,W/2-60,120,120,120);T('הפועל ירושלים',300,'800',44);
- /* הכרטיס עצמו */
- const cy=420,ch=1160;rr(70,cy,W-140,ch,64);x.fillStyle='rgba(255,255,255,.10)';x.fill();x.strokeStyle='rgba(255,255,255,.22)';x.lineWidth=3;x.stroke();
+ const hm=g.h?ME:g.o,aw=g.h?g.o:ME,[ih,ia]=await Promise.all([crestImg(hm),crestImg(aw)]);
+ /* הכרטיס עצמו, במרכז התמונה */
+ const ch=1160,cy=(Hh-ch)/2;rr(70,cy,W-140,ch,64);x.fillStyle='rgba(255,255,255,.10)';x.fill();x.strokeStyle='rgba(255,255,255,.22)';x.lineWidth=3;x.stroke();
  const live=L&&L.status==='live';
  if(live){T('הפועל',cy+170,'800',110,'#fff','left',W/2+20);
   x.font=F('800',110);const lw=x.measureText('לייב').width+70;rr(W/2-20-lw,cy+70,lw,140,36);x.fillStyle='#fff';x.fill();T('לייב',cy+175,'800',110,'#D21919','center',W/2-20-lw/2)}
@@ -599,8 +597,6 @@ async function storyCanvas(g,L){
   /* הספירה לאחור – נכון לרגע השיתוף */
   const df=Math.max(0,g.t-Date.now()),u=[['ימים',df/D|0],['שעות',(df%D)/H|0],['דקות',(df%H)/6e4|0],['שניות',(df%6e4)/1e3|0]],bw=190,gap=26,y0=top+cs+330,tw=4*bw+3*gap,x0=(W-tw)/2;
   u.forEach(([l,v],i)=>{const X=x0+i*(bw+gap);rr(X,y0,bw,190,36);x.fillStyle=i===0?'rgba(210,25,25,.85)':'rgba(255,255,255,.14)';x.fill();T(String(v).padStart(2,'0'),y0+112,'800',84,'#fff','center',X+bw/2);T(l,y0+165,'400',34,'rgba(255,255,255,.8)','center',X+bw/2)})}
- /* למטה */
- T(live?'עוקבים בלייב באפליקציית האוהדים':'מחכים למשחק! · אפליקציית האוהדים',cy+ch+170,'400',38,'rgba(255,255,255,.75)');
  return c}
 async function shareStory(A,g,L){try{A.toast('מכין תמונה לשיתוף…');const c=await storyCanvas(g,L),data=c.toDataURL('image/png'),txt=(L&&L.status==='live'?'הפועל לייב! ':'המשחק הבא של הפועל ירושלים: ')+NT.match(g);
   const P=plug('LiveActivity');if(P&&P.shareImage){await P.shareImage({data:data.split(',')[1],text:txt});return}
