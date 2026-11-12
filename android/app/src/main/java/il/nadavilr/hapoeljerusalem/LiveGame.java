@@ -169,7 +169,7 @@ final class LiveGame {
 
     // ---------- the live score card ----------
 
-    private static void fill(RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin) {
+    static void fill(RemoteViews v, LiveGame g, Bitmap homeCrest, Bitmap awayCrest, boolean fin) {
         v.setTextViewText(R.id.home_score, String.valueOf(g.hs));
         v.setTextViewText(R.id.away_score, String.valueOf(g.as));
         String st = fin ? "סיום" : g.status + (g.clock.isEmpty() ? "" : (g.status.isEmpty() ? "" : " • ") + g.clock);

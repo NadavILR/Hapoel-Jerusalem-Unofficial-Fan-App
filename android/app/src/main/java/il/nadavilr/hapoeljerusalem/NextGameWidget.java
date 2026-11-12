@@ -214,6 +214,23 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     private static RemoteViews build(Context c, int size, Model d, Bitmap[] cr) {
+        if (d != null && d.live && (size == ROW || size == WIDE)) {
+            // One row / the wide strip during the game: the live score card itself, without the play-by-play line
+            RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_row_live);
+            LiveGame g = new LiveGame();
+            g.t = d.t;
+            g.homeName = d.home;
+            g.awayName = d.away;
+            g.hs = d.hs;
+            g.as = d.as;
+            g.status = d.status;
+            g.clock = d.clock;
+            g.comp = d.comp;
+            g.play = "";
+            LiveGame.fill(v, g, cr[0], cr[1], false);
+            v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
+            return v;
+        }
         RemoteViews v = new RemoteViews(c.getPackageName(), LAYOUTS[size]);
         if (d == null) {
             v.setTextViewText(R.id.w_mid, "");
@@ -239,6 +256,8 @@ public class NextGameWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.w_venue, d.venue.isEmpty() ? "" : rlm + d.venue);
         v.setViewVisibility(R.id.w_venue, d.venue.isEmpty() ? View.GONE : View.VISIBLE);
         v.setTextViewText(R.id.w_when, rlm + when(d.t));
+        // One row: the competition and the day / time in one line above the countdown
+        v.setTextViewText(R.id.w_line, rlm + (d.comp.isEmpty() ? "" : d.comp + " · ") + when(d.t));
         if (d.live) {
             // Live: the score (home on the right), the LIVE pill, the quarter and clock
             v.setTextViewText(R.id.w_mid, rlm + d.hs + " – " + d.as);
@@ -267,9 +286,11 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setViewVisibility(R.id.w_status, View.GONE);
             v.setViewVisibility(R.id.w_count, View.VISIBLE);
             boolean boxed = size == TALL || size == XTALL;
-            if (boxed) {
+            if (boxed || size == ROW) {
                 v.setTextViewText(R.id.w_days, String.valueOf(days));
                 v.setViewVisibility(R.id.w_days, View.VISIBLE);
+                // no whole days left: only the ticking box
+                v.setViewVisibility(R.id.w_days_box, size == ROW && days <= 0 ? View.GONE : View.VISIBLE);
             } else {
                 v.setTextViewText(R.id.w_days, days <= 0 ? "" : days == 1 ? "יום ו-" : days + " ימים ו-");
                 v.setViewVisibility(R.id.w_days, days <= 0 ? View.GONE : View.VISIBLE);

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The next game / live game widget: resizable from one cell row / column up to the full width (layouts per size in NextGameWidget) -->
+<!-- The next game / live game widget: at least 3 cells wide (narrower was too cramped), from one row up (layouts per size in NextGameWidget) -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="110dp"
-    android:minHeight="110dp"
-    android:minResizeWidth="40dp"
+    android:minWidth="250dp"
+    android:minHeight="50dp"
+    android:minResizeWidth="190dp"
     android:minResizeHeight="40dp"
-    android:targetCellWidth="2"
-    android:targetCellHeight="2"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_small"
-    android:previewLayout="@layout/widget_tall"
+    android:initialLayout="@layout/widget_row"
+    android:previewLayout="@layout/widget_row"
     android:description="@string/widget_desc"
     android:widgetCategory="home_screen" />

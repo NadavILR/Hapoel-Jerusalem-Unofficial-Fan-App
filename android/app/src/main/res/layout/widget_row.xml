@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home-screen widget (NextGameWidget), one row of cells. Right to left: home team on the right -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center" android:background="@drawable/widget_bg" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:layoutDirection="rtl">
-<ImageView android:id="@+id/w_home_crest" android:layout_width="38dp" android:layout_height="38dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
-<LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:paddingStart="8dp" android:paddingEnd="8dp">
-  <TextView android:id="@+id/w_names" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" />
-  <FrameLayout android:layout_width="1dp" android:layout_height="3dp" />
-  <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-    <TextView android:id="@+id/w_mid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:gravity="center" android:text="VS" android:layoutDirection="rtl" android:fontFeatureSettings="tnum"/>
-    <FrameLayout android:layout_width="6dp" android:layout_height="1dp" />
-    <TextView android:id="@+id/w_live" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/widget_live" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:textColor="#D21919" android:textSize="8sp" android:textStyle="bold" android:text="LIVE" android:visibility="gone" android:maxLines="1" />
-    <FrameLayout android:layout_width="6dp" android:layout_height="1dp" />
-    <TextView android:id="@+id/w_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" />
-    <LinearLayout android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:background="@drawable/widget_box" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="2dp" android:paddingBottom="2dp">
-      <TextView android:id="@+id/w_days" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" android:layout_marginEnd="2dp"/>
-      <Chronometer android:id="@+id/w_chrono" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" />
+<!-- Home-screen widget, one row (3–5 cells), before the game: the crests at the two ends, and between them the
+     competition and the game's day and time above the countdown – a glass box with the days and one with the ticking
+     hours:minutes:seconds. Right to left: home team on the right. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/widget_bg" android:paddingStart="14dp" android:paddingEnd="14dp" android:paddingTop="6dp" android:paddingBottom="6dp" android:layoutDirection="rtl">
+  <ImageView android:id="@+id/w_home_crest" android:layout_width="48dp" android:layout_height="48dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
+  <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:paddingStart="10dp" android:paddingEnd="10dp">
+    <TextView android:id="@+id/w_line" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#D9FFFFFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" />
+    <TextView android:id="@+id/w_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/notif_pill" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:maxLines="1" android:visibility="gone" />
+    <LinearLayout android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="horizontal" android:gravity="center">
+      <LinearLayout android:id="@+id/w_days_box" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/widget_box" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:layout_marginEnd="6dp">
+        <TextView android:id="@+id/w_days" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
+        <TextView android:id="@+id/w_days_l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#BFFFFFFF" android:textSize="9sp" android:includeFontPadding="false" android:text="ימים" />
+      </LinearLayout>
+      <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/widget_box" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="3dp" android:paddingBottom="3dp">
+        <Chronometer android:id="@+id/w_chrono" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:includeFontPadding="false" android:layoutDirection="ltr" android:fontFeatureSettings="tnum" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#BFFFFFFF" android:textSize="9sp" android:includeFontPadding="false" android:text="שעות · דקות · שניות" />
+      </LinearLayout>
     </LinearLayout>
   </LinearLayout>
-</LinearLayout>
-<ImageView android:id="@+id/w_away_crest" android:layout_width="38dp" android:layout_height="38dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
+  <ImageView android:id="@+id/w_away_crest" android:layout_width="48dp" android:layout_height="48dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
 </LinearLayout>
