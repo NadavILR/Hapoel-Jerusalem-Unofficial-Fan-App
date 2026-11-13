@@ -19,21 +19,18 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * In-app updates: downloads the new APK from this app's GitHub Releases and opens Android's installer.
- * Only download URLs of this repository's releases are accepted. The first time, Android asks the user
- * to allow installing apps from this app ("install unknown apps").
+ * In-app updates: downloads the APK of a release of this app's GitHub repository (no other URL is accepted)
+ * and opens Android's installer. The first time Android asks to allow installing apps from this app.
  */
 @CapacitorPlugin(name = "Updater")
 public class UpdaterPlugin extends Plugin {
 
-    private static final String ALLOWED_PREFIX =
-        "https://github.com/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases/download/";
+    private static final String ALLOWED = "https://github.com/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases/download/";
 
     @PluginMethod
     public void canInstall(PluginCall call) {
-        boolean allowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getContext().getPackageManager().canRequestPackageInstalls();
         JSObject r = new JSObject();
-        r.put("allowed", allowed);
+        r.put("allowed", Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getContext().getPackageManager().canRequestPackageInstalls());
         call.resolve(r);
     }
 
@@ -43,20 +40,16 @@ public class UpdaterPlugin extends Plugin {
             Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getContext().getPackageName()));
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getContext().startActivity(i);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) { }
         call.resolve();
     }
 
     @PluginMethod
     public void downloadAndInstall(PluginCall call) {
         String url = call.getString("url");
-        if (url == null || !url.startsWith(ALLOWED_PREFIX) || !url.endsWith(".apk")) {
-            call.reject("bad url");
-            return;
-        }
+        if (url == null || !url.startsWith(ALLOWED) || !url.endsWith(".apk")) { call.reject("bad url"); return; }
         new Thread(() -> {
-            HttpURLConnection conn = null;
+            HttpURLConnection c = null;
             try {
                 Context ctx = getContext();
                 File dir = new File(ctx.getCacheDir(), "updates");
@@ -64,46 +57,38 @@ public class UpdaterPlugin extends Plugin {
                 File[] old = dir.listFiles();
                 if (old != null) for (File f : old) f.delete();
                 File out = new File(dir, "update.apk");
-
-                // GitHub answers with a redirect to its file storage; follow up to 5 https redirects.
-                String current = url;
-                for (int hop = 0; hop < 5; hop++) {
-                    conn = (HttpURLConnection) new URL(current).openConnection();
-                    conn.setInstanceFollowRedirects(false);
-                    conn.setConnectTimeout(20000);
-                    conn.setReadTimeout(30000);
-                    int code = conn.getResponseCode();
+                /* GitHub redirects to its file storage: follow up to 5 https redirects */
+                String at = url;
+                for (int hop = 0; ; hop++) {
+                    if (hop >= 5) throw new Exception("too many redirects");
+                    c = (HttpURLConnection) new URL(at).openConnection();
+                    c.setInstanceFollowRedirects(false);
+                    c.setConnectTimeout(20000);
+                    c.setReadTimeout(30000);
+                    int code = c.getResponseCode();
                     if (code >= 300 && code < 400) {
-                        String loc = conn.getHeaderField("Location");
-                        conn.disconnect();
+                        String loc = c.getHeaderField("Location");
+                        c.disconnect();
                         if (loc == null || !loc.startsWith("https://")) throw new Exception("bad redirect");
-                        current = loc;
+                        at = loc;
                         continue;
                     }
                     if (code != 200) throw new Exception("http " + code);
                     break;
                 }
-                long total = conn.getContentLengthLong();
-                long done = 0;
-                int lastPct = -1;
-                try (InputStream in = conn.getInputStream(); OutputStream os = new FileOutputStream(out)) {
+                long total = c.getContentLengthLong(), done = 0;
+                int last = -1;
+                try (InputStream in = c.getInputStream(); OutputStream os = new FileOutputStream(out)) {
                     byte[] buf = new byte[65536];
-                    int n;
-                    while ((n = in.read(buf)) > 0) {
+                    for (int n; (n = in.read(buf)) > 0; ) {
                         os.write(buf, 0, n);
                         done += n;
                         if (total > 0) {
-                            int pct = (int) (done * 100 / total);
-                            if (pct != lastPct) {
-                                lastPct = pct;
-                                JSObject p = new JSObject();
-                                p.put("p", pct);
-                                notifyListeners("progress", p);
-                            }
+                            int p = (int) (done * 100 / total);
+                            if (p != last) { last = p; JSObject e = new JSObject(); e.put("p", p); notifyListeners("progress", e); }
                         }
                     }
                 }
-
                 Uri uri = FileProvider.getUriForFile(ctx, ctx.getPackageName() + ".fileprovider", out);
                 Intent install = new Intent(Intent.ACTION_VIEW);
                 install.setDataAndType(uri, "application/vnd.android.package-archive");
@@ -113,7 +98,7 @@ public class UpdaterPlugin extends Plugin {
             } catch (Exception e) {
                 call.reject("download failed: " + e.getMessage());
             } finally {
-                if (conn != null) conn.disconnect();
+                if (c != null) c.disconnect();
             }
         }).start();
     }

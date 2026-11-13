@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app's three colors -->
+    <color name="hpj_red">#D21919</color>
+    <color name="hpj_ink">#282828</color>
+    <color name="hpj_white">#FFFFFF</color>
+    <color name="colorPrimary">#D21919</color>
+    <color name="colorPrimaryDark">#282828</color>
+    <color name="colorAccent">#D21919</color>
+</resources>

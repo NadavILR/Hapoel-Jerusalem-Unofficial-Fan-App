@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Status pill after the final buzzer -->
+<!-- Status pill after the final buzzer: ink -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#80808080" />
+    <solid android:color="#B3282828" />
     <corners android:radius="999dp" />
 </shape>

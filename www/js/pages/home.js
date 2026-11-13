@@ -26,7 +26,7 @@ function GameCard({ kind, g, now, L }) {
   const kicker = kind === 'prev' || kind === 'pend' ? 'המשחק הקודם' : kind === 'after' ? 'המשחק שאחריו' : 'המשחק הבא';
   const btn = red ? 'btn on-red' : 'btn btn-glass';
   return html`<article class=${cx('r-lg pad col', red ? 'glass-red' : 'glass')} style=${{ minHeight: '100%', position: 'relative' }}>
-    ${red ? html`<button onClick=${() => shareStory(A.storyUI, g, L)} aria-label="שיתוף לסטורי" class="icon-btn sm on-red press" style=${{ position: 'absolute', top: 12, left: 12 }}><${Icon} n="share" s=${17}/></button>` : null}
+    ${red ? html`<button onClick=${() => shareStory(A.storyUI, g, L)} aria-label="שיתוף לסטורי" class="icon-btn sm on-red press" style=${{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}><${Icon} n="share" s=${17}/></button>` : null}
     ${L ? html`<div class=${intro ? 'live-in' : ''}><div class="t-xs" style=${{ opacity: .9, marginBottom: 10, paddingLeft: 40 }}>${compLabel(g)}</div><${LiveScore} L=${L} g=${g}/>
       <button onClick=${() => A.openGame(g)} class="btn on-red press" style=${{ width: '100%', marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
       <div class="t-xs" style=${{ textAlign: 'center', opacity: .8, marginTop: 8 }}>מתעדכן כל כמה שניות</div></div>`
