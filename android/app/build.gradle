@@ -4,7 +4,10 @@ apply plugin: 'com.android.application'
 def appVersion = rootProject.file('../VERSION').text.trim()
 def appVersionParts = appVersion.tokenize('.')
 if (appVersionParts.size() == 2) appVersionParts = appVersionParts + ['0']
-def appVersionCode = appVersionParts.inject(0) { acc, n -> acc * 100 + (n as int) }
+// From 2.0 on: major * 1,000,000 + minor * 1,000 + patch (2.0 -> 2000000), always above every 1.x code (1.182 -> 28200)
+def appVersionCode = (appVersionParts[0] as int) >= 2
+    ? (appVersionParts[0] as int) * 1000000 + (appVersionParts[1] as int) * 1000 + (appVersionParts[2] as int)
+    : appVersionParts.inject(0) { acc, n -> acc * 100 + (n as int) }
 
 
 android {

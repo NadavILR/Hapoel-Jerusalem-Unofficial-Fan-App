@@ -14,7 +14,8 @@ if (!next) {
   const minor = p.length === 3 ? p[1] * 10 + p[2] : p[1]; // 1.1.8 counts as 1.18
   next = p[0] + '.' + (minor + 1);
 }
-if (!/^\d+\.(\d\.\d|\d{2,})$/.test(next)) throw new Error('bad version ' + next);
+/* 1.x: 1.XX (שתי ספרות לפחות); מ-2.0: X.Y רגיל */
+if (!/^\d+\.(\d\.\d|\d{2,})$/.test(next) && !/^([2-9]|\d{2,})\.\d+$/.test(next)) throw new Error('bad version ' + next);
 fs.writeFileSync(path.join(root, 'VERSION'), next + '\n');
 fs.writeFileSync(path.join(root, 'www/version.js'), `window.APP_VERSION='${next}';\n`);
 const sw = path.join(root, 'www/sw.js');

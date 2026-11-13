@@ -122,16 +122,8 @@ public class NextGameWidget extends AppWidgetProvider {
         Bitmap[] crests = d != null ? crests(c, d) : new Bitmap[2];
         for (int id : ids) {
             try {
-                RemoteViews v;
-                if (Build.VERSION.SDK_INT >= 31) {
-                    // Android picks the biggest layout that fits the widget's size
-                    Map<SizeF, RemoteViews> map = new HashMap<>();
-                    for (int k = 0; k < LAYOUTS.length; k++) map.put(new SizeF(SIZES[k][0], SIZES[k][1]), build(c, k, d, crests));
-                    v = new RemoteViews(map);
-                } else {
-                    v = build(c, pick(m.getAppWidgetOptions(id)), d, crests);
-                }
-                m.updateAppWidget(id, v);
+                // One size only: one row, five columns (hpj_widget_info.xml)
+                m.updateAppWidget(id, build(c, ROW, d, crests));
             } catch (Exception ignored) {
             }
         }

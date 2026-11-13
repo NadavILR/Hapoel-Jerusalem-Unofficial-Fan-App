@@ -8,7 +8,7 @@ const relVer = tag => String(tag || '').replace(/^v/, '').replace(/-(beta|alpha)
 /* 0 – רשמיות בלבד, 1 – גם בטא, 2 – גם אלפא */
 export const channel = () => { const v = +LS.get('hpj-beta', 0); return v >= 2 ? 2 : v >= 1 ? 1 : 0; };
 export const setChannel = v => LS.set('hpj-beta', v);
-const notesOf = t => String(t || '').split('\n').map(l => /^\s*-\s+(.+)/.exec(l)).filter(Boolean).map(m => m[1].replace(/`/g, '').trim()).filter(x => !/^להתקנה/.test(x)).slice(0, 8);
+const notesOf = t => String(t || '').split('\n').map(l => /^\s*-\s+(.+)/.exec(l)).filter(Boolean).map(m => m[1].replace(/`|\*\*/g, '').trim()).filter(x => !/^להתקנה/.test(x)).slice(0, 60);
 const unHtml = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 async function fromApi() {
   const ch = channel(), u = 'https://api.github.com/repos/' + REPO + '/releases' + (ch ? '?per_page=15' : '/latest');
@@ -29,7 +29,7 @@ async function fromAtom() {
   const re = ch >= 2 ? /\/releases\/tag\/(v\d+\.\d+(?:\.\d+)?(?:-beta|-alpha)?)["<]/g : ch ? /\/releases\/tag\/(v\d+\.\d+(?:\.\d+)?(?:-beta)?)["<]/g : /\/releases\/tag\/(v\d+\.\d+(?:\.\d+)?)["<]/g;
   for (const m of t.matchAll(re)) { const v = relVer(m[1]); if (!best || vcmp(v, best.v) > 0) best = { v, tag: m[1] }; }
   if (!best) return null; let notes = [];
-  try { const e = t.split('<entry>').find(x => x.includes('/releases/tag/' + best.tag + '"')), c = e && /<content[^>]*>([\s\S]*?)<\/content>/.exec(e); if (c) notes = [...unHtml(c[1]).matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m => unHtml(m[1].replace(/<[^>]+>/g, '')).trim()).filter(x => x && !/^להתקנה/.test(x)).slice(0, 8); } catch (_) { }
+  try { const e = t.split('<entry>').find(x => x.includes('/releases/tag/' + best.tag + '"')), c = e && /<content[^>]*>([\s\S]*?)<\/content>/.exec(e); if (c) notes = [...unHtml(c[1]).matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m => unHtml(m[1].replace(/<[^>]+>/g, '')).trim()).filter(x => x && !/^להתקנה/.test(x)).slice(0, 60); } catch (_) { }
   return { v: best.v, url: DL + best.tag + '/hapoel-jerusalem-v' + best.v + '.apk', notes, pre: /-(beta|alpha)$/.test(best.tag), alpha: /-alpha$/.test(best.tag) };
 }
 export async function latestRelease() { try { const r = await fromApi(); if (r) return r; } catch (e) { } return fromAtom(); }
