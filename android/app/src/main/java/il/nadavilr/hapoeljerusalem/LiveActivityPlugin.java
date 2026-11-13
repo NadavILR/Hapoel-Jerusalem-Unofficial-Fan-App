@@ -127,6 +127,27 @@ public class LiveActivityPlugin extends Plugin {
         }
     }
 
+    /** Opens the app's notification settings screen (for when notifications were blocked) */
+    @PluginMethod
+    public void openNotifSettings(PluginCall call) {
+        Context c = getContext();
+        try {
+            Intent i;
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                i = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, c.getPackageName());
+            } else {
+                i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(android.net.Uri.fromParts("package", c.getPackageName(), null));
+            }
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            c.startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("cannot open settings", e);
+        }
+    }
+
     @PluginMethod
     public void takeOpen(PluginCall call) {
         JSObject r = new JSObject();
