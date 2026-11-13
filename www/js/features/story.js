@@ -71,7 +71,7 @@ export async function storyCard(g, L, o = {}) {
     T(fdLong(g), top + cs + 190, '500', 42); T(g.v || (g.h ? 'משחק בית' : 'משחק חוץ'), top + cs + 252, '400', 38, mu);
     if (!o.noCd) {
       const df = Math.max(0, g.t - (o.now || Date.now())), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]], bw = 158, gap = 24, y0 = top + cs + 330, x0 = (W - (4 * bw + 3 * gap)) / 2;
-      u.forEach(([l, v], i) => { const X = x0 + (3 - i) * (bw + gap); rr(X, y0, bw, 176, 36); x.fillStyle = RED; x.fill(); T(String(v).padStart(2, '0'), y0 + 104, '800', 78, '#fff', 'center', X + bw / 2); T(l, y0 + 152, '500', 30, 'rgba(255,255,255,.92)', 'center', X + bw / 2); });
+      u.forEach(([l, v], i) => { const X = x0 + i * (bw + gap); rr(X, y0, bw, 176, 36); x.fillStyle = RED; x.fill(); T(String(v).padStart(2, '0'), y0 + 104, '800', 78, '#fff', 'center', X + bw / 2); T(l, y0 + 152, '500', 30, 'rgba(255,255,255,.92)', 'center', X + bw / 2); });
     }
   }
   c.remove(); return c;

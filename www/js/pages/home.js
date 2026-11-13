@@ -17,7 +17,7 @@ const openExt = u => window.open(u, '_blank', 'noopener');
 
 function Countdown({ t, now, red }) {
   const df = Math.max(0, t - now), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]];
-  return html`<div class="cd" aria-label="ספירה לאחור">${u.reverse().map(([l, v]) => html`<div key=${l} class=${red ? 'on-red' : 'cd-box'}><div class="v"><span key=${v} class="tick">${String(v).padStart(2, '0')}</span></div><div class=${cx('l', !red && 'mu')}>${l}</div></div>`)}</div>`;
+  return html`<div class="cd" aria-label="ספירה לאחור">${u.map(([l, v]) => html`<div key=${l} class=${red ? 'on-red' : 'cd-box'}><div class="v"><span key=${v} class="tick">${String(v).padStart(2, '0')}</span></div><div class=${cx('l', !red && 'mu')}>${l}</div></div>`)}</div>`;
 }
 /* כרטיס משחק במסך הבית – המידות והמרווחים כמו בגרסה 1.161 */
 function GameCard({ kind, g, now, L }) {
