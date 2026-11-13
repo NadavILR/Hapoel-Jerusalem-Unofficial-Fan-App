@@ -2,7 +2,7 @@
 import { html, useState, useEffect, useRef, useLayoutEffect, memo, portal, cx } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { useApp, useNow, Crest, Seg, Empty, ExtLink, VideoPop, usePhoto, Photo } from '../ui/kit.js';
-import { LiveScore } from '../ui/score.js';
+import { LiveScore, Pts } from '../ui/score.js';
 import { ME, LINKS } from '../data/constants.js';
 import { DB, compLabel, won } from '../data/store.js';
 import { H, D, SEASON, fdLong, dtf } from '../core/env.js';
@@ -19,6 +19,28 @@ function Countdown({ t, now, red }) {
   const df = Math.max(0, t - now), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]];
   return html`<div class="cd" aria-label="ספירה לאחור">${u.map(([l, v]) => html`<div key=${l} class=${red ? 'on-red' : 'cd-box'}><div class="v"><span key=${v} class="tick">${String(v).padStart(2, '0')}</span></div><div class=${cx('l', !red && 'mu')}>${l}</div></div>`)}</div>`;
 }
+/* המשחק בלייב בכרטיס האדום – המידות כמו בגרסה 1.161. הכותרת "הפועל לייב" ממלאת את השטח הפנוי בכרטיס
+   (כל הכרטיסים בקרוסלה באותו גובה), כך שאין רווח מת */
+function HomeLive({ L, g, intro, now, open }) {
+  const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME, on = L.status === 'live';
+  const side = n => html`<div class="col" style=${{ alignItems: 'center', textAlign: 'center', minWidth: 0 }}><${Crest} n=${n} s=${48}/><div class="t-s" style=${{ marginTop: 4, lineHeight: 1.25, fontWeight: n === ME ? 800 : 400 }}>${n}</div></div>`;
+  return html`<div class="col grow">
+    <div class=${cx('lv-title', intro && 'live-in')} aria-label="הפועל לייב"><span>הפועל</span><span class=${cx('live-tag', on && 'on')}><span class="lt-clip" aria-hidden="true"></span>לייב</span></div>
+    <div class="row between t-s md" style=${{ marginBottom: 8 }}><span class="row" style=${{ gap: 8 }}>${on ? html`<span class="lv-dot"></span>LIVE` : L.status === 'end' ? 'סיום' : 'ממתינים לשריקת הפתיחה'}</span><span>${on ? L.st : ''}${on && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
+    <div style=${{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)', alignItems: 'center', gap: 8 }}>
+      ${side(hm)}
+      <div class="row center num" style=${{ gap: 8, fontSize: 36, fontWeight: 600, lineHeight: 1.1 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ fontSize: 24, opacity: .6 }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
+      ${side(aw)}
+    </div>
+    ${L.q && L.q.length ? html`<div class="lv-q"><div style=${{ display: 'grid', gridTemplateColumns: `28px repeat(${L.q.length}, minmax(0,1fr))`, gap: 4, textAlign: 'center', alignItems: 'center' }}>
+      <span></span>${L.q.map(x => html`<span key=${x.n} style=${{ opacity: .75 }}>${x.n}</span>`)}
+      <span class="row center"><${Crest} n=${hm} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.h}</b>`)}
+      <span class="row center"><${Crest} n=${aw} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}
+    </div></div>` : null}
+    <button onClick=${open} class="gc-btn on-red press" style=${{ marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
+    <div style=${{ fontSize: 11, textAlign: 'center', marginTop: 8 }}>תוצאה בלייב · ${fresh(L, now)}</div>
+  </div>`;
+}
 /* כרטיס משחק במסך הבית – המידות והמרווחים כמו בגרסה 1.161 */
 function GameCard({ kind, g, now, L }) {
   const A = useApp(), [vid, setVid] = useState(false), red = kind === 'next', hm = g.h ? ME : g.o, aw = g.h ? g.o : ME, res = kind === 'prev' && g.r, w = res && won(g);
@@ -29,9 +51,7 @@ function GameCard({ kind, g, now, L }) {
   const btn = red ? 'gc-btn on-red' : 'gc-btn cd-box', sub = red ? '' : 'mu';
   return html`<article class=${cx('gc col', red ? 'glass-red' : 'glass')}>
     ${red ? html`<button onClick=${() => shareStory(A.storyUI, g, L)} aria-label="שיתוף לסטורי" class="icon-btn sm on-red press" style=${{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}><${Icon} n="share" s=${17}/></button>` : null}
-    ${L ? html`<div class=${intro ? 'live-in' : ''}><div class="t-s" style=${{ marginBottom: 12, paddingLeft: 40 }}>${compLabel(g)}</div><${LiveScore} L=${L} g=${g}/>
-      <button onClick=${() => A.openGame(g)} class="gc-btn on-red press" style=${{ marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
-      <div class="t-xs" style=${{ textAlign: 'center', marginTop: 8 }}>${fresh(L, now)}</div></div>`
+    ${L ? html`<${HomeLive} L=${L} g=${g} intro=${intro} now=${now} open=${() => A.openGame(g)}/>`
     : html`<div class="col grow">
       <div class=${cx('t-s', sub)} style=${{ textAlign: 'center', marginBottom: 12, padding: red ? '0 40px' : 0 }}>${kicker} · ${compLabel(g)}</div>
       <div class="row between" style=${{ gap: 8, marginBottom: 12 }}><${Crest} n=${hm} s=${60}/>

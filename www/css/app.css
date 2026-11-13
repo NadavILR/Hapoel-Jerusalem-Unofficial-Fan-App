@@ -409,3 +409,17 @@ html.dark .btn-red, html.dark .seg-ind { box-shadow: inset 0 1px 0 rgb(255 255 2
 
 /* כרטיסי המשחקים במסך הבית: בלי צל מטושטש (אדום / אפור) מאחוריהם */
 .car .gc, .car .gc.glass-red, html.dark .car .gc.glass-red { box-shadow: var(--hi); }
+
+/* המשחק בלייב במסך הבית (כמו ב-1.161): הכותרת ממלאת את השטח הפנוי */
+.lv-title { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px 0 16px; font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -.01em; }
+.live-tag { position: relative; isolation: isolate; background: #fff; color: var(--red); border-radius: 16px; padding: 6px 16px 10px; box-shadow: 0 4px 12px rgb(0 0 0 / .18); }
+.live-tag.on { animation: ltBeat 1.8s var(--ease) infinite; }
+.live-tag .lt-clip { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; z-index: -1; pointer-events: none; }
+.live-tag.on .lt-clip::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgb(var(--red-rgb) / .22) 50%, transparent 65%); transform: translateX(110%); animation: ltShine 1.8s ease-in-out infinite; }
+.live-tag::before { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 3px rgb(255 255 255 / .8); opacity: 0; pointer-events: none; }
+.live-tag.on::before { animation: ltRing 1.8s ease-out infinite; }
+@keyframes ltBeat { 0% { transform: scale(1); } 12% { transform: scale(1.06); } 24% { transform: scale(1); } }
+@keyframes ltRing { 0% { opacity: .9; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.28, 1.45); } }
+@keyframes ltShine { from { transform: translateX(110%); } to { transform: translateX(-110%); } }
+.lv-dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: blink 1.4s ease-in-out infinite; }
+.lv-q { margin-top: 12px; border-radius: 12px; padding: 8px; font-size: 12px; background: rgb(40 40 40 / .35); }
