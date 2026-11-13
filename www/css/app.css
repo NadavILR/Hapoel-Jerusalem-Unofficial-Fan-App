@@ -141,7 +141,7 @@ html.dark .glass-red { background: linear-gradient(150deg, rgb(var(--red-rgb) / 
 .chip { position: relative; flex-shrink: 0; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 700; white-space: nowrap; background: var(--faint); border: 1px solid transparent; color: var(--tx); display: inline-flex; align-items: center; gap: 6px; transition: background-color .2s var(--ease), color .2s var(--ease), transform .18s var(--ease); }
 .chip:active { transform: scale(.95); }
 .chip.on { background: var(--red); color: #fff; }
-.chip.sub { height: 30px; font-size: 12.5px; padding: 0 12px; }
+.chip.small { height: 30px; font-size: 12.5px; padding: 0 12px; }
 
 /* ---------- בורר מקטעים: הסימון האדום מחליק ---------- */
 .seg { position: relative; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; padding: 4px; border-radius: 14px; background: var(--faint); border: 1px solid var(--line); }
@@ -178,12 +178,12 @@ html.dark .glass-red { background: linear-gradient(150deg, rgb(var(--red-rgb) / 
 .unofficial { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--red-tx); background: rgb(var(--red-rgb) / .1); border-radius: 999px; padding: 1px 8px; margin-top: 3px; }
 /* סינון שמחובר לכותרת: נכנס בהחלקה כשגוללים למטה ויוצא כשחוזרים למעלה */
 #hd-slot:empty { display: none; }
-.hd-filters { overflow: hidden; }
+.hd-filters { }
 .hd-filters .chips { padding-top: 2px; }
 .fx-in { animation: fxIn .32s var(--ease) both; }
 @keyframes fxIn { from { opacity: 0; transform: translateY(-8px); } }
 .fx-sub { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s var(--ease), opacity .25s var(--ease); }
-.fx-sub > div { overflow: hidden; }
+.fx-sub > div { overflow: hidden; margin: 0 -14px; padding: 0 14px; }
 .fx-sub.on { grid-template-rows: 1fr; opacity: 1; }
 .hd-filters .chip { transition: height .25s var(--ease), font-size .25s var(--ease), background-color .2s var(--ease), color .2s; }
 
@@ -391,3 +391,6 @@ html.dark .legend i.dt-a { background: #fff; }
 
 /* במצב כהה: צל ניטרלי במקום זוהר אדום */
 html.dark .btn-red, html.dark .seg-ind { box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 4px 12px rgb(0 0 0 / .35); }
+
+/* כרטיסי המשחקים במסך הבית: בלי צל מטושטש (אדום / אפור) מאחוריהם */
+.car .gc, .car .gc.glass-red, html.dark .car .gc.glass-red { box-shadow: var(--hi); }

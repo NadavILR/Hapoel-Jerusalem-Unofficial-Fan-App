@@ -17,8 +17,8 @@ export default function Roster() {
   if (!DB.PL.length && DB.ok) return html`<${Empty} title=${'עונת ' + SEASON} sub="הסגל עוד לא נטען לאפליקציה."><${ExtLink} href=${LINKS.club + '/team'}>הסגל באתר הרשמי<//><//>`;
   const list = l => html`<div class="glass lite r-lg stg" style=${{ overflow: 'hidden' }}>${l.map((s, i) => html`<div key=${i} class="li"><span class="grow b">${s[1]}</span><span class="t-s mu">${s[0]}</span></div>`)}</div>`;
   return html`<div class="stack">
-    <${HeaderSlot}><${Chips} items=${[['pl', 'שחקנים'], ['st', 'צוות האימון'], ['of', 'בעלי תפקידים']]} val=${v} set=${setV} label="קבוצה"/>
-      <div class=${cx('fx-sub', v === 'pl' && 'on')}><div><${Chips} sub=${1} items=${[['all', 'כל העמדות'], ['G', 'גארדים'], ['F', 'פורוורדים'], ['C', 'סנטרים']]} val=${ps} set=${setPs} label="עמדה"/></div></div><//>
+    <${HeaderSlot}><div style=${{ paddingBottom: 8 }}><${Seg} items=${[['pl', 'שחקנים'], ['st', 'צוות האימון'], ['of', 'בעלי תפקידים']]} val=${v} set=${setV} label="קבוצה"/></div>
+      <div class=${cx('fx-sub', v === 'pl' && 'on')}><div><${Chips} items=${[['all', 'כל העמדות'], ['G', 'גארדים'], ['F', 'פורוורדים'], ['C', 'סנטרים']]} val=${ps} set=${setPs} label="עמדה"/></div></div><//>
     <${TeamPhoto}/>
     ${v === 'pl' ? html`<div key=${ps} class="roster-grid stg">${DB.PL.filter(p => ps === 'all' || posGroups(p).includes(ps)).map(p => html`<button key=${p[0] + p[1]} onClick=${() => A.openPlayer(p)} class="glass lite r-lg press" style=${{ overflow: 'hidden', padding: 0, textAlign: 'right' }}>
         <div class="rel" style=${{ aspectRatio: '4/4.4' }}><${Photo} u=${p[6]} k=${p[9]} fallback=${p[0]} cls="abs-fill"/><span class="pcard-no">${p[0]}</span></div>

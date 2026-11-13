@@ -87,7 +87,8 @@ export function BoxScore({ g, gs, pf }) {
   if (!pl) return pf && pf.length ? html`<div class="glass r-lg pad"><div class="sec-t" style=${{ marginBottom: 6 }}>שחקנים בולטים</div>
     ${pf.map(([n, v], i) => { const m = String(n).match(/^(.*?)\s*\((.*)\)$/); return html`<div key=${i} class="row between t-s" style=${{ padding: '8px 0', borderTop: i ? '1px solid var(--line)' : 0 }}><span><span class="b">${m ? m[1] : n}</span>${m ? html`<span class="t-xs mu"> · ${m[2]}</span>` : null}</span><b class="num">${v}</b></div>`; })}
     <div class="t-xs mu" style=${{ marginTop: 6 }}>הטבלה המלאה זמינה בעמוד המשחק ב-365scores.</div></div>` : html`<div class="glass r-lg pad t-s mu">הסטטיסטיקה האישית של המשחק לא נטענה לאפליקציה.</div>`;
-  const ord = ['league', 'wcup'].includes(g.c) ? r => { const num = w => { const v = parseInt(w[1], 10); return isNaN(v) ? 999 : v; }, grp = w => w[2] ? 0 : isDnp(w) ? 2 : 1; return r.slice().sort((a, b) => grp(a) - grp(b) || num(a) - num(b)); } : r => r;
+  /* חמישייה פותחת לפי מספר החולצה, אחריה שאר מי ששיחקו, ובסוף מי שלא שיחקו – כל קבוצה לפי מספר החולצה */
+  const ord = r => { const num = w => { const v = parseInt(w[1], 10); return isNaN(v) ? 999 : v; }, grp = w => w[2] ? 0 : isDnp(w) ? 2 : 1; return r.slice().sort((a, b) => grp(a) - grp(b) || num(a) - num(b)); };
   const ws = ord(pl[si]), sum = i => ws.reduce((t, w) => t + w[i], 0);
   const tot = ['', sum(4), sum(5), sum(6), sum(7), sum(8), sum(9) + '/' + sum(10), sum(11) + '/' + sum(12), sum(13) + '/' + sum(14), sum(15), sum(16), sum(17), sum(18)];
   const rows = [...ws.map((w, i) => ({ key: i, cls: isDnp(w) ? 'mu' : '', hi: 1,
@@ -106,7 +107,7 @@ export function PlayByPlay({ pbp, g }) {
   return html`<div class="glass lite r-lg" style=${{ overflow: 'hidden' }}>
     <div class="pad-s" style=${{ borderBottom: '1px solid var(--line)' }}>
       <div class="row between" style=${{ padding: '0 4px 8px' }}><span class="sec-t">מהלך המשחק</span><span class="t-xs mu">${g.h ? ME + ' – ' + g.o : g.o + ' – ' + ME}</span></div>
-      <div class="chips" style=${{ paddingBottom: 2 }}>${[[0, 'כל המשחק'], ...qs.map(q => [q, PBQ(q)])].map(([k, l]) => html`<button key=${k} onClick=${() => setQf(k)} class=${cx('chip sub', qf === k && 'on')}>${l}</button>`)}</div>
+      <div class="chips" style=${{ paddingBottom: 2 }}>${[[0, 'כל המשחק'], ...qs.map(q => [q, PBQ(q)])].map(([k, l]) => html`<button key=${k} onClick=${() => setQf(k)} class=${cx('chip small', qf === k && 'on')}>${l}</button>`)}</div>
     </div>
     <div ref=${box} class="pbp-win">
       ${list.map((x, i) => { const head = !qf && (i === 0 || list[i - 1].q !== x.q); return html`<${Fragment} key=${i}>${head ? html`<div class="pbp-q">${PBQ(x.q)}</div>` : null}

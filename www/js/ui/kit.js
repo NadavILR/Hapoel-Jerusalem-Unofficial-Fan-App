@@ -45,7 +45,7 @@ export function Seg({ items, val, set, cls = '', label }) {
   </div>`;
 }
 /* כפתורי סינון */
-export const Chips = ({ items, val, set, sub, label }) => html`<div class="chips" role="tablist" aria-label=${label}>${items.map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${String(k === val)} onClick=${() => set(k)} class=${cx('chip', sub && 'sub', k === val && 'on')}>${l}</button>`)}</div>`;
+export const Chips = ({ items, val, set, sub, label }) => html`<div class="chips" role="tablist" aria-label=${label}>${items.map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${String(k === val)} onClick=${() => set(k)} class=${cx('chip', sub && 'small', k === val && 'on')}>${l}</button>`)}</div>`;
 export const Toggle = ({ on, set, label, sub, disabled }) => html`<button role="switch" aria-checked=${String(!!on)} disabled=${disabled} onClick=${() => set(!on)} class="li press" style=${{ width: '100%', textAlign: 'right', opacity: disabled ? .5 : 1 }}>
   <span class="grow"><span class="li-t" style=${{ display: 'block', fontWeight: 600 }}>${label}</span>${sub ? html`<span class="li-s" style=${{ display: 'block' }}>${sub}</span>` : null}</span>
   <span class="tg" aria-checked=${String(!!on)} disabled=${disabled}></span></button>`;
