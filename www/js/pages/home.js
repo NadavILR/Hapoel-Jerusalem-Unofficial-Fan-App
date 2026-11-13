@@ -83,7 +83,6 @@ function News() {
     ${more > 0 ? html`<button onClick=${() => setAll(!all)} class="li press red b t-s" style=${{ width: '100%', justifyContent: 'center' }}>${all ? 'הצג פחות' : 'עוד כתבות (' + more + ')'}</button>` : null}</section>`;
 }
 function NewsImg({ src }) { const [bad, setBad] = useState(false); return bad ? null : html`<img src=${src} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${() => setBad(true)} style=${{ width: 92, height: 62, borderRadius: 12, objectFit: 'cover', flexShrink: 0, background: 'var(--faint)' }}/>`; }
-const stamp = d => dtf('he-IL', { timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(d).replace(',', '');
 
 export default function Home() {
   const A = useApp(), now = useNow();
@@ -96,9 +95,6 @@ export default function Home() {
   const cards = [pv, nx && ['next', nx], up[1] && ['after', up[1]]].filter(Boolean);
   return html`<div class="stack stg">
     <${Carousel} key=${nx ? nx.id : 'x'} start=${pv && nx ? 1 : 0} items=${cards.map(([k, g]) => html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k === 'next' ? L : null}/>`)}/>
-    <div class="row between t-xs">
-      <span class="glass-2 r-full mu" style=${{ padding: '4px 12px' }}>${status.loading ? 'מעדכן נתונים…' : status.at ? 'עודכן ב-' + stamp(status.at) : 'נתונים נכונים ל-' + DB.ASOF}</span>
-      <button onClick=${A.refresh} class="glass-2 r-full row press b tap" style=${{ padding: '0 16px', gap: 6 }}><${Icon} n="sync" s=${14} cls=${status.loading ? 'spin' : ''}/>רענון</button></div>
     ${me || em ? html`<div class=${me && em ? 'grid2' : ''}>
       ${me ? html`<button onClick=${() => A.go('stand', 'league')} class="glass r-lg pad-s press" style=${{ textAlign: 'right' }}><div class="t-xs mu">ליגת ווינר סל</div><div class="t-xl num">מקום ${rk + 1}</div><div class="t-xs mu">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></button>` : null}
       ${em ? html`<button onClick=${() => A.go('stand', 'euro')} class="glass r-lg pad-s press" style=${{ textAlign: 'right' }}><div class="t-xs mu">יורוקאפ · ${eg[0]}</div><div class="t-xl num">מקום ${er + 1}</div><div class="t-xs mu">${em[1]} נצ׳ · ${em[2]} הפ׳</div></button>` : null}</div>` : null}
