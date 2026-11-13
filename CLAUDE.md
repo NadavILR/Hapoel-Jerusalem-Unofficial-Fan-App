@@ -8,3 +8,9 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 - A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
+
+## Save the limit
+- Hand quick, mechanical work to the haiku-helper subagent: finding files, grep searches, reading logs,
+listing folders, renames, one-line edits, running a command and reporting the output.
+- Batch several small lookups into one haiku-helper call.
+- Keep planning, debugging, architecture and multi-file changes for yourself.
