@@ -807,7 +807,9 @@ function StickyBar({children}){
   useEffect(()=>{const de=document.documentElement;let last=null,lastH='';const rd=()=>{};
   const on=()=>{const el=r.current;if(!el)return;const top=window.__hdh||parseFloat(getComputedStyle(de).getPropertyValue('--hdh'))||0;const st=window.scrollY>4&&el.getBoundingClientRect().top<=top+1;if(st){const h=el.offsetHeight+'px';if(h!==lastH){lastH=h;de.style.setProperty('--fbh',h)}}if(st!==last){last=st;setStuck(st);de.classList.toggle('bar-stuck',st)}};
   rd();on();const ro=rafT(on),rs=rafT(()=>{rd();on()});window.addEventListener('scroll',ro,{passive:true});window.addEventListener('resize',rs);
-  return()=>{window.removeEventListener('scroll',ro);window.removeEventListener('resize',rs);de.classList.remove('bar-stuck')}},[]);
+  /* חזרה לעמוד (למשל מעמוד משחק או שחקן) עם גלילה משוחזרת: בזמן אנימציית הכניסה המיקום עוד לא סופי ואין אירוע גלילה אחריה – בודקים שוב כשהיא נגמרת */
+  document.addEventListener('animationend',ro,true);const tm=[120,320,700].map(d=>setTimeout(ro,d));
+  return()=>{window.removeEventListener('scroll',ro);window.removeEventListener('resize',rs);document.removeEventListener('animationend',ro,true);tm.forEach(clearTimeout);de.classList.remove('bar-stuck')}},[]);
  return html`<div ref=${r} class=${'fbar'+(stuck?' stuck':'')}>${children}</div>`;
 }
 function Sched(){
