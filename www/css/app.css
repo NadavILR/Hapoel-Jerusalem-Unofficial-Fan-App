@@ -358,8 +358,21 @@ html.dark .dt-a { background: #fff; color: var(--ink); }
 .home-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 20%, transparent 65%); mask-image: linear-gradient(to bottom, #000 20%, transparent 65%); }
 .home-bg img { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(30px) saturate(1.2); opacity: .55; }
 
-/* משיכה לרענון */
-.ptr { position: fixed; left: 50%; z-index: 35; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--red); pointer-events: none; }
+/* משיכה לרענון: סמל המועדון בכותרת מגיב, פס אדום מתחת לכותרת, והתוכן יורד מעט עם האצבע */
+#hd .logo { transition: transform .35s var(--spring); }
+html.pull-on #hd .logo { transform: rotate(calc(min(var(--pull, 0), 1) * -360deg)) scale(calc(1 + min(var(--pull, 0), 1) * .1)); }
+html.pulling #hd .logo { transition: none; }
+html.pull-ready #hd .logo { transform: rotate(-360deg) scale(1.14); transition: transform .25s var(--spring); }
+html.refreshing #hd .logo { animation: dribble .52s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
+@keyframes dribble { 0% { transform: translateY(-3px); } 80% { transform: translateY(5px) scale(1.02, .98); } 100% { transform: translateY(6px) scale(1.06, .9); } }
+.pull-bar { position: fixed; left: 0; right: 0; top: var(--hdh, 64px); z-index: 31; height: 3px; pointer-events: none; transform-origin: right center; transform: scaleX(min(var(--pull, 0), 1)); background: rgb(var(--red-rgb) / .55); transition: transform .3s var(--ease), background-color .2s; }
+html.pull-ready .pull-bar { background: var(--red); }
+html.refreshing .pull-bar { transform: none; background: linear-gradient(90deg, transparent, var(--red) 30%, var(--red) 70%, transparent) 0 0 / 50% 100% no-repeat, rgb(var(--red-rgb) / .2); animation: barflow 1s linear infinite; }
+@keyframes barflow { from { background-position: 200% 0, 0 0; } to { background-position: -100% 0, 0 0; } }
+main.wrap { transition: transform .35s var(--spring); }
+html.pull-on main.wrap { transform: translateY(calc(min(var(--pull, 0), 1.4) * 22px)); }
+html.pulling main.wrap { transition: none; }
+@media (prefers-reduced-motion: reduce) { html.refreshing #hd .logo { animation: none; } html.pull-on main.wrap { transform: none; } }
 
 /* כרטיס כרטיסייה (הכרטיסים שלי) – בהשראת הכרטיס הרשמי של המועדון */
 .tix { border-radius: 28px; overflow: hidden; color: #fff; background: #242424; border: 1px solid rgb(255 255 255 / .08); box-shadow: var(--shadow-lg); }

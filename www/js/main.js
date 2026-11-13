@@ -52,9 +52,18 @@ function PullRefresh({ onRefresh, off }) {
     addEventListener('touchstart', start, { passive: true }); addEventListener('touchmove', move, { passive: false }); addEventListener('touchend', end); addEventListener('touchcancel', end);
     return () => { removeEventListener('touchstart', start); removeEventListener('touchmove', move); removeEventListener('touchend', end); removeEventListener('touchcancel', end); };
   }, []);
-  if (!d && !busy) return null;
-  return html`<div class="ptr glass-3" style=${{ top: topR.current + 'px', transform: 'translateY(' + (d - 44) + 'px)', transition: st.current ? 'none' : 'transform .25s var(--ease)', opacity: Math.min(1, d / 48 + (busy ? 1 : 0)) }}>
-    <span class=${busy ? 'spin' : ''} style=${busy ? null : { transform: 'rotate(' + d * 3 + 'deg)', display: 'flex' }}><${Icon} n="sync" s=${20}/></span></div>`;
+  /* במקום אייקון שצף: סמל המועדון בכותרת מסתובב עם המשיכה, פס אדום מתחת לכותרת מתמלא עד נקודת הרענון,
+     והתוכן יורד מעט עם האצבע. בזמן הרענון הסמל קופץ כמו כדור בכדרור והפס זורם */
+  useLayoutEffect(() => {
+    const de = document.documentElement, k = Math.min(d / 64, 1.4);
+    de.style.setProperty('--pull', String(busy ? 1 : k));
+    de.classList.toggle('pulling', !!st.current && d > 0 && !busy);
+    de.classList.toggle('pull-on', d > 0 || busy);
+    de.classList.toggle('pull-ready', d >= 64 && !busy);
+    de.classList.toggle('refreshing', busy);
+  }, [d, busy]);
+  useEffect(() => () => { const de = document.documentElement; de.classList.remove('pulling', 'pull-on', 'pull-ready', 'refreshing'); de.style.removeProperty('--pull'); }, []);
+  return d || busy ? html`<div class="pull-bar" aria-hidden="true"></div>` : null;
 }
 
 function App() {
