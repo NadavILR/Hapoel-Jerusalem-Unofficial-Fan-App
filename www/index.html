@@ -661,26 +661,25 @@ async function storyVideo(g,L,prog,opt={}){
   return new Blob([mux.target.buffer],{type:'video/mp4'})}
  finally{try{enc.state!=='closed'&&enc.close()}catch(e){}try{dec.close()}catch(e){}}}
 /* חיווי התקדמות קטן בזמן הכנת הסרטון */
-function storyBusy(){const d=document.createElement('div');d.setAttribute('dir','rtl');d.style.cssText='position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;padding:10px 18px;border-radius:999px;background:rgba(20,20,20,.9);color:#fff;font:600 14px "Noto Sans Hebrew",sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3);pointer-events:none';
+function storyBusy(){const d=document.createElement('div');d.setAttribute('dir','rtl');d.style.cssText='position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;padding:10px 18px;border-radius:999px;background:var(--bar);color:var(--bar-tx);border:1px solid var(--gl-bd);-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);font:600 14px "Noto Sans Hebrew",sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3);pointer-events:none';
  d.textContent='מכין סרטון לסטורי…';document.body.appendChild(d);return{set:p=>{d.textContent='מכין סרטון לסטורי… '+Math.round(p*100)+'%'},done:()=>d.remove()}}
 const b64=blob=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(blob)});
 /* בחירת גרסת הסטורי של הספירה לאחור: עם הספירה לאחור, או בלי – עם אזור ריק למדבקת הספירה לאחור של אינסטגרם.
    מוצגות תמונות מקדימות של שתי הגרסאות. מחזיר {noCd} או null (ביטול). */
 async function storyPick(g){
- const th=document.documentElement.getAttribute('data-theme'),dark=th?th==='dark':!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
- const fg=dark?'#fff':'#111',bg=dark?'#1a1a1a':'#fff',sub=dark?'rgba(255,255,255,.65)':'rgba(0,0,0,.6)',bd=dark?'rgba(255,255,255,.14)':'rgba(0,0,0,.1)';
+ const fg='var(--tx)',bg='var(--bg)',sub='var(--mu)',bd='var(--gl-bd)';
  const [a,b]=await Promise.all([storyCanvas(g,null),storyCanvas(g,null,{noCd:true})]);
  return new Promise(done=>{const ov=document.createElement('div');ov.setAttribute('dir','rtl');
   ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;font-family:"Noto Sans Hebrew",sans-serif';
-  const sh=document.createElement('div');sh.style.cssText='width:100%;max-width:480px;background:'+bg+';color:'+fg+';border-radius:24px 24px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(0,0,0,.25)';
-  sh.innerHTML='<div style="font-weight:700;font-size:18px;margin-bottom:4px">איזה סטורי לשתף?</div><div style="font-size:13px;color:'+sub+';margin-bottom:14px">בגרסה בלי הספירה לאחור נשאר מקום ריק – שם שמים את מדבקת הספירה לאחור של אינסטגרם</div>';
+  const sh=document.createElement('div');sh.style.cssText='width:100%;max-width:480px;background:'+bg+';color:'+fg+';border-radius:20px 20px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(0,0,0,.25)';
+  sh.innerHTML='<div style="font-weight:700;font-size:18px;margin-bottom:4px">איזה סטורי לשתף?</div><div style="font-size:14px;color:'+sub+';margin-bottom:12px">בגרסה בלי הספירה לאחור נשאר מקום ריק – שם שמים את מדבקת הספירה לאחור של אינסטגרם</div>';
   const row=document.createElement('div');row.style.cssText='display:flex;gap:12px';
   const close=v=>{ov.remove();done(v)};
   [[a,'עם ספירה לאחור',false],[b,'מקום למדבקה של אינסטגרם',true]].forEach(([cv,l,v])=>{const bt=document.createElement('button');bt.type='button';
    bt.style.cssText='flex:1;min-width:0;border:1px solid '+bd+';border-radius:16px;background:transparent;color:'+fg+';padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px;font:600 13px "Noto Sans Hebrew",sans-serif';
-   const im=new Image();im.src=cv.toDataURL('image/jpeg',.7);im.alt=l;im.style.cssText='width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;display:block';
+   const im=new Image();im.src=cv.toDataURL('image/jpeg',.7);im.alt=l;im.style.cssText='width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:8px;display:block';
    const sp=document.createElement('span');sp.textContent=l;bt.append(im,sp);bt.onclick=()=>close({noCd:v});row.appendChild(bt)});
-  const cn=document.createElement('button');cn.type='button';cn.textContent='ביטול';cn.style.cssText='width:100%;margin-top:12px;padding:12px;border:0;border-radius:14px;background:'+bd+';color:'+fg+';font:600 15px "Noto Sans Hebrew",sans-serif';cn.onclick=()=>close(null);
+  const cn=document.createElement('button');cn.type='button';cn.textContent='ביטול';cn.style.cssText='width:100%;margin-top:12px;padding:12px;border:1px solid '+bd+';border-radius:12px;background:transparent;color:'+fg+';font:600 15px "Noto Sans Hebrew",sans-serif';cn.onclick=()=>close(null);
   sh.append(row,cn);ov.appendChild(sh);ov.onclick=e=>{if(e.target===ov)close(null)};document.body.appendChild(ov)})}
 async function shareStory(A,g,L){let bz=null;try{const live=L&&L.status==='live';let opt={};
   if(!live){opt=await storyPick(g);if(!opt)return}
@@ -878,7 +877,7 @@ function Stand(){
  const CT={league:[[BRT.league.u,'הבראקט ב-365scores'],[LINKS.basket,'האתר הרשמי של ליגת ווינר סל']],euro:[[LINKS.e365,'הטבלאות החיות ב-365scores'],[BRT.euro.u,'הבראקט ב-365scores']],cup:[[BRT.cup.u,'הבראקט ב-365scores']],wcup:[[LINKS.wcup365,'גביע ווינר ב-365scores'],[BRT.wcup.u,'הבראקט ב-365scores']]}[k];
  const note=txt=>html`<div class="mb-3"><span class="on-glass box text-xs mu">${txt} · מקור: 365scores</span></div>`;
  return html`<div><${Ttl}>טבלאות · עונת ${SEASON}<//>
- <${StickyBar}><${Chips} o=${[['league','ליגת ווינר סל'],['euro','יורוקאפ'],['cup','גביע המדינה'],['wcup','גביע ווינר סל']]} v=${k} set=${setK}/><//>
+ <${StickyBar}><${Chips} o=${[['league','ליגת ווינר'],['euro','יורוקאפ'],['cup','גביע המדינה'],['wcup','גביע ווינר']]} v=${k} set=${setK}/><//>
  ${ld?html`<${Sk}/>`:html`<div key=${k} class="stg">
  ${none?html`<${SeasonEmpty} msg=${HAS?'אין נתונים למפעל הזה בעונה הנוכחית.':'הטבלאות של עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${CT[0][0]} cta=${CT[0][1]}/>`
  :k==='league'?html`<div><${Tb} nm="" heads=${['מש׳','נצ׳','הפ׳',PM,'רצף']} endHead="נק׳" rows=${LG.map(r=>({n:r.n,cells:[r.g??(r.w+r.l),r.w,r.l,sgn(r.d),streak(r.s)],end:r.p}))} mk=${i=>i<6?'g':i<10?'p':'r'} lg=${['g','p','r']}/>${note('2 נק׳ לניצחון, נק׳ להפסד')}</div>`
@@ -927,7 +926,7 @@ function GmP({g,gs,pf}){
  const tn=[ME,g.o],ws=ord(pl[si]),sum=i=>ws.reduce((t,w)=>t+w[i],0),tot=[ '',sum(4),sum(5),sum(6),sum(7),sum(8),sum(9)+'/'+sum(10),sum(11)+'/'+sum(12),sum(13)+'/'+sum(14),sum(15),sum(16),sum(17),sum(18)],
  bgs={background:'rgb(var(--sf-rgb)/.4)',WebkitBackdropFilter:'blur(24px) saturate(1.8)',backdropFilter:'blur(24px) saturate(1.8)'};
  return html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה אישית</div>
- <div role="tablist" class="segc grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg"><${SegInd} k=${si}/>${tn.map((n,i)=>html`<button key=${i} data-on=${si===i?'':undefined} role="tab" aria-selected=${String(!!(si===i))} onClick=${()=>setSi(i)} class=${'flex items-center justify-center gap-2 py-2 px-1 rounded-lg text-[13px] font-bold '+(si===i?'text-white':'mu')}><${Cr} n=${n} s=${18}/><span class="truncate">${n}</span></button>`)}</div>
+ <div role="tablist" class="segc grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg"><${SegInd} k=${si}/>${tn.map((n,i)=>html`<button key=${i} data-on=${si===i?'':undefined} role="tab" aria-selected=${String(!!(si===i))} onClick=${()=>setSi(i)} class=${'flex items-center justify-center gap-2 py-2 px-1 rounded-lg text-sm font-bold '+(si===i?'text-white':'mu')}><${Cr} n=${n} s=${18}/><span class="truncate">${n}</span></button>`)}</div>
  <${SplitTable} key=${si} nameHead="שחקן" heads=${PH} rows=${[...ws.map((w,i)=>({key:i,cls:'border-t bd'+(isDnp(w)?' mu':''),ncls:'font-medium whitespace-normal min-w-[112px] max-w-[132px]',
   name:html`${w[2]?html`<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#D21919] ml-1"></span>`:null}${w[1]!=null?html`<bdi class="inline-block mu font-normal text-xs ml-1">${w[1]}</bdi>`:null}<bdi>${w[0]}</bdi>`,
   cells:isDnp(w)?html`<td colSpan=13 class="text-right px-1.5 py-1.5 text-xs">לא שיחק</td>`:prw(w).map((v,j)=>html`<td key=${j} class=${'px-1.5 py-1.5 '+(j===1?'font-medium':'')}>${v}</td>`)})),
@@ -1182,7 +1181,7 @@ function Game({g}){
  <div class="text-xs opacity-80 mt-3 flex items-center justify-center gap-1"><${I} n="pin" s=${14}/>${g.v||(g.h?'משחק בית':'משחק חוץ')}</div></div>`}
  ${gs?null:g.r&&!LG?(ytId(g)?html`<div class="mt-3 rounded-xl overflow-hidden bg-black fade-in" style=${{aspectRatio:'16/9'}}><iframe key=${ytId(g)} src=${'https://www.youtube-nocookie.com/embed/'+ytId(g)+'?rel=0&playsinline=1'} title="תקציר המשחק" class="w-full h-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
   :html`<button onClick=${()=>openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white font-bold flex items-center justify-center gap-2"><${I} n="play" s=${18}/>לתקציר המשחק ביוטיוב</button>`):null}
- ${LG&&!gs?null:gs?html`<div><div role="tablist" class=${'segc grid gap-1 p-1 rounded-xl sf mt-3 '+(PB?'grid-cols-4':'grid-cols-3')}>${[['g','משחק'],['s','קבוצתי'],['p','אישי'],...(PB?[['b','מהלך']]:[])].map(([k,l])=>html`<button key=${k} data-on=${tb===k?'':undefined} role="tab" aria-selected=${String(!!(tb===k))} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-[13px] font-bold whitespace-nowrap '+(tb===k?'text-white':'mu')}>${l}</button>`)}<${SegInd} k=${tb+(PB?4:3)}/></div>
+ ${LG&&!gs?null:gs?html`<div><div role="tablist" class=${'segc grid gap-1 p-1 rounded-xl sf mt-3 '+(PB?'grid-cols-4':'grid-cols-3')}>${[['g','משחק'],['s','קבוצתי'],['p','אישי'],...(PB?[['b','מהלך']]:[])].map(([k,l])=>html`<button key=${k} data-on=${tb===k?'':undefined} role="tab" aria-selected=${String(!!(tb===k))} onClick=${()=>setTb(k)} class=${'py-2 px-1 rounded-lg text-sm font-bold whitespace-nowrap '+(tb===k?'text-white':'mu')}>${l}</button>`)}<${SegInd} k=${tb+(PB?4:3)}/></div>
  <div key=${tb}>${tb==='b'&&PB?html`<${Pbp} L=${PB} g=${g}/>`:tb==='g'?html`<${GmQ} g=${gg} gs=${gs}/>${g.r&&!LG?(ytId(g)?html`<div class="mt-3 rounded-xl overflow-hidden bg-black fade-in" style=${{aspectRatio:'16/9'}}><iframe key=${ytId(g)} src=${'https://www.youtube-nocookie.com/embed/'+ytId(g)+'?rel=0&playsinline=1'} title="תקציר המשחק" class="w-full h-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
   :html`<button onClick=${()=>openExt(hlUrl(g))} class="mt-3 w-full py-3 rounded-xl bg-[#D21919] text-white font-bold flex items-center justify-center gap-2"><${I} n="play" s=${18}/>לתקציר המשחק ביוטיוב</button>`):null}`:tb==='s'?html`<${GmT} g=${gg} gs=${gs}/>`:html`<${GmP} g=${gg} gs=${gs} pf=${pf}/>`}</div></div>`
  :!g.r&&!pf?html`<div class="mt-3"><span class="on-glass text-sm mu">הסטטיסטיקה תופיע כאן אחרי שריקת הסיום</span></div>`:html`<div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">${g.r?'שחקנים בולטים':'סטטיסטיקת משחק'}</div>
@@ -1231,7 +1230,7 @@ function Player({p}){
   <div class="p-4 flex-1 flex flex-col justify-center min-w-0 nm-in"><div class="text-5xl font-semibold sb opacity-90 leading-none num-in">${p[0]}</div><div class="text-xl font-bold leading-tight mt-1">${p[1]}</div><div class="text-sm opacity-80 mt-1">${p[2]}</div></div></div>
  <div class="stg grid grid-cols-2 gap-2 mt-3">${[['גובה',p[3]+' מ׳'],['אזרחות',p[4]],['תאריך לידה',p[5]+(ag!==''?' · גיל '+ag:'')],['עמדה',p[2]]].map(([l,v])=>html`<div key=${l} class="sf rounded-xl p-3"><div class="text-xs mu">${l}</div><div class="font-medium text-sm mt-0.5">${v}</div></div>`)}</div>
  <div class="sf rounded-xl p-3 mt-3"><div class="font-bold mb-2">סטטיסטיקה אישית · עונת ${SEASON}</div>
- ${ks.length?html`<div><div role="tablist" class="segc grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg"><${SegInd} k=${md}/>${[['a','ממוצע למשחק'],['t','סה״כ']].map(([k,l])=>html`<button key=${k} data-on=${md===k?'':undefined} role="tab" aria-selected=${String(!!(md===k))} onClick=${()=>setMd(k)} class=${'py-2 rounded-lg text-[13px] font-bold '+(md===k?'text-white':'mu')}>${l}</button>`)}</div>
+ ${ks.length?html`<div><div role="tablist" class="segc grid grid-cols-2 gap-1 p-1 rounded-xl mb-2 seg"><${SegInd} k=${md}/>${[['a','ממוצע למשחק'],['t','סה״כ']].map(([k,l])=>html`<button key=${k} data-on=${md===k?'':undefined} role="tab" aria-selected=${String(!!(md===k))} onClick=${()=>setMd(k)} class=${'py-2 rounded-lg text-sm font-bold '+(md===k?'text-white':'mu')}>${l}</button>`)}</div>
  <div key=${md} class="fade-in"><${SplitTable} nameHead="מפעל" heads=${HD} rows=${[...ks.map((k,i)=>({key:k,style:{animationDelay:(80+i*30)+'ms'},cls:'row-in border-t bd',ncls:'font-medium whitespace-normal min-w-[84px]',name:CN[k]||COMPS[k],
   cells:fm(by[k]).map((v,j)=>html`<td key=${j} class=${TDC+(j===2?' font-medium':'')}>${v}</td>`)})),
   ...(ks.length>1?[{key:'all',cls:'border-t-2 bd font-medium',name:'כל המפעלים',cells:fm(tt).map((v,j)=>html`<td key=${j} class=${TDC}>${v}</td>`)}]:[])]}/></div>

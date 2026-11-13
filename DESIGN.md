@@ -146,6 +146,7 @@ One club red over neutral glass: the palette is neutral by design so the red and
 - **Title** (700, 1.125rem): card and section titles.
 - **Body** (400, 0.875rem): rows, descriptions, news, play-by-play.
 - **Label** (500, 0.75rem): captions, chips, tab labels, "updated at" stamps.
+- **Compact score** (800, 15px and 26px): the live score inside the bottom-nav dock and the compact game-page scoreboard – deliberate off-ramp sizes so the score fits one line next to the crests.
 
 ### Named Rules
 **The Tabular Score Rule.** Every number that changes – score, clock, countdown, stat – uses tabular figures, so updates never shift the layout.
