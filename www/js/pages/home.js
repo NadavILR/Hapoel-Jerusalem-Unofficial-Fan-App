@@ -15,37 +15,37 @@ export const fresh = (L, now) => { const s = Math.max(0, Math.round((now - (L.at
 const PEND = 4 * H, isPend = (f, now) => !f.r && f.t < now - PEND;
 const openExt = u => window.open(u, '_blank', 'noopener');
 
-function Countdown({ t, now }) {
+function Countdown({ t, now, red }) {
   const df = Math.max(0, t - now), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]];
-  return html`<div class="cd" aria-label="ספירה לאחור">${u.reverse().map(([l, v]) => html`<div key=${l} class="on-red"><div class="v"><span key=${v} class="tick">${String(v).padStart(2, '0')}</span></div><div class="l">${l}</div></div>`)}</div>`;
+  return html`<div class="cd" aria-label="ספירה לאחור">${u.reverse().map(([l, v]) => html`<div key=${l} class=${red ? 'on-red' : 'cd-box'}><div class="v"><span key=${v} class="tick">${String(v).padStart(2, '0')}</span></div><div class=${cx('l', !red && 'mu')}>${l}</div></div>`)}</div>`;
 }
+/* כרטיס משחק במסך הבית – המידות והמרווחים כמו בגרסה 1.161 */
 function GameCard({ kind, g, now, L }) {
   const A = useApp(), [vid, setVid] = useState(false), red = kind === 'next', hm = g.h ? ME : g.o, aw = g.h ? g.o : ME, res = kind === 'prev' && g.r, w = res && won(g);
-  /* כשהמשחק עולה לאוויר בזמן שהמסך פתוח: הספירה יוצאת והתוצאה בלייב נכנסת */
   const [intro, setIntro] = useState(false), was = useRef(!!L);
   useEffect(() => { if (L && !was.current) { setIntro(true); const t = setTimeout(() => setIntro(false), 900); was.current = true; return () => clearTimeout(t); } was.current = !!L; }, [!!L]);
-  const nm = n => html`<div class=${cx('t-l', n === ME ? 'xb' : 'md')} style=${{ lineHeight: 1.2 }}>${n}</div>`;
+  const nm = n => html`<div class="gc-name" style=${{ fontWeight: n === ME ? 800 : 400 }}>${n}</div>`;
   const kicker = kind === 'prev' || kind === 'pend' ? 'המשחק הקודם' : kind === 'after' ? 'המשחק שאחריו' : 'המשחק הבא';
-  const btn = red ? 'btn on-red' : 'btn btn-glass';
-  return html`<article class=${cx('r-lg pad col', red ? 'glass-red' : 'glass')} style=${{ minHeight: '100%', position: 'relative' }}>
+  const btn = red ? 'gc-btn on-red' : 'gc-btn cd-box', sub = red ? '' : 'mu';
+  return html`<article class=${cx('gc col', red ? 'glass-red' : 'glass')}>
     ${red ? html`<button onClick=${() => shareStory(A.storyUI, g, L)} aria-label="שיתוף לסטורי" class="icon-btn sm on-red press" style=${{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}><${Icon} n="share" s=${17}/></button>` : null}
-    ${L ? html`<div class=${intro ? 'live-in' : ''}><div class="t-xs" style=${{ marginBottom: 10, paddingLeft: 40 }}>${compLabel(g)}</div><${LiveScore} L=${L} g=${g}/>
-      <button onClick=${() => A.openGame(g)} class="btn on-red press" style=${{ width: '100%', marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
+    ${L ? html`<div class=${intro ? 'live-in' : ''}><div class="t-s" style=${{ marginBottom: 12, paddingLeft: 40 }}>${compLabel(g)}</div><${LiveScore} L=${L} g=${g}/>
+      <button onClick=${() => A.openGame(g)} class="gc-btn on-red press" style=${{ marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
       <div class="t-xs" style=${{ textAlign: 'center', marginTop: 8 }}>${fresh(L, now)}</div></div>`
     : html`<div class="col grow">
-      <div class=${cx('t-xs', red ? '' : 'mu')} style=${{ textAlign: 'center', marginBottom: 12, padding: '0 36px' }}><b>${kicker}</b> · ${compLabel(g)}</div>
-      <div class="row" style=${{ gap: 8, marginBottom: 12 }}><${Crest} n=${hm} s=${58}/>
-        <div class="grow" style=${{ textAlign: 'center' }}>${nm(hm)}${res ? html`<div class="row center num" style=${{ gap: 8, fontSize: 32, fontWeight: 800, margin: '4px 0' }}><span>${g.h ? g.r[0] : g.r[1]}</span><span style=${{ opacity: .5 }}>–</span><span>${g.h ? g.r[1] : g.r[0]}</span></div>` : html`<div class="t-xs b" style=${{ opacity: .7, margin: '3px 0' }}>VS</div>`}${nm(aw)}</div>
-        <${Crest} n=${aw} s=${58}/></div>
+      <div class=${cx('t-s', sub)} style=${{ textAlign: 'center', marginBottom: 12, padding: red ? '0 40px' : 0 }}>${kicker} · ${compLabel(g)}</div>
+      <div class="row between" style=${{ gap: 8, marginBottom: 12 }}><${Crest} n=${hm} s=${60}/>
+        <div class="grow" style=${{ textAlign: 'center' }}>${nm(hm)}${res ? html`<div class="row center num" style=${{ gap: 8, fontSize: 30, fontWeight: 600, margin: '4px 0', lineHeight: 1.2 }}><span>${g.h ? g.r[0] : g.r[1]}</span><span>–</span><span>${g.h ? g.r[1] : g.r[0]}</span></div>` : html`<div class=${cx('t-s ltr', sub)} style=${{ margin: '2px 0' }}>VS</div>`}${nm(aw)}</div>
+        <${Crest} n=${aw} s=${60}/></div>
       <div class="t-s" style=${{ textAlign: 'center' }}>${fdLong(g)}</div>
-      <div class=${cx('t-s row center', red ? '' : 'mu')} style=${{ gap: 4, marginBottom: 14,  }}><${Icon} n="pin" s=${14}/>${g.v || (g.h ? 'משחק בית' : 'משחק חוץ')}</div>
-      ${res ? html`<div class="row center grow" style=${{ padding: '4px 0 6px' }}><span class=${cx('t-xl', w ? 'green' : 'red')}>${w ? 'ניצחון' : 'הפסד'}</span></div>
-          <button onClick=${() => ytId(g) ? setVid(true) : openExt(hlUrl(g))} class="btn btn-red press" style=${{ width: '100%' }}><${Icon} n="play" s=${15}/>לתקציר המשחק</button>`
-      : kind === 'pend' ? html`<div class="col center grow" style=${{ alignItems: 'center', padding: '6px 0' }}><span class="t-l xb">ממתין לתוצאה</span><span class="t-s mu">התוצאה תופיע כאן כשתתעדכן מהמקור הרשמי</span></div>`
-      : red && g.t <= now ? html`<div class="on-red r-md" style=${{ padding: 14, textAlign: 'center' }}><div class="t-l xb">המשחק התחיל</div><div class="t-s" style=${{ }}>התוצאה בלייב תופיע כאן ברגע שתתקבל</div></div>`
-      : html`${red ? html`<${Countdown} t=${g.t} now=${now}/>` : null}
-          <button onClick=${() => A.togRem(g)} class=${cx('btn press', A.rem[g.id] ? (red ? 'btn-white' : 'btn-red') : (red ? 'on-red' : 'btn-glass'))} style=${{ width: '100%', marginTop: red ? 12 : 'auto' }}><${Icon} n=${A.rem[g.id] ? 'bellOn' : 'bell'} s=${16}/>${A.rem[g.id] ? 'תזכורת פעילה – לחצו לביטול' : 'תזכורת שעה לפני המשחק'}</button>`}
-      <button onClick=${() => A.openGame(g)} class=${cx(btn, 'press')} style=${{ width: '100%', marginTop: 8 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
+      <div class=${cx('t-s row center', sub)} style=${{ gap: 4, marginBottom: 12 }}><${Icon} n="pin" s=${14}/>${g.v || (g.h ? 'משחק בית' : 'משחק חוץ')}</div>
+      ${res ? html`<div class="row center grow" style=${{ padding: '8px 0' }}><span class=${w ? 'green' : 'red'} style=${{ fontSize: 30, fontWeight: 800, lineHeight: '31px' }}>${w ? 'ניצחון' : 'הפסד'}</span></div>
+          <button onClick=${() => ytId(g) ? setVid(true) : openExt(hlUrl(g))} class="gc-btn btn-red press" style=${{ marginTop: 12 }}><${Icon} n="play" s=${16}/>לתקציר המשחק</button>`
+      : kind === 'pend' ? html`<div class="col center grow" style=${{ alignItems: 'center', padding: '8px 0' }}><span style=${{ fontSize: 24, fontWeight: 800 }}>ממתין לתוצאה</span><span class="t-s mu" style=${{ marginTop: 4 }}>התוצאה תופיע כאן כשתתעדכן מהמקור הרשמי</span></div>`
+      : red && g.t <= now ? html`<div class="on-red" style=${{ borderRadius: 12, padding: '16px 12px', textAlign: 'center', marginTop: 'auto' }}><div style=${{ fontSize: 20, fontWeight: 800 }}>המשחק התחיל</div><div class="t-s" style=${{ marginTop: 4 }}>התוצאה בלייב תופיע כאן ברגע שתתקבל</div></div>`
+      : html`<div style=${{ marginTop: 'auto' }}><${Countdown} t=${g.t} now=${now} red=${red}/></div>
+          <button onClick=${() => A.togRem(g)} class=${cx('gc-btn press', A.rem[g.id] ? (red ? 'btn-white' : 'btn-red') : btn)} style=${{ marginTop: 12 }}><${Icon} n=${A.rem[g.id] ? 'bellOn' : 'bell'} s=${16}/>${A.rem[g.id] ? 'תזכורת פעילה – לחצו לביטול' : 'הגדר תזכורת למשחק'}</button>`}
+      <button onClick=${() => A.openGame(g)} class=${cx(btn, 'press')} style=${{ marginTop: 8 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
     </div>`}
     ${vid ? html`<${VideoPop} id=${ytId(g)} title=${'תקציר: ' + (g.h ? ME + ' – ' + g.o : g.o + ' – ' + ME)} onClose=${() => setVid(false)}/>` : null}
   </article>`;
@@ -59,10 +59,6 @@ function Carousel({ items, start }) {
   const onScroll = () => { if (raf.current) return; raf.current = requestAnimationFrame(() => { raf.current = 0; const el = r.current; if (!el) return; const x = mid(el); let b = 0, bd = 1e9; [...el.children].forEach((c, k) => { const d = Math.abs(mid(c) - x); if (d < bd) { bd = d; b = k; } }); if (b !== iR.current) setI(b); }); };
   return html`<div><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
     ${items.length > 1 ? html`<div class="dots">${items.map((_, k) => html`<button key=${k} aria-label=${'כרטיס ' + (k + 1)} class=${k === i ? 'on' : ''} onClick=${() => to(k, 1)}></button>`)}</div>` : null}</div>`;
-}
-function HomeBg() {
-  const [src, err] = usePhoto(DB.TP, 'team');
-  return src ? portal(html`<div class="home-bg fade-in" aria-hidden="true"><img src=${src} alt="" referrerPolicy="no-referrer" onError=${err}/></div>`) : null;
 }
 const Leaders = memo(function Leaders({ v }) {
   const A = useApp(), [d, setD] = useState(savedLeaders), [ci, setCi] = useState(0);
@@ -98,7 +94,7 @@ export default function Home() {
   if (!nx && !ls) return html`<${Empty} title=${'עונת ' + SEASON} sub="משחקי העונה עוד לא נטענו לאפליקציה."><${ExtLink} href=${LINKS.club}>לאתר הרשמי של הקבוצה<//><//>`;
   const pv = pd && (!ls || pd.t > ls.t) ? ['pend', pd] : ls && ['prev', ls];
   const cards = [pv, nx && ['next', nx], up[1] && ['after', up[1]]].filter(Boolean);
-  return html`<div class="stack stg"><${HomeBg}/>
+  return html`<div class="stack stg">
     <${Carousel} key=${nx ? nx.id : 'x'} start=${pv && nx ? 1 : 0} items=${cards.map(([k, g]) => html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k === 'next' ? L : null}/>`)}/>
     <div class="row between t-xs">
       <span class="glass-2 r-full mu" style=${{ padding: '4px 12px' }}>${status.loading ? 'מעדכן נתונים…' : status.at ? 'עודכן ב-' + stamp(status.at) : 'נתונים נכונים ל-' + DB.ASOF}</span>

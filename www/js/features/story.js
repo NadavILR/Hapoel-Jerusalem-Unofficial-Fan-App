@@ -19,6 +19,8 @@ function blurInto(x, src, rect) {
   const s = small.getContext('2d'); s.drawImage(src, 0, 0, small.width, small.height);
   x.save(); x.beginPath(); rect(); x.clip(); x.imageSmoothingQuality = 'high'; x.drawImage(small, 0, 0, W, HH); x.restore();
 }
+/* מקום הכרטיס בתמונה: 80px משולי התמונה, ובתוכו 80px עד התוכן */
+const cardRect = live => { const h = live ? 1110 : 1120; return { x: 80, y: (HH - h) / 2, w: W - 160, h, r: 72 }; };
 /* הכרטיס עצמו (על שקוף). bgSrc – הרקע שמתחתיו, לטשטוש */
 export async function storyCard(g, L, o = {}) {
   const c = document.createElement('canvas'); c.width = W; c.height = HH; c.setAttribute('dir', 'rtl');
@@ -29,44 +31,47 @@ export async function storyCard(g, L, o = {}) {
   const T = (t, y, w, s, col = fg, al = 'center', xx = W / 2) => { x.font = F(w, s); x.fillStyle = col; x.textAlign = al; x.direction = 'rtl'; x.fillText(t, xx, y); };
   const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
   const hm = g.h ? ME : g.o, aw = g.h ? g.o : ME, [ih, ia] = await Promise.all([crestImg(hm), crestImg(aw)]);
-  const live = L && L.status === 'live', ch = live ? 1240 : 1180, cy = (HH - ch) / 2, cx0 = 70, cw = W - 140;
+  const live = L && L.status === 'live', { x: cx0, y: cy, w: cw, h: ch, r: cr } = cardRect(live), IN = 80, L0 = cx0 + IN, R0 = cx0 + cw - IN;
   /* זכוכית: הרקע מטושטש, שכבה שקופה, קו מתאר וברק עליון */
-  if (o.bgSrc) blurInto(x, o.bgSrc, () => rr(cx0, cy, cw, ch, 72));
-  x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 80; x.shadowOffsetY = 24; rr(cx0, cy, cw, ch, 72); x.fillStyle = dark ? 'rgba(40,40,40,.70)' : 'rgba(255,255,255,.72)'; x.fill(); x.restore();
-  rr(cx0 + 1, cy + 1, cw - 2, ch - 2, 71); x.strokeStyle = dark ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.9)'; x.lineWidth = 3; x.stroke();
+  if (o.bgSrc) blurInto(x, o.bgSrc, () => rr(cx0, cy, cw, ch, cr));
+  x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 80; x.shadowOffsetY = 24; rr(cx0, cy, cw, ch, cr); x.fillStyle = dark ? 'rgba(40,40,40,.72)' : 'rgba(255,255,255,.76)'; x.fill(); x.restore();
+  rr(cx0 + 1, cy + 1, cw - 2, ch - 2, cr - 1); x.strokeStyle = dark ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.9)'; x.lineWidth = 3; x.stroke();
   /* הפס האדום העליון */
-  x.save(); rr(cx0, cy, cw, ch, 72); x.clip(); x.fillStyle = RED; x.fillRect(cx0, cy, cw, 210); x.restore();
+  const BAND = 230;
+  x.save(); rr(cx0, cy, cw, ch, cr); x.clip(); x.fillStyle = RED; x.fillRect(cx0, cy, cw, BAND); x.restore();
   if (live) {
-    T(ME, cy + 128, '800', 64, '#fff', 'right', W - 140);
-    x.font = F('800', 52); const lw = x.measureText('לייב').width + 64; rr(140, cy + 64, lw, 86, 43); x.fillStyle = '#fff'; x.fill(); T('לייב', cy + 125, '800', 52, RED, 'center', 140 + lw / 2);
-  } else { T('המשחק הבא', cy + 100, '800', 60, '#fff'); T(compLabel(g), cy + 160, '400', 38, 'rgba(255,255,255,.9)'); }
-  const top = cy + 270, cs = live ? 190 : 220, xr = W - 130 - cs, xl = 130;
-  const crest = (im, X, n) => { if (im) { const k = Math.min(cs / im.width, cs / im.height), w = im.width * k, h = im.height * k; x.drawImage(im, X + (cs - w) / 2, top + (cs - h) / 2, w, h); } else { x.beginPath(); x.arc(X + cs / 2, top + cs / 2, cs / 2, 0, 7); x.fillStyle = 'rgba(128,128,128,.2)'; x.fill(); T(n[0], top + cs / 2 + 40, '800', 110, fg, 'center', X + cs / 2); } };
+    x.font = F('800', 50); const lw = x.measureText('לייב').width + 64; rr(L0, cy + 74, lw, 84, 42); x.fillStyle = '#fff'; x.fill(); T('לייב', cy + 134, '800', 50, RED, 'center', L0 + lw / 2);
+    T(ME, cy + 134, '800', 62, '#fff', 'right', R0);
+  } else { T('המשחק הבא', cy + 112, '800', 64, '#fff'); T(compLabel(g), cy + 176, '400', 38, 'rgba(255,255,255,.95)'); }
+  const top = cy + BAND + 70, cs = live ? 150 : 200, xr = R0 - cs, xl = L0;
+  const crest = (im, X, n) => { if (im) { const k = Math.min(cs / im.width, cs / im.height), w = im.width * k, h = im.height * k; x.drawImage(im, X + (cs - w) / 2, top + (cs - h) / 2, w, h); } else { x.beginPath(); x.arc(X + cs / 2, top + cs / 2, cs / 2, 0, 7); x.fillStyle = 'rgba(128,128,128,.2)'; x.fill(); T(n[0], top + cs / 2 + 36, '800', 100, fg, 'center', X + cs / 2); } };
   crest(ih, xr, hm); crest(ia, xl, aw);
-  const nm = (t, X, me) => { let fs = 46, s = t; x.font = F(me ? '800' : '500', fs); while (x.measureText(s).width > 380 && fs > 34) { fs -= 2; x.font = F(me ? '800' : '500', fs); } while (x.measureText(s).width > 380 && s.length > 3) s = s.slice(0, -2) + '…'; T(s, top + cs + 76, me ? '800' : '500', fs, fg, 'center', X); };
-  nm(hm, xr + cs / 2, hm === ME); nm(aw, xl + cs / 2, aw === ME);
+  /* השמות מתחת לסמלים: שם ארוך מוקטן, ואם צריך מקוצר – תמיד בתוך הכרטיס */
+  const maxW = (cw - 2 * IN) / 2 - 30;
+  const nm = (t, side, me) => { let fs = 44, s = t; x.font = F(me ? '800' : '500', fs); while (x.measureText(s).width > maxW && fs > 32) { fs -= 2; x.font = F(me ? '800' : '500', fs); } while (x.measureText(s).width > maxW && s.length > 3) s = s.slice(0, -2) + '…'; T(s, top + cs + 72, me ? '800' : '500', fs, fg, side === 'r' ? 'right' : 'left', side === 'r' ? R0 : L0); };
+  nm(hm, 'r', hm === ME); nm(aw, 'l', aw === ME);
   if (live) {
-    T(String(L.hs), top + cs / 2 + 45, '800', 130, fg, 'center', W / 2 + 150); T(String(L.as), top + cs / 2 + 45, '800', 130, fg, 'center', W / 2 - 150); T('–', top + cs / 2 + 35, '400', 90, mu);
-    const st = (L.st || 'LIVE') + (L.clock ? ' · ' + L.clock : ''); x.font = F('800', 44); const sw = x.measureText(st).width + 80; rr(W / 2 - sw / 2, top + cs + 120, sw, 84, 42); x.fillStyle = RED; x.fill(); T(st, top + cs + 177, '800', 44, '#fff');
-    T(compLabel(g) + ' · ' + fdLong(g).split(' · ').slice(0, 2).join(' · '), top + cs + 285, '400', 34, mu);
-    const qs = (L.q || []).filter(q => q && q.n).slice(0, 8), ty = top + cs + 340, row = 80;
+    T(String(L.hs), top + cs / 2 + 44, '800', 124, fg, 'center', W / 2 + 100); T(String(L.as), top + cs / 2 + 44, '800', 124, fg, 'center', W / 2 - 100); T('–', top + cs / 2 + 34, '400', 80, mu);
+    const st = (L.st || 'LIVE') + (L.clock ? ' · ' + L.clock : ''); x.font = F('800', 42); const sw = x.measureText(st).width + 80; rr(W / 2 - sw / 2, top + cs + 124, sw, 82, 41); x.fillStyle = RED; x.fill(); T(st, top + cs + 180, '800', 42, '#fff');
+    T(compLabel(g) + ' · ' + fdLong(g).split(' · ').slice(0, 2).join(' · '), top + cs + 280, '400', 34, mu);
+    const qs = (L.q || []).filter(q => q && q.n).slice(0, 8), ty = top + cs + 330, row = 80;
     if (qs.length) {
-      const bx = 130, bw = W - 260, pad = 40, n = qs.length + 2, cwd = (bw - 2 * pad) / n, ccx = k => bx + bw - pad - cwd * (k + .5);
+      const bx = L0, bw = R0 - L0, pad = 40, n = qs.length + 2, cwd = (bw - 2 * pad) / n, ccx = k => bx + bw - pad - cwd * (k + .5);
       rr(bx, ty, bw, row * 3 + 20, 36); x.fillStyle = dark ? 'rgba(255,255,255,.08)' : 'rgba(40,40,40,.06)'; x.fill();
       [...qs.map(q => q.n), 'סה״כ'].forEach((q, i) => T(q, ty + 58, '800', 30, mu, 'center', ccx(i + 1)));
       [[ih, 'h', L.hs], [ia, 'a', L.as]].forEach(([im, k, tot], r) => {
         const y = ty + row * (r + 1) + 10;
-        if (im) { const kk = Math.min(56 / im.width, 56 / im.height), w = im.width * kk, h = im.height * kk; x.drawImage(im, ccx(0) - w / 2, y + 26 - h / 2, w, h); }
+        if (im) { const kk = Math.min(52 / im.width, 52 / im.height), w = im.width * kk, h = im.height * kk; x.drawImage(im, ccx(0) - w / 2, y + 26 - h / 2, w, h); }
         qs.forEach((q, i) => T(String(q[k] ?? ''), y + 44, '500', 38, fg, 'center', ccx(i + 1)));
         T(String(tot), y + 44, '800', 40, fg, 'center', ccx(qs.length + 1));
       });
     }
   } else {
-    T('VS', top + cs / 2 + 26, '800', 60, mu);
-    T(fdLong(g), top + cs + 180, '500', 42); T(g.v || (g.h ? 'משחק בית' : 'משחק חוץ'), top + cs + 242, '400', 38, mu);
+    T('VS', top + cs / 2 + 22, '800', 56, mu);
+    T(fdLong(g), top + cs + 190, '500', 42); T(g.v || (g.h ? 'משחק בית' : 'משחק חוץ'), top + cs + 252, '400', 38, mu);
     if (!o.noCd) {
-      const df = Math.max(0, g.t - (o.now || Date.now())), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]], bw = 180, gap = 26, y0 = top + cs + 320, x0 = (W - (4 * bw + 3 * gap)) / 2;
-      u.forEach(([l, v], i) => { const X = x0 + (3 - i) * (bw + gap); rr(X, y0, bw, 190, 40); x.fillStyle = RED; x.fill(); T(String(v).padStart(2, '0'), y0 + 112, '800', 84, '#fff', 'center', X + bw / 2); T(l, y0 + 164, '500', 32, 'rgba(255,255,255,.85)', 'center', X + bw / 2); });
+      const df = Math.max(0, g.t - (o.now || Date.now())), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]], bw = 158, gap = 24, y0 = top + cs + 330, x0 = (W - (4 * bw + 3 * gap)) / 2;
+      u.forEach(([l, v], i) => { const X = x0 + (3 - i) * (bw + gap); rr(X, y0, bw, 176, 36); x.fillStyle = RED; x.fill(); T(String(v).padStart(2, '0'), y0 + 104, '800', 78, '#fff', 'center', X + bw / 2); T(l, y0 + 152, '500', 30, 'rgba(255,255,255,.92)', 'center', X + bw / 2); });
     }
   }
   c.remove(); return c;
@@ -107,8 +112,8 @@ export async function storyVideo(g, L, prog, opt = {}) {
       if (!card || (!live && !opt.noCd && s !== sec)) { sec = s; card = await storyCard(g, L, { now: t0 + s * 1000, noCd: opt.noCd }); }
       x.drawImage(bgc, 0, 0);
       /* הזכוכית: רק אזור הכרטיס מטושטש */
-      const ch = live ? 1240 : 1180, cy = (HH - ch) / 2;
-      blurInto(x, bgc, () => { const X = 70, Y = cy, w = W - 140, h = ch, r = 72; x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); });
+      const { x: X, y: Y, w, h, r } = cardRect(live);
+      blurInto(x, bgc, () => { x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); });
       x.drawImage(card, 0, 0);
       const vf = new VideoFrame(cv, { timestamp: Math.round(i * us), duration: Math.round(us) }); enc.encode(vf, { keyFrame: i % (fps * 2) === 0 }); vf.close();
       while (enc.encodeQueueSize > 6) await new Promise(r => setTimeout(r, 4));
