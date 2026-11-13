@@ -170,6 +170,8 @@ Depth comes from layered translucency, not shadows. The animated background is t
 ### Named Rules
 **The Glass Needs Something Behind It Rule.** Blur only where content or the animated background shows through. Inside the opaque red card, inner boxes drop the blur and keep only the translucent fill and edge.
 
+**The Big Surface Rule.** Large, long surfaces that scroll over the animated background (standings tables, the box score, bracket boxes, schedule rows) drop the live backdrop blur and use a denser fill (Paper / black at 80%). The background is already blurred, and a blur recomputed on every animation frame costs smooth scrolling. Chrome (header, bottom nav, menus, sheets) and small cards keep the glass.
+
 ## Shapes
 
 Soft, friendly rounding: cards are 16px (large cards 20px), controls and inner boxes 12px, small indicators 8px, and nav items, chips and the live tag are full pills. Crests sit in circles or are shown as-is. No sharp corners, no dotted lines.
