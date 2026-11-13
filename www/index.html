@@ -798,15 +798,11 @@ function openGame(A,g){A.setGm(g);window.scrollTo(0,0)}
 const rafT=f=>{let q=0;return()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;f()})}};
 /* כפתור "חזרה" הנעוץ מצטמצם לחץ בלבד אחרי גלילה, כדי לכסות פחות תוכן */
 addEventListener('scroll',rafT(()=>document.documentElement.classList.toggle('pg-scrolled',scrollY>40)),{passive:true});
-/* סרגל הסינון: בגלילה הוא נצמד לכותרת ומקבל את הזכוכית שלה, כך ששניהם נראים כחלק אחד */
+/* סרגל הסינון יושב בתוך הכותרת עצמה (מועבר אליה ב-portal): תמיד צמוד אליה ועל הזכוכית שלה, בלי שום בדיקה של מיקום או גלילה */
 function StickyBar({children}){
- const r=useRef(null),[stuck,setStuck]=useState(false);
- useEffect(()=>{const on=()=>{const el=r.current;if(!el)return;const top=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hdh'))||0,st=window.scrollY>4&&el.getBoundingClientRect().top<=top+1;if(st)document.documentElement.style.setProperty('--fbh',el.offsetHeight+'px');setStuck(st);document.documentElement.classList.toggle('bar-stuck',st)};
-  on();const ro=rafT(on);window.addEventListener('scroll',ro,{passive:true});window.addEventListener('resize',ro);
-  /* חזרה לעמוד (מעמוד משחק או שחקן) עם גלילה משוחזרת: בזמן אנימציית הכניסה המיקום עוד לא סופי ואין אירוע גלילה אחריה – בודקים שוב כשהיא נגמרת */
-  document.addEventListener('animationend',ro,true);const tm=[120,320,700].map(d=>setTimeout(ro,d));
-  return()=>{window.removeEventListener('scroll',ro);window.removeEventListener('resize',ro);document.removeEventListener('animationend',ro,true);tm.forEach(clearTimeout);document.documentElement.classList.remove('bar-stuck')}},[]);
- return html`<div ref=${r} class=${'fbar'+(stuck?' stuck':'')}>${children}</div>`;
+ const [t,setT]=useState(null);
+ React.useLayoutEffect(()=>{setT(document.getElementById('hd-slot'))},[]);
+ return t?ReactDOM.createPortal(html`<div class="pt-1 pb-2">${children}</div>`,t):null;
 }
 function Sched(){
  const A=useContext(Ctx),[tab,setTab0]=useState(SCH.tab),[fl,setFl0]=useState(SCH.fl);
@@ -1614,7 +1610,7 @@ function App(){
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 glass-bar" style=${{top:0,paddingTop:'var(--sat)',borderBottom:'1px solid var(--gl-bd)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
   <img src=${LOGO} alt="הפועל ירושלים" class="w-10 h-10 object-contain shrink-0"/>${gm||!PGT[pg]?html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${gm?'עמוד משחק':ME}</div>${gm?null:html`<div class="text-xs leading-tight mt-0.5 opacity-70">אפליקציית אוהדים · לא רשמית</div>`}</div>`
   :html`<div class="flex-1 min-w-0"><div class="font-extrabold text-xl leading-tight truncate">${pl&&pg==='roster'?pl[1]:PGT[pg]}</div><div class="text-xs leading-tight mt-0.5 opacity-60">עונת ${SEASON}</div></div>`}
-  ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-xs font-medium flex items-center justify-center">${unread}</span>`}</button></div></header>`}
+  ${['home','sched','stand','roster'].includes(pg)?html`<button onClick=${()=>setSt(true)} class="p-2" aria-label="הגדרות"><${I} n="cog" s=${22}/></button>`:null}<button onClick=${()=>setDr(true)} class="relative p-2" aria-label="התראות"><${I} n="bell" s=${22}/>${unread>0&&html`<span class="absolute top-0.5 left-0.5 min-w-[18px] h-[18px] rounded-full bg-[#D21919] text-white text-xs font-medium flex items-center justify-center">${unread}</span>`}</button></div><div id="hd-slot" class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto px-3 empty:hidden"></div></header>`}
  <div class="fixed inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none" style=${{top:'calc(var(--sat) + 64px)'}}>${toasts.map(t=>html`<div key=${t.id} class="pointer-events-auto bg-[#D21919] text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-[92%]">${t.t}</div>`)}</div>
  <main class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto p-3 pb-28"><div key=${gm?'g'+gm.id:'p'+pg} class=${!gm&&EXT[pg]?'':'pg-in'}>${gm?html`<${Game} g=${gm}/>`:html`<${Pg}/>`}</div><div class="text-center mt-6"><span onClick=${tapFoot} class="on-glass txt text-xs mu select-none">${demo?html`<b class="text-[#D21919]">מצב בדיקה · </b>`:null}אפליקציית אוהדים לא רשמית · נדב רובינסון © גרסה ${window.APP_VERSION||''}</span><div class="mt-2"><a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="on-glass txt text-xs mu underline">לאתר הרשמי של המועדון</a></div></div></main>
  ${mo?html`<div class="fixed inset-0 z-[44]" onClick=${()=>setMo(false)}></div>
