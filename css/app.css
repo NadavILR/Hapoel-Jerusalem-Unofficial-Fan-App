@@ -1,0 +1,425 @@
+/* ==========================================================================
+   הפועל ירושלים – מערכת העיצוב
+   שלושה צבעים: אדום #D21919, דיו #282828, לבן #FFFFFF.
+   בהיר: בסיס לבן, טקסט בדיו. כהה: בסיס דיו, טקסט לבן. האדום – בשניהם.
+   זכוכית: כל משטח צף מעל הרקע המונפש – טשטוש, מילוי שקוף, קו מתאר וברק עליון.
+   ========================================================================== */
+:root {
+  --red: #D21919; --red-rgb: 210 25 25; --ink: #282828; --ink-rgb: 40 40 40; --white: #FFFFFF;
+  --bg: #FFFFFF; --bg-rgb: 255 255 255; --tx: #282828; --tx-rgb: 40 40 40;
+  --mu: rgb(40 40 40 / .72); --faint: rgb(40 40 40 / .08); --line: rgb(40 40 40 / .1);
+  --glass: rgb(255 255 255 / .58); --glass-2: rgb(255 255 255 / .74); --glass-3: rgb(255 255 255 / .86);
+  --edge: rgb(255 255 255 / .75); --edge-out: rgb(40 40 40 / .08);
+  --hi: inset 0 1px 0 rgb(255 255 255 / .9);
+  --shadow: 0 1px 2px rgb(40 40 40 / .05), 0 8px 24px rgb(40 40 40 / .08);
+  --shadow-lg: 0 18px 48px rgb(40 40 40 / .18);
+  --red-tx: #C01414; --green: #13804A;
+  --blur: blur(22px) saturate(1.7);
+  --ease: cubic-bezier(.22, 1, .36, 1); --spring: cubic-bezier(.34, 1.4, .64, 1);
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --r-lg: 24px; --r-md: 18px; --r-sm: 12px;
+  color-scheme: light;
+}
+html.dark {
+  --bg: #282828; --bg-rgb: 40 40 40; --tx: #FFFFFF; --tx-rgb: 255 255 255;
+  --mu: rgb(255 255 255 / .7); --faint: rgb(255 255 255 / .07); --line: rgb(255 255 255 / .1);
+  --glass: rgb(40 40 40 / .55); --glass-2: rgb(40 40 40 / .72); --glass-3: rgb(34 34 34 / .88);
+  --edge: rgb(255 255 255 / .12); --edge-out: rgb(0 0 0 / .25);
+  --hi: inset 0 1px 0 rgb(255 255 255 / .08);
+  --shadow: 0 1px 2px rgb(0 0 0 / .2), 0 8px 24px rgb(0 0 0 / .22);
+  --shadow-lg: 0 18px 48px rgb(0 0 0 / .45);
+  --red-tx: #FF5A5A; --green: #4ADE80;
+  color-scheme: dark;
+}
+
+/* ---------- בסיס ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overscroll-behavior: none; }
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; scroll-padding-top: calc(var(--hdh, 64px) + 8px); }
+body {
+  margin: 0; background: var(--bg); color: var(--tx); min-height: 100vh;
+  font-family: "Noto Sans Hebrew", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+/* הרקע המונפש: פסים אדומים על לבן / על דיו */
+body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; background: #fff url(../bg/pattern-light.webp) center / cover no-repeat; }
+html.dark body::before { background: #282828 url(../bg/pattern-dark.webp) center / cover no-repeat; }
+@media (prefers-reduced-motion: reduce) {
+  body::before { background-image: url(../bg/pattern-light.jpg); }
+  html.dark body::before { background-image: url(../bg/pattern-dark.jpg); }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+img { max-width: 100%; }
+button, input, select { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; box-shadow: 0 0 0 4px var(--bg); }
+/* על משטח אדום הטבעת לבנה, כדי שלא תיבלע */
+.glass-red :focus-visible, .btn-red:focus-visible, .chip.on:focus-visible, .seg > button[aria-selected="true"]:focus-visible { outline-color: #fff; box-shadow: 0 0 0 4px var(--red); }
+::selection { background: rgb(var(--red-rgb) / .22); }
+.press { transition: transform .18s var(--ease), background-color .15s var(--ease), color .15s var(--ease), opacity .15s; }
+.press:active { transform: scale(.96); transition-duration: .06s; }
+[hidden] { display: none !important; }
+
+/* ---------- זכוכית ---------- */
+.glass, .glass-2, .glass-3, .bar {
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--edge); box-shadow: var(--hi), var(--shadow);
+}
+.glass { background: var(--glass); }
+.glass-2 { background: var(--glass-2); }
+.glass-3 { background: var(--glass-3); box-shadow: var(--hi), var(--shadow-lg); }
+/* משטחים ארוכים (טבלאות, רשימות): מילוי אטום יותר ובלי טשטוש חי – חלק בגלילה */
+.glass.lite { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--glass-2); }
+.bar { background: var(--glass-2); box-shadow: var(--hi); border-width: 0; }
+.glass-red {
+  background: linear-gradient(150deg, rgb(var(--red-rgb) / .92), rgb(170 14 14 / .9)); color: #fff;
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid rgb(255 255 255 / .28); box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), 0 14px 36px rgb(var(--red-rgb) / .28);
+}
+html.dark .glass-red { background: linear-gradient(150deg, rgb(var(--red-rgb) / .94), rgb(150 12 12 / .94)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 14px 36px rgb(0 0 0 / .4); }
+/* תיבה זכוכית בתוך הכרטיס האדום */
+.on-red { background: rgb(255 255 255 / .14); border: 1px solid rgb(255 255 255 / .22); box-shadow: inset 0 1px 0 rgb(255 255 255 / .18); }
+.r-lg { border-radius: var(--r-lg); } .r-md { border-radius: var(--r-md); } .r-sm { border-radius: var(--r-sm); } .r-full { border-radius: 999px; }
+
+/* ---------- פריסה ---------- */
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 14px; }
+@media (min-width: 900px) { .wrap { max-width: 980px; } }
+.stack > * + * { margin-top: 12px; }
+.stack-s > * + * { margin-top: 8px; }
+.row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.col { display: flex; flex-direction: column; min-width: 0; }
+.between { justify-content: space-between; }
+.center { justify-content: center; text-align: center; }
+.grow { flex: 1; min-width: 0; }
+.wrapx { flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 900px) { .grid-md2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; } .grid-md2 > * + * { margin-top: 0; } }
+.pad { padding: 16px; } .pad-s { padding: 12px; } .pad-x { padding-left: 16px; padding-right: 16px; }
+.gap-s { gap: 6px; } .gap-l { gap: 16px; }
+.shrink0 { flex-shrink: 0; }
+.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nowrap { white-space: nowrap; }
+.rel { position: relative; }
+.hscroll { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.hscroll::-webkit-scrollbar { display: none; }
+
+/* ---------- טיפוגרפיה ---------- */
+.t-xl { font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+.t-l { font-size: 19px; font-weight: 700; line-height: 1.25; }
+.t-m { font-size: 16px; font-weight: 700; }
+.t-s { font-size: 14px; } .t-xs { font-size: 12.5px; } .t-xxs { font-size: 11px; }
+.b { font-weight: 700; } .xb { font-weight: 800; } .md { font-weight: 500; } .lt { font-weight: 400; }
+.mu { color: var(--mu); } .red { color: var(--red-tx); } .green { color: var(--green); } .white { color: #fff; }
+.num { font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.ltr { direction: ltr; unicode-bidi: isolate; }
+.sec-t { font-size: 16px; font-weight: 800; }
+
+/* ---------- כפתורים ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 14px; font-weight: 700; font-size: 15px; }
+.btn-red { background: var(--red); color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), 0 6px 18px rgb(var(--red-rgb) / .3); }
+.btn-glass { background: var(--glass-2); border: 1px solid var(--edge); box-shadow: var(--hi); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.btn-white { background: #fff; color: var(--red); }
+.btn-ghost { background: var(--faint); }
+.btn-s { min-height: 36px; padding: 0 12px; font-size: 13.5px; border-radius: 12px; }
+.btn[disabled] { opacity: .6; pointer-events: none; }
+.icon-btn { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; position: relative; flex-shrink: 0; }
+.icon-btn.sm { width: 36px; height: 36px; }
+/* אזור לחיצה של 44px גם כשהכפתור נראה קטן יותר */
+.icon-btn.sm::after, .chip::after { content: ""; position: absolute; inset: -5px -2px; }
+.tap { min-height: 44px; }
+.link { color: var(--red-tx); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.badge { position: absolute; top: 2px; left: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--bg); }
+
+/* ---------- צ'יפים (סינון) ---------- */
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 4px 18px 12px; margin: 0 -14px; overscroll-behavior-x: contain; scroll-padding: 0 18px;
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to left, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+.chips::-webkit-scrollbar { display: none; }
+.chip { position: relative; flex-shrink: 0; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 700; white-space: nowrap; background: var(--faint); border: 1px solid transparent; color: var(--tx); display: inline-flex; align-items: center; gap: 6px; transition: background-color .2s var(--ease), color .2s var(--ease), transform .18s var(--ease); }
+.chip:active { transform: scale(.95); }
+.chip.on { background: var(--red); color: #fff; }
+.chip.small { height: 30px; font-size: 12.5px; padding: 0 12px; }
+
+/* ---------- בורר מקטעים: הסימון האדום מחליק ---------- */
+.seg { position: relative; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; padding: 4px; border-radius: 14px; background: var(--faint); border: 1px solid var(--line); }
+.seg > button { position: relative; z-index: 1; min-height: 40px; padding: 0 6px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--mu); transition: color .22s var(--ease); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg > button[aria-selected="true"] { color: #fff; }
+.seg-ind { position: absolute; top: 4px; bottom: 4px; right: 4px; border-radius: 10px; background: var(--red); box-shadow: 0 3px 10px rgb(var(--red-rgb) / .3); transition: transform .32s var(--ease); pointer-events: none; }
+.on-red-seg.seg { background: rgb(255 255 255 / .12); border-color: rgb(255 255 255 / .2); }
+.on-red-seg .seg-ind { background: #fff; }
+.on-red-seg > button { color: rgb(255 255 255 / .8); }
+.on-red-seg > button[aria-selected="true"] { color: var(--red); }
+
+/* ---------- מתג ---------- */
+.tg { position: relative; width: 50px; height: 30px; border-radius: 999px; background: rgb(var(--tx-rgb) / .2); transition: background-color .22s var(--ease); flex-shrink: 0; }
+.tg::after { content: ""; position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .25); transition: transform .26s var(--spring); }
+.tg[aria-checked="true"] { background: var(--red); }
+.tg[aria-checked="true"]::after { transform: translateX(-20px); }
+.tg[disabled] { opacity: .45; }
+
+/* ---------- רשימות ---------- */
+.li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-width: 0; }
+.li + .li { border-top: 1px solid var(--line); }
+.li-t { font-weight: 700; }
+.li-s { font-size: 12.5px; color: var(--mu); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+.ic-circle { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--red); color: #fff; flex-shrink: 0; }
+.ic-soft { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgb(var(--red-rgb) / .12); color: var(--red-tx); flex-shrink: 0; }
+
+/* ---------- כותרת ---------- */
+#hd { position: sticky; top: 0; z-index: 30; padding-top: var(--sat); border-bottom: 1px solid var(--edge-out); }
+#hd .hd-in { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 6px 0; }
+#hd .logo { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+#hd .ttl { font-size: 19px; font-weight: 800; line-height: 1.2; }
+#hd .sub { font-size: 12px; color: var(--mu); line-height: 1.2; margin-top: 1px; }
+.unofficial { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--red-tx); background: rgb(var(--red-rgb) / .1); border-radius: 999px; padding: 1px 8px; margin-top: 3px; }
+/* סינון שמחובר לכותרת: נכנס בהחלקה כשגוללים למטה ויוצא כשחוזרים למעלה */
+#hd-slot:empty { display: none; }
+.hd-filters { }
+.hd-filters .chips { padding-top: 2px; }
+.fx-in { animation: fxIn .32s var(--ease) both; }
+@keyframes fxIn { from { opacity: 0; transform: translateY(-8px); } }
+.fx-sub { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s var(--ease), opacity .25s var(--ease); }
+.fx-sub > div { overflow: hidden; margin: 0 -14px; padding: 0 14px; }
+.fx-sub.on { grid-template-rows: 1fr; opacity: 1; }
+.hd-filters .chip { transition: height .25s var(--ease), font-size .25s var(--ease), background-color .2s var(--ease), color .2s; }
+
+/* כפתור חזרה: נעול מתחת לכותרת */
+.back { position: sticky; top: calc(var(--hdh, 64px) + 8px); z-index: 20; display: inline-flex; width: max-content; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 12px; border-radius: 999px; font-weight: 700; font-size: 14px; }
+.back-row { position: sticky; top: calc(var(--hdh, 64px) + 8px); z-index: 20; height: 48px; pointer-events: none; }
+.back-row > * { pointer-events: auto; }
+
+/* ---------- סרגל ניווט תחתון ---------- */
+#nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; padding-bottom: var(--sab); border-top: 1px solid var(--edge-out); }
+#nav .nav-in { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 720px; margin: 0 auto; }
+#nav .nav-b { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 7px; font-size: 11.5px; font-weight: 600; color: var(--mu); transition: color .2s var(--ease); }
+#nav .nav-b .pill { width: 58px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 999px; transition: transform .2s var(--ease); }
+#nav .nav-b[aria-current="page"], #nav .nav-b.on { color: var(--red-tx); font-weight: 800; }
+#nav .nav-b:active .pill { transform: scale(.9); }
+.nav-ind { position: absolute; top: 8px; right: 0; width: 20%; height: 32px; display: flex; justify-content: center; pointer-events: none; transition: transform .38s var(--ease); }
+.nav-ind::before { content: ""; width: 58px; height: 32px; border-radius: 999px; background: rgb(var(--red-rgb) / .13); }
+html.dark .nav-ind::before { background: rgb(var(--red-rgb) / .28); }
+main.wrap { padding-top: 12px; padding-bottom: calc(var(--navh, 72px) + 28px); }
+
+/* התוצאה בלייב בתוך סרגל הניווט */
+.dock { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 720px; margin: 0 auto; padding: 8px 14px; border-bottom: 1px solid var(--line); animation: fade .3s var(--ease) both; text-align: right; }
+.dock .sc { font-size: 20px; font-weight: 800; }
+
+/* תפריט "עוד" */
+.menu { position: fixed; left: 12px; z-index: 46; width: 260px; border-radius: 22px; overflow: hidden; transform-origin: bottom left; animation: pop .22s var(--ease) both; }
+
+/* ---------- שכבות: מסך מלא, גיליון, חלון ---------- */
+.scrim { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / .35); animation: fade .2s var(--ease) both; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 51; max-height: 92vh; overflow-y: auto; border-radius: 26px 26px 0 0; padding: 8px 0 calc(16px + var(--sab)); animation: sheetIn .32s var(--ease) both; }
+.sheet .grab { width: 40px; height: 5px; border-radius: 9px; background: rgb(var(--tx-rgb) / .2); margin: 2px auto 10px; }
+.sheet .in { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+.full { position: fixed; inset: 0; z-index: 55; overflow-y: auto; background: var(--bg); animation: fade .2s var(--ease) both; }
+.full::before { content: ""; position: fixed; inset: 0; z-index: -1; background: inherit; }
+.full-bg { position: fixed; inset: 0; z-index: -1; background: #fff url(../bg/pattern-light.webp) center / cover no-repeat; }
+html.dark .full-bg { background: #282828 url(../bg/pattern-dark.webp) center / cover no-repeat; }
+.full-hd { position: sticky; top: 0; z-index: 2; padding-top: var(--sat); border-bottom: 1px solid var(--edge-out); }
+
+/* ---------- הודעות קופצות ---------- */
+.toasts { position: fixed; left: 0; right: 0; top: calc(var(--sat) + 70px); z-index: 80; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }
+.toast { pointer-events: none; max-width: 440px; padding: 10px 16px; border-radius: 16px; font-size: 14px; font-weight: 600; background: var(--ink); color: #fff; box-shadow: var(--shadow-lg); animation: toastIn .3s var(--spring) both; text-align: center; }
+html.dark .toast { background: #fff; color: var(--ink); }
+
+/* ---------- טבלאות ---------- */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.tbl th { font-size: 11.5px; font-weight: 700; color: var(--mu); padding: 8px 4px; text-align: center; white-space: nowrap; }
+.tbl td { padding: 9px 4px; text-align: center; border-top: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbl .tn { text-align: right; white-space: nowrap; }
+.tbl th:last-child, .tbl td:last-child { padding-left: 16px; }
+.tbl th:first-child, .tbl td:first-child { padding-right: 12px; }
+.tbl .mark + .pos, .tbl th.mark + th { padding-right: 8px; }
+.tbl tr.me td { background: rgb(var(--red-rgb) / .09); color: var(--red-tx); font-weight: 800; }
+.tbl .pos { width: 30px; }
+.tbl td.mark, .tbl th.mark { width: 4px; padding: 0; }
+.mk-g { background: #16A34A; } .mk-p { background: var(--ink); } html.dark .mk-p { background: #fff; } .mk-r { background: var(--red); }
+.tscroll { overflow-x: auto; scrollbar-width: none; }
+.tscroll::-webkit-scrollbar { display: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--mu); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-left: 5px; vertical-align: -1px; }
+
+/* ---------- סמלים ותמונות ---------- */
+.crest { object-fit: contain; flex-shrink: 0; }
+.crest-l { border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; flex-shrink: 0; background: var(--ink); }
+html.dark .crest-l { background: #fff; color: var(--ink); }
+.ph { object-fit: cover; object-position: top; background: linear-gradient(160deg, var(--red), var(--ink)); }
+
+/* ---------- טעינה ---------- */
+.sk { border-radius: 14px; background: linear-gradient(90deg, var(--faint) 25%, rgb(var(--tx-rgb) / .12) 50%, var(--faint) 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }
+@keyframes sk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(-360deg); } }
+
+/* ---------- תנועה ---------- */
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pop { from { opacity: 0; transform: scale(.94) translateY(6px); } }
+@keyframes sheetIn { from { transform: translateY(100%); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px) scale(.96); } }
+.pg-in { animation: up .26s var(--ease) both; }
+.stg > * { animation: up .3s var(--ease) both; }
+.stg > *:nth-child(2) { animation-delay: .03s; } .stg > *:nth-child(3) { animation-delay: .06s; } .stg > *:nth-child(n+4) { animation-delay: .09s; }
+.fade-in { animation: fade .2s var(--ease) both; }
+.pop-in { animation: pop .22s var(--ease) both; }
+.cv { content-visibility: auto; contain-intrinsic-size: auto 84px; }
+
+/* ---------- רכיבים של עמודים ---------- */
+/* קרוסלת המשחקים במסך הבית */
+.car { display: flex; gap: 32px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; padding: 4px 14px 14px; margin: -4px -14px -14px; scroll-padding: 0 14px; }
+.car::-webkit-scrollbar { display: none; }
+.car > * { flex: 0 0 100%; min-width: 0; scroll-snap-align: center; }
+.dots { display: flex; justify-content: center; gap: 2px; margin: 4px 0 -6px; }
+/* הנקודות תופסות 24px בעיצוב, ואזור הלחיצה שלהן 44px (בלי רווח מת מתחת לכרטיסים) */
+.dots button { position: relative; height: 24px; min-width: 28px; display: flex; align-items: center; justify-content: center; }
+.dots button::after { content: ""; position: absolute; inset: -10px 0; }
+.dots button::before { content: ""; width: 8px; height: 8px; border-radius: 9px; background: rgb(var(--tx-rgb) / .3); transition: width .3s var(--ease), background-color .3s; }
+.dots button.on::before { width: 22px; background: var(--red); }
+.cd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; direction: ltr; }
+.cd > div { border-radius: 12px; padding: 8px 0; text-align: center; }
+.cd .v { font-size: 24px; font-weight: 600; line-height: 1.33; font-variant-numeric: tabular-nums; }
+.cd .l { font-size: 11px; direction: rtl; }
+.cd-box { background: var(--faint); border: 1px solid var(--line); }
+/* כרטיס המשחק במסך הבית (מידות כמו ב-1.161) */
+.gc { position: relative; min-height: 100%; padding: 16px; border-radius: 16px; }
+.gc-name { font-size: 24px; line-height: 1.25; }
+.gc-btn { display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; border-radius: 12px; font-size: 14px; font-weight: 700; }
+.tick { display: inline-block; animation: fade .15s var(--ease) both; }
+.live-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; }
+.live-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1.4s ease-in-out infinite; }
+.glass-red .live-pill { background: #fff; color: var(--red); }
+.glass-red .live-pill::before { background: var(--red); }
+@keyframes blink { 50% { opacity: .25; } }
+.sc-big { font-size: 46px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.pts-pop { position: absolute; top: -6px; left: 50%; font-size: 13px; font-weight: 800; background: #fff; color: var(--red); border-radius: 999px; padding: 1px 8px; animation: ptsPop 1.8s var(--ease) both; pointer-events: none; }
+@keyframes ptsPop { 0% { opacity: 0; transform: translate(-50%, 6px) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -6px) scale(1.08); } 80% { opacity: 1; transform: translate(-50%, -8px); } 100% { opacity: 0; transform: translate(-50%, -14px); } }
+.live-in { animation: liveIn .7s var(--spring) both; }
+@keyframes liveIn { from { opacity: 0; transform: scale(.8); } }
+
+/* אריח תאריך בלוח המשחקים: בית – אדום, חוץ – דיו */
+.dt { width: 52px; flex-shrink: 0; border-radius: 14px; text-align: center; padding: 6px 0 5px; line-height: 1.1; }
+.dt .d { font-size: 20px; font-weight: 800; }
+.dt .w { font-size: 11px; font-weight: 600; opacity: .9; }
+.dt-h { background: var(--red); color: #fff; }
+.dt-a { background: var(--ink); color: #fff; }
+html.dark .dt-a { background: #fff; color: var(--ink); }
+.month { font-size: 13px; font-weight: 800; color: var(--mu); padding: 6px 4px 0; }
+.res-w { color: var(--green); } .res-l { color: var(--red-tx); }
+
+/* מדדי קבוצה */
+.bar2 { display: flex; height: 8px; border-radius: 9px; overflow: hidden; gap: 3px; direction: rtl; }
+.bar2 > i { display: block; border-radius: 9px; transition: width .5s var(--ease); }
+.bar2 .j { background: var(--red); } .bar2 .o { background: rgb(var(--tx-rgb) / .3); }
+
+/* מהלך המשחק */
+.pbp-win { max-height: 62vh; overflow-y: auto; overscroll-behavior: contain; }
+.pbp-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 13.5px; }
+.pbp-row.big { font-weight: 700; }
+.pbp-row .clk { width: 44px; flex-shrink: 0; color: var(--mu); font-variant-numeric: tabular-nums; direction: ltr; text-align: right; }
+.pbp-row.j .who { color: var(--red-tx); }
+.pbp-q { padding: 7px 14px; font-size: 12px; font-weight: 800; color: var(--mu); background: var(--faint); }
+
+/* דוח שחקנים: עמודת שם קבועה */
+.box { display: flex; }
+.box .names { flex-shrink: 0; width: 152px; border-left: 1px solid var(--line); }
+.box .cells { overflow-x: auto; flex: 1; scrollbar-width: none; }
+.box .cells::-webkit-scrollbar { display: none; }
+.box .r { height: 40px; display: flex; align-items: center; border-top: 1px solid var(--line); font-size: 13px; }
+.box .r.h { height: 32px; border-top: 0; font-size: 11.5px; color: var(--mu); font-weight: 700; }
+.box .names .r { padding: 0 10px; gap: 6px; }
+.box .cells .r > span { width: 44px; flex-shrink: 0; text-align: center; font-variant-numeric: tabular-nums; }
+.box .cells .r > span.w { width: 60px; white-space: nowrap; }
+.box .st { font-weight: 800; }
+
+/* הבראקטים */
+.brk { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+.brk::-webkit-scrollbar { display: none; }
+.brk .stage { flex: 0 0 168px; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; }
+.brk .st-t { font-size: 12px; font-weight: 800; text-align: center; color: var(--red-tx); background: rgb(var(--red-rgb) / .1); border-radius: 999px; padding: 3px 0; margin-bottom: 2px; }
+.brk .m { border-radius: 14px; padding: 6px 10px; font-size: 13px; }
+.brk .m .tm { display: flex; align-items: center; gap: 6px; height: 26px; }
+.brk .m .tm.win { font-weight: 800; }
+.brk .m .tm + .tm { border-top: 1px solid var(--line); }
+.brk .ghost { opacity: .45; }
+
+/* כרטיס שחקן בסגל */
+.pcard { position: relative; border-radius: 20px; overflow: hidden; aspect-ratio: 4 / 5; display: block; text-align: right; }
+.pcard img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pcard .cap { position: absolute; inset-inline: 0; bottom: 0; padding: 26px 10px 9px; color: #fff; background: linear-gradient(to top, rgb(0 0 0 / .78), transparent); }
+.pcard .no { position: absolute; top: 8px; right: 10px; font-size: 22px; font-weight: 800; color: #fff; text-shadow: 0 2px 8px rgb(0 0 0 / .35); }
+.roster-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 600px) { .roster-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .roster-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* תמונת הקבוצה מטושטשת מאחורי מסך הבית */
+.home-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 20%, transparent 65%); mask-image: linear-gradient(to bottom, #000 20%, transparent 65%); }
+.home-bg img { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(30px) saturate(1.2); opacity: .55; }
+
+/* משיכה לרענון: סמל המועדון בכותרת מגיב, פס אדום מתחת לכותרת, והתוכן יורד מעט עם האצבע */
+#hd .logo { transition: transform .35s var(--spring); }
+html.pull-on #hd .logo { transform: rotate(calc(min(var(--pull, 0), 1) * -360deg)) scale(calc(1 + min(var(--pull, 0), 1) * .1)); }
+html.pulling #hd .logo { transition: none; }
+html.pull-ready #hd .logo { transform: rotate(-360deg) scale(1.14); transition: transform .25s var(--spring); }
+html.refreshing #hd .logo { animation: dribble .52s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
+@keyframes dribble { 0% { transform: translateY(-3px); } 80% { transform: translateY(5px) scale(1.02, .98); } 100% { transform: translateY(6px) scale(1.06, .9); } }
+.pull-bar { position: fixed; left: 0; right: 0; top: var(--hdh, 64px); z-index: 31; height: 3px; pointer-events: none; transform-origin: right center; transform: scaleX(min(var(--pull, 0), 1)); background: rgb(var(--red-rgb) / .55); transition: transform .3s var(--ease), background-color .2s; }
+html.pull-ready .pull-bar { background: var(--red); }
+html.refreshing .pull-bar { transform: none; background: linear-gradient(90deg, transparent, var(--red) 30%, var(--red) 70%, transparent) 0 0 / 50% 100% no-repeat, rgb(var(--red-rgb) / .2); animation: barflow 1s linear infinite; }
+@keyframes barflow { from { background-position: 200% 0, 0 0; } to { background-position: -100% 0, 0 0; } }
+main.wrap { transition: transform .35s var(--spring); }
+html.pull-on main.wrap { transform: translateY(calc(min(var(--pull, 0), 1.4) * 22px)); }
+html.pulling main.wrap { transition: none; }
+@media (prefers-reduced-motion: reduce) { html.refreshing #hd .logo { animation: none; } html.pull-on main.wrap { transform: none; } }
+
+/* כרטיס כרטיסייה (הכרטיסים שלי) – בהשראת הכרטיס הרשמי של המועדון */
+.tix { border-radius: 28px; overflow: hidden; color: #fff; background: #242424; border: 1px solid rgb(255 255 255 / .08); box-shadow: var(--shadow-lg); }
+.tix .ring { width: 96px; height: 96px; border-radius: 50%; border: 1.5px solid rgb(255 255 255 / .28); display: flex; align-items: center; justify-content: center; }
+.tix .foot { border-top: 1px solid rgb(255 255 255 / .1); }
+.qr-box { background: #fff; border-radius: 24px; padding: 16px; }
+
+/* מסך העדכון */
+.gate { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: center; padding: calc(var(--sat) + 24px) 20px calc(var(--sab) + 24px); }
+.prog { height: 8px; border-radius: 9px; background: var(--faint); overflow: hidden; }
+.prog > i { display: block; height: 100%; background: var(--red); border-radius: 9px; transition: width .3s var(--ease); }
+
+/* חלון וידאו */
+.vid { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgb(0 0 0 / .62); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); animation: fade .2s both; }
+.vid .fr { width: 100%; max-width: 860px; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #000; }
+.vid iframe { width: 100%; height: 100%; border: 0; }
+
+/* דף חיצוני בתוך האפליקציה */
+.ext-frame { position: fixed; left: 0; right: 0; bottom: 0; border: 0; width: 100%; background: #fff; }
+
+/* מוסתר ויזואלית, נקרא בקורא מסך */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.abs-fill { position: absolute; inset: 0; width: 100%; height: 100%; }
+.legend i.dt-h { background: var(--red); } .legend i.dt-a { background: var(--ink); }
+html.dark .legend i.dt-a { background: #fff; }
+.pcard-no { position: absolute; top: 8px; right: 8px; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 999px; background: rgb(40 40 40 / .62); color: #fff; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+@keyframes dropIn { from { transform: translateY(-100%); } }
+@keyframes noteOut { to { opacity: 0; transform: translateX(-48px); } }
+
+/* במצב כהה: צל ניטרלי במקום זוהר אדום */
+html.dark .btn-red, html.dark .seg-ind { box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 4px 12px rgb(0 0 0 / .35); }
+
+/* כרטיסי המשחקים במסך הבית: בלי צל מטושטש (אדום / אפור) מאחוריהם */
+.car .gc, .car .gc.glass-red, html.dark .car .gc.glass-red { box-shadow: var(--hi); }
+
+/* המשחק בלייב במסך הבית (כמו ב-1.161): הכותרת ממלאת את השטח הפנוי */
+.lv-title { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px 0 16px; font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -.01em; }
+.live-tag { position: relative; isolation: isolate; background: #fff; color: var(--red); border-radius: 16px; padding: 6px 16px 10px; box-shadow: 0 4px 12px rgb(0 0 0 / .18); }
+.live-tag.on { animation: ltBeat 1.8s var(--ease) infinite; }
+.live-tag .lt-clip { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; z-index: -1; pointer-events: none; }
+.live-tag.on .lt-clip::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgb(var(--red-rgb) / .22) 50%, transparent 65%); transform: translateX(110%); animation: ltShine 1.8s ease-in-out infinite; }
+.live-tag::before { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 3px rgb(255 255 255 / .8); opacity: 0; pointer-events: none; }
+.live-tag.on::before { animation: ltRing 1.8s ease-out infinite; }
+@keyframes ltBeat { 0% { transform: scale(1); } 12% { transform: scale(1.06); } 24% { transform: scale(1); } }
+@keyframes ltRing { 0% { opacity: .9; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.28, 1.45); } }
+@keyframes ltShine { from { transform: translateX(110%); } to { transform: translateX(-110%); } }
+.lv-dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: blink 1.4s ease-in-out infinite; }
+.lv-q { margin-top: 12px; border-radius: 12px; padding: 8px; font-size: 12px; background: rgb(40 40 40 / .35); }

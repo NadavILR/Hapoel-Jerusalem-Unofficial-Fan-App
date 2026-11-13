@@ -1,0 +1,123 @@
+/* מסך הבית: קרוסלת משחקים (קודם / הבא / שאחריו), מיקום בטבלאות, מובילי הקבוצה וחדשות */
+import { html, useState, useEffect, useRef, useLayoutEffect, memo, portal, cx } from '../ui/html.js';
+import { Icon } from '../ui/icons.js';
+import { useApp, useNow, Crest, Seg, Empty, ExtLink, VideoPop, usePhoto, Photo } from '../ui/kit.js';
+import { LiveScore, Pts } from '../ui/score.js';
+import { ME, LINKS } from '../data/constants.js';
+import { DB, compLabel, won } from '../data/store.js';
+import { H, D, SEASON, fdLong, dtf } from '../core/env.js';
+import { ytId, hlUrl, CLUB, loadLeaders, savedLeaders, LCAT } from '../data/media.js';
+import { status } from '../data/refresh.js';
+import { shareStory } from '../features/story.js';
+
+/* כמה זמן עבר מהעדכון האחרון של הלייב */
+export const fresh = (L, now) => { const s = Math.max(0, Math.round((now - (L.at || now)) / 1000)); return s < 5 ? 'עודכן עכשיו' : s < 60 ? 'עודכן לפני ' + s + ' שנ׳' : 'עודכן לפני ' + Math.round(s / 60) + ' דק׳'; };
+const PEND = 4 * H, isPend = (f, now) => !f.r && f.t < now - PEND;
+const openExt = u => window.open(u, '_blank', 'noopener');
+
+function Countdown({ t, now, red }) {
+  const df = Math.max(0, t - now), u = [['ימים', df / D | 0], ['שעות', (df % D) / H | 0], ['דקות', (df % H) / 6e4 | 0], ['שניות', (df % 6e4) / 1e3 | 0]];
+  return html`<div class="cd" aria-label="ספירה לאחור">${u.map(([l, v]) => html`<div key=${l} class=${red ? 'on-red' : 'cd-box'}><div class="v"><span key=${v} class="tick">${String(v).padStart(2, '0')}</span></div><div class=${cx('l', !red && 'mu')}>${l}</div></div>`)}</div>`;
+}
+/* המשחק בלייב בכרטיס האדום – המידות כמו בגרסה 1.161. הכותרת "הפועל לייב" ממלאת את השטח הפנוי בכרטיס
+   (כל הכרטיסים בקרוסלה באותו גובה), כך שאין רווח מת */
+function HomeLive({ L, g, intro, now, open }) {
+  const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME, on = L.status === 'live';
+  const side = n => html`<div class="col" style=${{ alignItems: 'center', textAlign: 'center', minWidth: 0 }}><${Crest} n=${n} s=${48}/><div class="t-s" style=${{ marginTop: 4, lineHeight: 1.25, fontWeight: n === ME ? 800 : 400 }}>${n}</div></div>`;
+  return html`<div class="col grow">
+    <div class=${cx('lv-title', intro && 'live-in')} aria-label="הפועל לייב"><span>הפועל</span><span class=${cx('live-tag', on && 'on')}><span class="lt-clip" aria-hidden="true"></span>לייב</span></div>
+    <div class="row between t-s md" style=${{ marginBottom: 8 }}><span class="row" style=${{ gap: 8 }}>${on ? html`<span class="lv-dot"></span>LIVE` : L.status === 'end' ? 'סיום' : 'ממתינים לשריקת הפתיחה'}</span><span>${on ? L.st : ''}${on && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
+    <div style=${{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)', alignItems: 'center', gap: 8 }}>
+      ${side(hm)}
+      <div class="row center num" style=${{ gap: 8, fontSize: 36, fontWeight: 600, lineHeight: 1.1 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ fontSize: 24, opacity: .6 }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
+      ${side(aw)}
+    </div>
+    ${L.q && L.q.length ? html`<div class="lv-q"><div style=${{ display: 'grid', gridTemplateColumns: `28px repeat(${L.q.length}, minmax(0,1fr))`, gap: 4, textAlign: 'center', alignItems: 'center' }}>
+      <span></span>${L.q.map(x => html`<span key=${x.n} style=${{ opacity: .75 }}>${x.n}</span>`)}
+      <span class="row center"><${Crest} n=${hm} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.h}</b>`)}
+      <span class="row center"><${Crest} n=${aw} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}
+    </div></div>` : null}
+    <button onClick=${open} class="gc-btn on-red press" style=${{ marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
+    <div style=${{ fontSize: 11, textAlign: 'center', marginTop: 8 }}>תוצאה בלייב · ${fresh(L, now)}</div>
+  </div>`;
+}
+/* כרטיס משחק במסך הבית – המידות והמרווחים כמו בגרסה 1.161 */
+function GameCard({ kind, g, now, L }) {
+  const A = useApp(), [vid, setVid] = useState(false), red = kind === 'next', hm = g.h ? ME : g.o, aw = g.h ? g.o : ME, res = kind === 'prev' && g.r, w = res && won(g);
+  const [intro, setIntro] = useState(false), was = useRef(!!L);
+  useEffect(() => { if (L && !was.current) { setIntro(true); const t = setTimeout(() => setIntro(false), 900); was.current = true; return () => clearTimeout(t); } was.current = !!L; }, [!!L]);
+  const nm = n => html`<div class="gc-name" style=${{ fontWeight: n === ME ? 800 : 400 }}>${n}</div>`;
+  const kicker = kind === 'prev' || kind === 'pend' ? 'המשחק הקודם' : kind === 'after' ? 'המשחק שאחריו' : 'המשחק הבא';
+  const btn = red ? 'gc-btn on-red' : 'gc-btn cd-box', sub = red ? '' : 'mu';
+  return html`<article class=${cx('gc col', red ? 'glass-red' : 'glass')}>
+    ${red ? html`<button onClick=${() => shareStory(A.storyUI, g, L)} aria-label="שיתוף לסטורי" class="icon-btn sm on-red press" style=${{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}><${Icon} n="share" s=${17}/></button>` : null}
+    ${L ? html`<${HomeLive} L=${L} g=${g} intro=${intro} now=${now} open=${() => A.openGame(g)}/>`
+    : html`<div class="col grow">
+      <div class=${cx('t-s', sub)} style=${{ textAlign: 'center', marginBottom: 12, padding: red ? '0 40px' : 0 }}>${kicker} · ${compLabel(g)}</div>
+      <div class="row between" style=${{ gap: 8, marginBottom: 12 }}><${Crest} n=${hm} s=${60}/>
+        <div class="grow" style=${{ textAlign: 'center' }}>${nm(hm)}${res ? html`<div class="row center num" style=${{ gap: 8, fontSize: 30, fontWeight: 600, margin: '4px 0', lineHeight: 1.2 }}><span>${g.h ? g.r[0] : g.r[1]}</span><span>–</span><span>${g.h ? g.r[1] : g.r[0]}</span></div>` : html`<div class=${cx('t-s ltr', sub)} style=${{ margin: '2px 0' }}>VS</div>`}${nm(aw)}</div>
+        <${Crest} n=${aw} s=${60}/></div>
+      <div class="t-s" style=${{ textAlign: 'center' }}>${fdLong(g)}</div>
+      <div class=${cx('t-s row center', sub)} style=${{ gap: 4, marginBottom: 12 }}><${Icon} n="pin" s=${14}/>${g.v || (g.h ? 'משחק בית' : 'משחק חוץ')}</div>
+      ${res ? html`<div class="row center grow" style=${{ padding: '8px 0' }}><span class=${w ? 'green' : 'red'} style=${{ fontSize: 30, fontWeight: 800, lineHeight: '31px' }}>${w ? 'ניצחון' : 'הפסד'}</span></div>
+          <button onClick=${() => ytId(g) ? setVid(true) : openExt(hlUrl(g))} class="gc-btn btn-red press" style=${{ marginTop: 12 }}><${Icon} n="play" s=${16}/>לתקציר המשחק</button>`
+      : kind === 'pend' ? html`<div class="col center grow" style=${{ alignItems: 'center', padding: '8px 0' }}><span style=${{ fontSize: 24, fontWeight: 800 }}>ממתין לתוצאה</span><span class="t-s mu" style=${{ marginTop: 4 }}>התוצאה תופיע כאן כשתתעדכן מהמקור הרשמי</span></div>`
+      : red && g.t <= now ? html`<div class="on-red" style=${{ borderRadius: 12, padding: '16px 12px', textAlign: 'center', marginTop: 'auto' }}><div style=${{ fontSize: 20, fontWeight: 800 }}>המשחק התחיל</div><div class="t-s" style=${{ marginTop: 4 }}>התוצאה בלייב תופיע כאן ברגע שתתקבל</div></div>`
+      : html`<div style=${{ marginTop: 'auto' }}><${Countdown} t=${g.t} now=${now} red=${red}/></div>
+          <button onClick=${() => A.togRem(g)} class=${cx('gc-btn press', A.rem[g.id] ? (red ? 'btn-white' : 'btn-red') : btn)} style=${{ marginTop: 12 }}><${Icon} n=${A.rem[g.id] ? 'bellOn' : 'bell'} s=${16}/>${A.rem[g.id] ? 'תזכורת פעילה – לחצו לביטול' : 'הגדר תזכורת למשחק'}</button>`}
+      <button onClick=${() => A.openGame(g)} class=${cx(btn, 'press')} style=${{ marginTop: 8 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
+    </div>`}
+    ${vid ? html`<${VideoPop} id=${ytId(g)} title=${'תקציר: ' + (g.h ? ME + ' – ' + g.o : g.o + ' – ' + ME)} onClose=${() => setVid(false)}/>` : null}
+  </article>`;
+}
+function Carousel({ items, start }) {
+  const r = useRef(null), [i, setI] = useState(start), iR = useRef(start); iR.current = i;
+  const mid = e => { const b = e.getBoundingClientRect(); return b.left + b.width / 2; };
+  const to = (k, smooth) => { const el = r.current, c = el && el.children[k]; if (c) el.scrollBy({ left: mid(c) - mid(el), behavior: smooth ? 'smooth' : 'auto' }); };
+  useLayoutEffect(() => { to(start); }, []);
+  const raf = useRef(0);
+  const onScroll = () => { if (raf.current) return; raf.current = requestAnimationFrame(() => { raf.current = 0; const el = r.current; if (!el) return; const x = mid(el); let b = 0, bd = 1e9; [...el.children].forEach((c, k) => { const d = Math.abs(mid(c) - x); if (d < bd) { bd = d; b = k; } }); if (b !== iR.current) setI(b); }); };
+  return html`<div><div ref=${r} class="car" onScroll=${onScroll}>${items}</div>
+    ${items.length > 1 ? html`<div class="dots">${items.map((_, k) => html`<button key=${k} aria-label=${'כרטיס ' + (k + 1)} class=${k === i ? 'on' : ''} onClick=${() => to(k, 1)}></button>`)}</div>` : null}</div>`;
+}
+const Leaders = memo(function Leaders({ v }) {
+  const A = useApp(), [d, setD] = useState(savedLeaders), [ci, setCi] = useState(0);
+  useEffect(() => { let on = true; loadLeaders().then(x => { if (on && x) setD(x); }).catch(() => { }); return () => { on = false; }; }, [v]);
+  if (!d || !d.comps.length) return null;
+  const c = d.comps[Math.min(ci, d.comps.length - 1)], open = a => { const p = DB.PL.find(x => x[7] === a.id); if (p) A.openPlayer(p); };
+  const face = a => { const p = DB.PL.find(x => x[7] === a.id); return p && p[6] ? html`<${Photo} u=${p[6]} k=${p[9]} cls="abs-fill"/>` : html`<img src=${'https://imagecache.365scores.com/image/upload/f_png,w_160,h_200,c_limit,q_auto:eco,d_Athletes:default.png/v' + a.iv + '/Athletes/' + a.id} alt="" loading="lazy" referrerPolicy="no-referrer" class="ph abs-fill"/>`; };
+  return html`<section class="glass r-lg pad"><div class="row between" style=${{ marginBottom: 10 }}><h2 class="sec-t" style=${{ margin: 0 }}>מובילי הפועל</h2><span class="t-xs mu">ממוצע למשחק · 365scores</span></div>
+    ${d.comps.length > 1 ? html`<${Seg} items=${d.comps.map((x, i) => [i, x.name])} val=${ci} set=${setCi} cls="" label="מפעל"/>` : null}
+    <div key=${c.id} class="grid3 fade-in" style=${{ marginTop: 12 }}>${LCAT.map(([tid, l]) => { const rr = c.cat[tid] || [], a = rr[0]; return html`<div key=${tid} style=${{ minWidth: 0, textAlign: 'center' }}>
+      <div class="t-xs mu b" style=${{ marginBottom: 6 }}>${l}</div>
+      ${a ? html`<button onClick=${() => open(a)} class="pcard press" style=${{ width: '100%' }}>${face(a)}<div class="cap"><div class="num" style=${{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>${a.v}</div><div class="t-xs b trunc">${a.n}</div></div></button>` : html`<div class="mu t-s" style=${{ padding: 20 }}>—</div>`}
+      ${rr.slice(1).map((x, i) => html`<button key=${x.id} onClick=${() => open(x)} class="row between t-xs tap" style=${{ width: '100%', gap: 4 }}><span class="trunc"><span class="mu">${i + 2}.</span> ${x.n}</span><b class="num">${x.v}</b></button>`)}
+    </div>`; })}</div></section>`;
+});
+function News() {
+  const [all, setAll] = useState(false);
+  if (!DB.NEWS.length) return null;
+  const L = all ? DB.NEWS : DB.NEWS.slice(0, 4), more = DB.NEWS.length - 4, dd = d => { const m = /^\d{4}-(\d\d)-(\d\d)/.exec(d || ''); return m ? (+m[2]) + '.' + (+m[1]) : ''; };
+  return html`<section class="glass r-lg" style=${{ overflow: 'hidden' }}><div class="row between pad-x" style=${{ paddingTop: 14, paddingBottom: 4 }}><h2 class="sec-t" style=${{ margin: 0 }}>חדשות המועדון</h2><${ExtLink} href=${CLUB + 'archive'} cls="link t-xs tap">לכל הכתבות<//></div>
+    ${L.map(n => html`<a key=${n.u || n.t} href=${n.u || undefined} target="_blank" rel="noopener noreferrer" class="li press">${n.i ? html`<${NewsImg} src=${n.i}/>` : null}<div class="grow"><div class="t-s b clamp3" style=${{ lineHeight: 1.4 }}>${n.t}</div>${n.d ? html`<div class="t-xs mu" style=${{ marginTop: 3 }}>${dd(n.d)}</div>` : null}</div></a>`)}
+    ${more > 0 ? html`<button onClick=${() => setAll(!all)} class="li press red b t-s" style=${{ width: '100%', justifyContent: 'center' }}>${all ? 'הצג פחות' : 'עוד כתבות (' + more + ')'}</button>` : null}</section>`;
+}
+function NewsImg({ src }) { const [bad, setBad] = useState(false); return bad ? null : html`<img src=${src} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${() => setBad(true)} style=${{ width: 92, height: 62, borderRadius: 12, objectFit: 'cover', flexShrink: 0, background: 'var(--faint)' }}/>`; }
+
+export default function Home() {
+  const A = useApp(), now = useNow();
+  const up = DB.F.filter(f => !f.r && !isPend(f, now)).sort((a, b) => a.t - b.t), nx = up[0], ls = DB.F.filter(f => f.r).sort((a, b) => b.t - a.t)[0], pd = DB.F.filter(f => isPend(f, now)).sort((a, b) => b.t - a.t)[0];
+  const L = A.live && nx && A.live.app === nx.id && (A.live.status !== 'pre' || now >= nx.t) && A.live.status !== 'end' ? A.live : null;
+  const rk = DB.LG.findIndex(r => r.n === ME), me = DB.LG[rk], eg = DB.EC.find(([, t]) => t.some(r => r[0] === ME)), er = eg ? eg[1].findIndex(r => r[0] === ME) : -1, em = er >= 0 ? eg[1][er] : null;
+  if (!DB.ok) return html`<div class="stack"><div class="sk" style=${{ height: 380, borderRadius: 24 }}></div><div class="sk" style=${{ height: 90 }}></div></div>`;
+  if (!nx && !ls) return html`<${Empty} title=${'עונת ' + SEASON} sub="משחקי העונה עוד לא נטענו לאפליקציה."><${ExtLink} href=${LINKS.club}>לאתר הרשמי של הקבוצה<//><//>`;
+  const pv = pd && (!ls || pd.t > ls.t) ? ['pend', pd] : ls && ['prev', ls];
+  const cards = [pv, nx && ['next', nx], up[1] && ['after', up[1]]].filter(Boolean);
+  return html`<div class="stack stg">
+    <${Carousel} key=${nx ? nx.id : 'x'} start=${pv && nx ? 1 : 0} items=${cards.map(([k, g]) => html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k === 'next' ? L : null}/>`)}/>
+    ${me || em ? html`<div class=${me && em ? 'grid2' : ''}>
+      ${me ? html`<button onClick=${() => A.go('stand', 'league')} class="glass r-lg pad-s press" style=${{ textAlign: 'right' }}><div class="t-xs mu">ליגת ווינר סל</div><div class="t-xl num">מקום ${rk + 1}</div><div class="t-xs mu">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></button>` : null}
+      ${em ? html`<button onClick=${() => A.go('stand', 'euro')} class="glass r-lg pad-s press" style=${{ textAlign: 'right' }}><div class="t-xs mu">יורוקאפ · ${eg[0]}</div><div class="t-xl num">מקום ${er + 1}</div><div class="t-xs mu">${em[1]} נצ׳ · ${em[2]} הפ׳</div></button>` : null}</div>` : null}
+    <div class="grid-md2 stack"><${Leaders} v=${status.at}/><${News}/></div>
+  </div>`;
+}
