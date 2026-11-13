@@ -64,9 +64,9 @@ export function Player({ p }) {
           <div class="t-xs mu" style=${{ padding: '8px 4px 0' }}>מש׳ = משחקים שבהם נכלל בסגל · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · בלי משחקי הכנה · הנתונים מ-365scores</div>`
         : html`<div class="t-s mu" style=${{ padding: '0 4px 4px' }}>${p[7] ? 'השחקן עוד לא נכלל בסגל של משחק עם נתונים העונה.' : 'השחקן לא נמצא ב-365scores, ולכן אין לו סטטיסטיקה אישית.'}</div>`}</section>
       ${log.length ? html`<section class="glass r-lg pad-s"><div class="sec-t" style=${{ padding: '2px 4px 8px' }}>משחק אחר משחק</div>
-        <${SplitTable} head="משחק" heads=${['תוצאה', ...PH]} rows=${log.map(([f, w]) => ({ key: f.id, cls: '', hi: 2,
+        <${SplitTable} head="משחק" wide=${[0, 7, 8, 9]} heads=${['תוצאה', ...PH]} rows=${log.map(([f, w]) => ({ key: f.id, cls: '', hi: 2,
           name: html`<span class="col" style=${{ lineHeight: 1.2 }}><span class="t-xs b trunc">${f.h ? '' : '@ '}${f.o}</span><span class="t-xxs mu">${fmt.dm(f.t)} · ${CN[f.c] || COMPS[f.c]}</span></span>`,
-          cells: [html`<span class=${f.r[0] > f.r[1] ? 'res-w b' : 'res-l b'}>${f.r[0]}–${f.r[1]}</span>`, ...(isDnp(w) ? [html`<span class="mu t-xs nowrap">לא שיחק</span>`] : prw(w))] }))}/></section>` : null}
+          cells: [html`<span class=${f.r[0] > f.r[1] ? 'res-w b nowrap' : 'res-l b nowrap'}>${f.r[0]}–${f.r[1]}</span>`, ...(isDnp(w) ? [html`<span class="mu t-xs nowrap">לא שיחק</span>`] : prw(w))] }))}/></section>` : null}
       ${p[8] || p[9] ? html`<${LinkRows} items=${[p[8] && ['https://www.365scores.com/en-us/basketball/player/' + p[8], 'הדף המלא ב-365scores'], p[9] && ['https://hapoel.co.il/player.asp?PlayerId=' + p[9], 'הדף באתר הרשמי של המועדון']]}/>` : null}
     </div></div>`;
 }

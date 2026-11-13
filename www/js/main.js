@@ -193,18 +193,19 @@ function App() {
   const [pick, setPick] = useState(null), [busy, setBusy] = useState(null);
   const storyUI = { toast, pick: g => new Promise(done => setPick({ g, done })), busy: () => { setBusy(0); return { set: p => setBusy(p), done: () => setBusy(null) }; } };
 
-  const dockL = !upd && L && L.status === 'live' && !(game && game.id === L.app) ? L : null, dockG = dockL ? DB.F.find(f => f.id === dockL.app) : null;
+  /* פס הלייב: בכל העמודים, חוץ מעמוד המשחק עצמו וממסך הבית (שם הכרטיס האדום כבר מציג את התוצאה) */
+  const dockL = !upd && L && L.status === 'live' && !(game && game.id === L.app) && !(pg === 'home' && !game && !player) ? L : null, dockG = dockL ? DB.F.find(f => f.id === dockL.app) : null;
   useLayoutEffect(() => { document.documentElement.classList.toggle('ld-on', !!(dockL && dockG)); }, [!!(dockL && dockG)]);
   const navOn = menu || ['mytix', 'tix', 'shop', 'mem'].includes(pg) ? 'more' : pg, navI = NAV.findIndex(x => x[0] === navOn), unread = notes.filter(n => !n.r).length, ext = ['shop', 'mem'].includes(pg);
   const A = { pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
-  const title = game ? 'עמוד משחק' : player ? player[1] : TITLES[pg];
+  const title = game ? (game.h ? 'הפועל – ' + game.o : game.o + ' – הפועל') : player ? player[1] : TITLES[pg];
   const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'mytix' ? html`<${MyTickets}/>` : pg === 'tix' ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את אתר הכרטיסים…</div>` : html`<${External} k=${pg}/>`;
 
   return html`<${AppCtx.Provider} value=${A}>
     <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd)}/>
     <header id="hd" class="bar"><div class="wrap">
       <div class="hd-in"><img src="icons/club-logo.png" alt="הפועל ירושלים" class="logo"/>
-        <div class="grow">${title ? html`<div class="ttl trunc">${title}</div><div class="sub">${game || player ? '' : 'עונת ' + SEASON}</div>` : html`<div class="ttl">${ME}</div><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
+        <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1><div class="sub">${game || player ? '' : 'עונת ' + SEASON}</div>` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
         ${['home', 'sched', 'stand', 'roster'].includes(pg) && !game ? html`<button onClick=${() => setSettings(true)} class="icon-btn press" aria-label="הגדרות"><${Icon} n="cog" s=${22}/></button>` : null}
         <button onClick=${() => setDrawer(true)} class="icon-btn press" aria-label=${'התראות' + (unread ? ', ' + unread + ' חדשות' : '')}><${Icon} n="bell" s=${22}/>${unread > 0 ? html`<span class="badge">${unread}</span>` : null}</button>
       </div>
@@ -212,9 +213,9 @@ function App() {
     <div class="toasts" aria-live="polite">${toasts.map(t => html`<div key=${t.id} class="toast">${t.t}</div>`)}</div>
     <main class="wrap"><div key=${game ? 'g' + game.id : player ? 'p' + player[1] : 'p' + pg} class=${ext ? '' : 'pg-in'}>${page}</div>
       ${ext ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
-        <span onClick=${tapFoot} class="glass-2 r-full t-xs mu" style=${{ padding: '4px 14px', userSelect: 'none' }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית · נדב רובינסון © גרסה ${VERSION()}</span>
-        <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu" style=${{ padding: '4px 14px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a></footer>`}</main>
-    ${menu ? html`<${Fragment}><div style=${{ position: 'fixed', inset: 0, zIndex: 44 }} onClick=${() => setMenu(false)}></div>
+        <span onClick=${tapFoot} class="glass-2 r-md t-xs mu" style=${{ padding: '6px 16px', userSelect: 'none', lineHeight: 1.6 }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית<br/>נדב רובינסון © גרסה ${VERSION()}</span>
+        <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu tap row" style=${{ padding: '4px 16px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a></footer>`}</main>
+    ${menu ? html`<${Fragment}><div style=${{ position: 'fixed', inset: 0, zIndex: 39 }} onClick=${() => setMenu(false)}></div>
       <nav class="menu glass-3" aria-label="עוד" style=${{ bottom: 'calc(var(--navh, 72px) + 10px)' }}>${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="li press" style=${{ width: '100%', textAlign: 'right' }}><span class=${pg === k ? 'ic-circle' : 'ic-soft'}><${Icon} n=${ic} s=${18}/></span><span class="grow"><span class="b" style=${{ display: 'block' }}>${l}</span><span class="li-s trunc" style=${{ display: 'block' }}>${sub}</span></span></button>`)}</nav><//>` : null}
     <nav id="nav" class="bar" aria-label="ניווט ראשי" ref=${el => { if (el) document.documentElement.style.setProperty('--navh', el.offsetHeight + 'px'); }}>
       ${dockL && dockG ? html`<button class="dock press" onClick=${() => openAt(dockG.t)} aria-label=${'משחק בלייב: ' + ME + ' ' + dockL.r[0] + ' – ' + dockL.r[1] + ' ' + dockG.o + '. לעמוד המשחק'}><${MiniScore} g=${dockG} L=${dockL}/></button>` : null}

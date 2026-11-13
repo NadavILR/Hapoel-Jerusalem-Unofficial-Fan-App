@@ -25,7 +25,7 @@ export function LiveScore({ L, g, big }) {
       ${side(aw)}
     </div>
     ${L.q && L.q.length ? html`<div class="on-red r-md" style=${{ marginTop: 12, padding: '8px 10px' }}><div style=${{ display: 'grid', gridTemplateColumns: `28px repeat(${L.q.length}, minmax(0,1fr))`, gap: 4, textAlign: 'center', alignItems: 'center', fontSize: 12.5 }}>
-      <span></span>${L.q.map(x => html`<span key=${x.n} style=${{ opacity: .75 }}>${x.n}</span>`)}
+      <span></span>${L.q.map(x => html`<span key=${x.n} aria-label=${x.n.replace(/^Q(\d)$/, 'רבע $1').replace(/^OT(\d)$/, 'הארכה $1')}>${x.n}</span>`)}
       <span class="row center"><${Crest} n=${hm} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.h}</b>`)}
       <span class="row center"><${Crest} n=${aw} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}
     </div></div>` : null}
@@ -48,7 +48,7 @@ export function Quarters({ g, gs }) {
   if (!q.length) return html`<div class="glass r-lg pad t-s mu">סיכום הרבעים של המשחק לא נטען לאפליקציה.</div>`;
   const lb = i => i < 4 ? 'Q' + (i + 1) : 'OT' + (i - 3), jw = q.filter(p => p[0] > p[1]).length;
   return html`<div class="glass r-lg pad-s"><div class="sec-t" style=${{ padding: '2px 4px 6px' }}>תוצאה לפי רבעים</div>
-    <div class="tscroll"><table class="tbl"><thead><tr><th class="tn"></th>${q.map((_, i) => html`<th key=${i}>${lb(i)}</th>`)}<th>סה״כ</th></tr></thead>
+    <div class="tscroll"><table class="tbl"><thead><tr><th class="tn"></th>${q.map((_, i) => html`<th key=${i} aria-label=${i < 4 ? 'רבע ' + (i + 1) : 'הארכה ' + (i - 3)}>${lb(i)}</th>`)}<th>סה״כ</th></tr></thead>
     <tbody>${[[hm, hi, ai], [aw, ai, hi]].map(([n, f, o]) => html`<tr key=${n}><td class="tn"><span class="row" style=${{ gap: 8 }}><${Crest} n=${n} s=${22}/><span class=${n === ME ? 'b' : ''}>${n}</span></span></td>${q.map((p, i) => html`<td key=${i} class=${f(p) > o(p) ? 'b' : 'mu'}>${f(p)}</td>`)}<td class="xb">${q.reduce((t, p) => t + f(p), 0)}</td></tr>`)}</tbody></table></div>
     <div class="t-xs mu" style=${{ padding: '6px 4px 0' }}>${ME} ניצחה ב-${jw} מתוך ${q.length} ${q.length > 4 ? 'הרבעים וההארכות' : 'הרבעים'}.</div></div>`;
 }
