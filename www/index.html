@@ -1282,25 +1282,48 @@ async function pdfPages(file){
   const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   await pg.render({canvasContext:x,viewport:vp}).promise;out.push(await new Promise(r=>c.toBlob(r,'image/png')))}
  return out}
+/* קוד ה-QR של הכרטיס: נקרא מהקובץ שהועלה (jsQR) ומצויר מחדש נקי וחד (qrcode-generator) – שתי הספריות נטענות רק כשצריך */
+const qrLibs=()=>Promise.all([jsLoad('vendor/qr/jsQR.js'),jsLoad('vendor/qr/qrcode.js')]);
+async function findQR(blobs){
+ await qrLibs();const J=window.jsQR;if(!J)return '';
+ for(const b of blobs){let bm=null;try{bm=await createImageBitmap(b)}catch(e){continue}
+  for(const w of [1600,900,600]){const k=Math.min(1,w/bm.width),c=document.createElement('canvas');c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);
+   const x=c.getContext('2d',{willReadFrequently:true});x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bm,0,0,c.width,c.height);
+   const r=J(x.getImageData(0,0,c.width,c.height).data,c.width,c.height,{inversionAttempts:'attemptBoth'});if(r&&r.data)return r.data}}
+ return ''}
+function QR({text,size=220}){
+ const [d,setD]=useState(null);
+ useEffect(()=>{let on=true;qrLibs().then(()=>{const Q=window.qrcode;if(!Q||!on)return;const q=Q(0,'M');if(/[^\x00-\x7f]/.test(text)&&Q.stringToBytesFuncs&&Q.stringToBytesFuncs['UTF-8'])Q.stringToBytes=Q.stringToBytesFuncs['UTF-8'];q.addData(text);q.make();
+  const n=q.getModuleCount();let p='';for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))p+='M'+c+' '+r+'h1v1h-1z';setD({n,p})}).catch(()=>{});return()=>{on=false}},[text]);
+ return d?html`<svg width=${size} height=${size} viewBox=${'-2 -2 '+(d.n+4)+' '+(d.n+4)} role="img" aria-label="קוד QR של הכרטיס" shape-rendering="crispEdges" style=${{display:'block'}}><rect x="-2" y="-2" width=${d.n+4} height=${d.n+4} fill="#fff"/><path d=${d.p} fill="#000"/></svg>`
+  :html`<div style=${{width:size,height:size}} class="flex items-center justify-center text-black/40 text-sm">טוען…</div>`}
 function TixViewer({it,onClose}){
- const urls=React.useMemo(()=>it.pages.map(b=>URL.createObjectURL(b)),[it]);useEffect(()=>()=>urls.forEach(u=>URL.revokeObjectURL(u)),[urls]);
- return ReactDOM.createPortal(html`<div role="dialog" aria-modal="true" aria-label="הכרטיס במסך מלא" class="fixed inset-0 z-[70] bg-black overflow-y-auto fade-in" dir="rtl" style=${{paddingTop:'calc(var(--sat) + 12px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}}>
- <div class="sticky top-0 z-10 flex items-center justify-between px-4 pb-3 text-white"><span class="text-sm opacity-90">הגבירו את בהירות המסך לסריקה בכניסה</span><button onClick=${onClose} aria-label="סגירה" class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center"><${I} n="x" s=${20}/></button></div>
- <div class="px-3 space-y-3">${urls.map((u,i)=>html`<img key=${i} src=${u} alt=${'עמוד '+(i+1)+' של הכרטיס'} class="w-full rounded-xl bg-white"/>`)}</div></div>`,document.body)}
+ const urls=React.useMemo(()=>it.qr?[]:it.pages.map(b=>URL.createObjectURL(b)),[it]);useEffect(()=>()=>urls.forEach(u=>URL.revokeObjectURL(u)),[urls]);
+ const sz=Math.min(window.innerWidth-64,420);
+ return ReactDOM.createPortal(html`<div role="dialog" aria-modal="true" aria-label="הכרטיס במסך מלא" class="fixed inset-0 z-[70] overflow-y-auto fade-in text-white" dir="rtl" style=${{background:'#1c1c1c',paddingTop:'calc(var(--sat) + 12px)',paddingBottom:'calc(24px + env(safe-area-inset-bottom,0px))'}}>
+ <div class="flex items-center justify-between px-4 pb-3"><span class="text-sm opacity-90">הגבירו את בהירות המסך לסריקה בכניסה</span><button onClick=${onClose} aria-label="סגירה" class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center"><${I} n="x" s=${20}/></button></div>
+ ${it.qr?html`<div class="flex flex-col items-center px-4 pt-6"><div class="bg-white rounded-3xl p-6"><${QR} text=${it.qr} size=${sz-48}/></div><div class="mt-4 text-sm font-medium opacity-90 break-all text-center" dir="ltr">${it.qr.length>60?it.qr.slice(0,60)+'…':it.qr}</div></div>`
+ :html`<div class="px-3 space-y-3">${urls.map((u,i)=>html`<img key=${i} src=${u} alt=${'עמוד '+(i+1)+' של הכרטיס'} class="w-full rounded-xl bg-white"/>`)}</div>`}</div>`,document.body)}
 function TixCard({it,onOpen,onDel}){
- const A=useContext(Ctx),g=it.gid?A.F.find(f=>f.id===it.gid):null,thumb=React.useMemo(()=>it.pages[0]?URL.createObjectURL(it.pages[0]):'',[it]);useEffect(()=>()=>thumb&&URL.revokeObjectURL(thumb),[thumb]);
- const left=it.kind==='season'?0:Math.max(0,Math.ceil((it.exp-Date.now())/D)),hm=g?(g.h?ME:g.o):null,aw=g?(g.h?g.o:ME):null;
- return html`<div class="tix rounded-2xl overflow-hidden">
- <div class="text-white p-4" style=${{background:'linear-gradient(135deg,#D21919,var(--blk))'}}>
-  ${it.kind==='season'?html`<div class="flex items-center gap-3"><img src=${LOGO} alt="" class="w-12 h-12 object-contain"/><div><div class="text-xl font-extrabold leading-tight">מנוי עונתי</div><div class="text-sm opacity-90">עונת ${SEASON}</div></div></div>`
-  :g?html`<div class="text-xs opacity-90 text-center mb-2">${cmp(g)}</div><div class="flex items-center justify-between gap-2"><${Cr} n=${hm} s=${44}/><div class="flex-1 min-w-0 text-center"><div class=${'truncate '+(hm===ME?'font-extrabold':'')}>${hm}</div><div class="text-xs opacity-80">VS</div><div class=${'truncate '+(aw===ME?'font-extrabold':'')}>${aw}</div></div><${Cr} n=${aw} s=${44}/></div><div class="text-sm text-center mt-2 opacity-90">${fdLong(g)}</div>`
-  :html`<div class="text-xl font-extrabold">כרטיס למשחק</div><div class="text-sm opacity-90 truncate">${it.name}</div>`}
+ const A=useContext(Ctx),g=it.gid?A.F.find(f=>f.id===it.gid):null,[qr,setQr]=useState(it.qr),noQr=qr==='';
+ /* כרטיסים שנשמרו לפני זיהוי ה-QR: מזהים פעם אחת ושומרים */
+ useEffect(()=>{if(it.qr!==undefined)return;let on=true;findQR(it.pages).then(t=>{if(!on)return;setQr(t);TIXDB.put({...it,qr:t}).catch(()=>{})}).catch(()=>on&&setQr(''));return()=>{on=false}},[it.id]);
+ const thumb=React.useMemo(()=>noQr&&it.pages[0]?URL.createObjectURL(it.pages[0]):'',[it,noQr]);useEffect(()=>()=>thumb&&URL.revokeObjectURL(thumb),[thumb]);
+ const left=it.kind==='season'?0:Math.max(0,Math.ceil((it.exp-Date.now())/D));
+ const sub=it.kind==='season'?'עונת '+SEASON:g?(g.h?'משחק בית מול ':'משחק חוץ מול ')+g.o:'';
+ return html`<div class="tixd rounded-[28px] overflow-hidden text-white" style=${{background:'#242424',border:'1px solid rgb(255 255 255/.08)'}}>
+ <div class="flex flex-col items-center text-center px-5 pt-6 pb-5">
+  <div class="w-24 h-24 rounded-full flex items-center justify-center" style=${{border:'1.5px solid rgb(255 255 255/.28)'}}><img src=${LOGO} alt="" class="w-[76px] h-[76px] object-contain"/></div>
+  <div class="mt-3 text-base opacity-95">${ME}</div>
+  <div class="text-4xl font-light leading-tight mt-1">${it.kind==='season'?'מנוי':'כרטיס למשחק'}</div>
+  ${sub?html`<div class="text-base font-medium mt-1 opacity-90">${sub}</div>`:null}
+  ${g?html`<div class="text-sm mt-0.5 opacity-75">${fdLong(g)}</div>`:null}
+  <button onClick=${onOpen} aria-label="הצגת הקוד במסך מלא" class="mt-5 bg-white rounded-3xl p-4">${qr?html`<${QR} text=${qr} size=${190}/>`:noQr?html`<img src=${thumb} alt="הכרטיס" class="w-48 max-h-64 object-contain"/>`:html`<div class="w-[190px] h-[190px] flex items-center justify-center text-black/40 text-sm">מחפש את הקוד…</div>`}</button>
+  ${qr?html`<div class="mt-3 text-sm font-medium tracking-wide break-all max-w-full" dir="ltr">${qr.length>40?qr.slice(0,40)+'…':qr}</div>`:noQr?html`<div class="mt-3 text-xs opacity-75">לא נמצא קוד QR בקובץ – מוצג הקובץ המלא</div>`:null}
  </div>
- <div class="tix-cut" aria-hidden="true"></div>
- <div class="tix-body p-3">
-  <button onClick=${onOpen} class="block w-full rounded-xl overflow-hidden bg-white" aria-label="פתיחת הכרטיס במסך מלא"><img src=${thumb} alt="הכרטיס" class="w-full max-h-72 object-contain"/></button>
-  <div class="flex items-center justify-between gap-2 mt-3"><span class="text-xs mu">${it.kind==='season'?'מנוי – נשמר עד שתמחקו אותו':left<=1?'יימחק אוטומטית היום':'יימחק אוטומטית בעוד '+left+' ימים'}${it.pages.length>1?' · '+it.pages.length+' עמודים':''}</span>
-  <div class="flex gap-2"><button onClick=${onOpen} class="px-3 py-2 rounded-xl bg-[#D21919] text-white text-sm font-bold">הצגה</button><button onClick=${onDel} aria-label="מחיקת הכרטיס" class="px-3 py-2 rounded-xl tint-glass text-sm font-bold">מחיקה</button></div></div>
+ <div class="flex items-center justify-between gap-2 px-5 py-3" style=${{borderTop:'1px solid rgb(255 255 255/.1)'}}>
+  <span class="text-xs opacity-75">${it.kind==='season'?'נשמר עד שתמחקו אותו':left<=1?'יימחק אוטומטית היום':'יימחק אוטומטית בעוד '+left+' ימים'}</span>
+  <div class="flex gap-2"><button onClick=${onOpen} class="px-3 py-2 rounded-xl bg-[#D21919] text-white text-sm font-bold">הצגה</button><button onClick=${onDel} aria-label="מחיקת הכרטיס" class="px-3 py-2 rounded-xl bg-white/10 text-white text-sm font-bold">מחיקה</button></div>
  </div></div>`}
 function MyTix(){
  const A=useContext(Ctx),[items,setItems]=useState(null),[kind,setKind]=useState('game'),up=A.F.filter(f=>!f.r&&f.t>Date.now()-6*H).sort((a,b)=>a.t-b.t),[gid,setGid]=useState(up[0]?up[0].id:''),[busy,setBusy]=useState(''),[view,setView]=useState(null),fr=useRef(null);
@@ -1312,7 +1335,8 @@ function MyTix(){
   if(!isPdf&&!isImg){A.toast('אפשר להעלות תמונה או PDF בלבד');return}
   setBusy(isPdf?'ממיר את ה-PDF לתצוגה…':'שומר את הכרטיס…');
   try{const pages=isPdf?await pdfPages(file):[file],now=Date.now();if(!pages.length)throw new Error('empty');
-   await TIXDB.put({id:'t'+now,kind,gid:kind==='game'&&gid?gid:null,name:file.name||'כרטיס',at:now,exp:kind==='season'?0:now+TIX_TTL,pages});
+   setBusy('מחפש את קוד ה-QR…');const qr=await findQR(pages).catch(()=>'');
+   await TIXDB.put({id:'t'+now,kind,gid:kind==='game'&&gid?gid:null,name:file.name||'כרטיס',at:now,exp:kind==='season'?0:now+TIX_TTL,pages,qr});
    A.toast(kind==='season'?'המנוי נשמר באפליקציה':'הכרטיס נשמר – יימחק אוטומטית בעוד שבוע');await load()}
   catch(err){A.toast(isPdf?'לא הצלחנו לקרוא את ה-PDF. נסו צילום מסך של הכרטיס':'לא הצלחנו לשמור את הקובץ')}finally{setBusy('')}};
  const del=it=>{if(!confirm(it.kind==='season'?'למחוק את המנוי מהאפליקציה?':'למחוק את הכרטיס מהאפליקציה?'))return;TIXDB.del(it.id).then(load).catch(()=>{})};
@@ -1320,7 +1344,7 @@ function MyTix(){
  return html`<div class="space-y-3">
  <div class="sf rounded-2xl p-4">
   <div class="font-bold mb-1">הוספת כרטיס או מנוי</div>
-  <div class="text-sm mu mb-3">הקובץ נשמר רק בטלפון שלך. כרטיס למשחק נמחק אוטומטית אחרי שבוע; מנוי נשמר עד שתמחקו אותו.</div>
+  <div class="text-sm mu mb-3">מעלים צילום מסך או PDF של הכרטיס, והאפליקציה מציגה רק את קוד ה-QR שלו. הקובץ נשמר רק בטלפון שלך; כרטיס למשחק נמחק אוטומטית אחרי שבוע, ומנוי נשמר עד שתמחקו אותו.</div>
   <div role="tablist" class="segc grid grid-cols-2 gap-1 p-1 rounded-xl seg mb-3"><${SegInd} k=${kind}/>${[['game','כרטיס למשחק'],['season','מנוי']].map(([k,l])=>html`<button key=${k} data-on=${kind===k?'':undefined} role="tab" aria-selected=${String(kind===k)} onClick=${()=>setKind(k)} class=${'py-2 rounded-lg text-sm font-bold '+(kind===k?'text-white':'mu')}>${l}</button>`)}</div>
   ${kind==='game'?html`<label class="block text-sm mb-3"><span class="block mb-1 mu">לאיזה משחק?</span><select value=${gid} onChange=${e=>setGid(e.target.value)} class="w-full rounded-xl px-3 py-2.5 tint-glass text-sm" style=${{color:'var(--tx)'}}>${up.map(f=>html`<option key=${f.id} value=${f.id}>${(f.h?'בית':'חוץ')+' · '+f.o+' · '+fdate(f.t)}</option>`)}<option value="">משחק אחר / לא מהרשימה</option></select></label>`:null}
   <input ref=${fr} type="file" accept="image/*,application/pdf" class="hidden" onChange=${pick}/>
