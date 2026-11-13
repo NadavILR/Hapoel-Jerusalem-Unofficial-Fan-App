@@ -500,9 +500,7 @@ function Cr({n,s=40}){
 function useMoreFade(ref){const [more,setMore]=useState(false);useEffect(()=>{const el=ref.current;if(!el)return;const f=()=>{const m=el.scrollWidth-el.clientWidth-Math.abs(el.scrollLeft)>2;el.classList.toggle('fade-more',m);setMore(m)};f();el.addEventListener('scroll',f,{passive:true});let ro=null;try{ro=new ResizeObserver(f);ro.observe(el);el.firstElementChild&&ro.observe(el.firstElementChild)}catch(e){}return()=>{el.removeEventListener('scroll',f);ro&&ro.disconnect()}});return more}
 /* רמז גלוי לגלילה לצד, בפינה השמאלית של טבלה או בראקט, כל עוד יש עוד תוכן */
 const MoreHint=()=>null;
-function Chips({o,v,set}){
- const vis=o,r=useRef(null);useMoreFade(r);
- return html`<div ref=${r} class="chips flex gap-2 overflow-x-auto -mx-3 px-3 no-sb">${vis.map(([k,l])=>html`<button key=${k} aria-pressed=${String(v===k)} onClick=${()=>set(k)} class=${'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border shrink-0 '+(v===k?'bg-[#D21919] border-[#D21919] text-white':'sf mu')}>${l}</button>`)}</div>`}
+const Chips=({o,v,set})=>html`<div class="chips flex gap-2 overflow-x-auto -mx-3 px-3 no-sb">${o.map(([k,l])=>html`<button key=${k} onClick=${()=>set(k)} class=${'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border shrink-0 '+(v===k?'bg-[#D21919] border-[#D21919] text-white':'sf mu')}>${l}</button>`)}</div>`;
 /* מתג: העיגול עובר לצד השני באותה תנועה נמתחת של סימון הכפתורים – הקצה הקדמי יוצא ראשון, ואז האחורי משיג אותו */
 function Tg({on,f,l}){
  const r=useRef(null),was=useRef(on);
@@ -803,13 +801,11 @@ addEventListener('scroll',rafT(()=>document.documentElement.classList.toggle('pg
 /* סרגל הסינון: בגלילה הוא נצמד לכותרת ומקבל את הזכוכית שלה, כך ששניהם נראים כחלק אחד */
 function StickyBar({children}){
  const r=useRef(null),[stuck,setStuck]=useState(false);
- /* בכל פריים של גלילה: קריאה אחת של מיקום. גובה הכותרת נקרא רק בשינוי גודל, והמשתנה / המחלקה על השורש משתנים רק כשהערך באמת השתנה – שינוי משתנה CSS על השורש מחשב מחדש את הסגנון של כל העמוד */
-  useEffect(()=>{const de=document.documentElement;let last=null,lastH='';const rd=()=>{};
-  const on=()=>{const el=r.current;if(!el)return;const top=window.__hdh||parseFloat(getComputedStyle(de).getPropertyValue('--hdh'))||0;const st=window.scrollY>4&&el.getBoundingClientRect().top<=top+1;if(st){const h=el.offsetHeight+'px';if(h!==lastH){lastH=h;de.style.setProperty('--fbh',h)}}if(st!==last){last=st;setStuck(st);de.classList.toggle('bar-stuck',st)}};
-  rd();on();const ro=rafT(on),rs=rafT(()=>{rd();on()});window.addEventListener('scroll',ro,{passive:true});window.addEventListener('resize',rs);
-  /* חזרה לעמוד (למשל מעמוד משחק או שחקן) עם גלילה משוחזרת: בזמן אנימציית הכניסה המיקום עוד לא סופי ואין אירוע גלילה אחריה – בודקים שוב כשהיא נגמרת */
+ useEffect(()=>{const on=()=>{const el=r.current;if(!el)return;const top=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hdh'))||0,st=window.scrollY>4&&el.getBoundingClientRect().top<=top+1;if(st)document.documentElement.style.setProperty('--fbh',el.offsetHeight+'px');setStuck(st);document.documentElement.classList.toggle('bar-stuck',st)};
+  on();const ro=rafT(on);window.addEventListener('scroll',ro,{passive:true});window.addEventListener('resize',ro);
+  /* חזרה לעמוד (מעמוד משחק או שחקן) עם גלילה משוחזרת: בזמן אנימציית הכניסה המיקום עוד לא סופי ואין אירוע גלילה אחריה – בודקים שוב כשהיא נגמרת */
   document.addEventListener('animationend',ro,true);const tm=[120,320,700].map(d=>setTimeout(ro,d));
-  return()=>{window.removeEventListener('scroll',ro);window.removeEventListener('resize',rs);document.removeEventListener('animationend',ro,true);tm.forEach(clearTimeout);de.classList.remove('bar-stuck')}},[]);
+  return()=>{window.removeEventListener('scroll',ro);window.removeEventListener('resize',ro);document.removeEventListener('animationend',ro,true);tm.forEach(clearTimeout);document.documentElement.classList.remove('bar-stuck')}},[]);
  return html`<div ref=${r} class=${'fbar'+(stuck?' stuck':'')}>${children}</div>`;
 }
 function Sched(){
@@ -819,7 +815,7 @@ function Sched(){
  const nowS=Date.now(),ls=A.F.filter(f=>(!f.r&&!isPend(f,nowS))===(tab==='up')&&(fl==='all'||f.c===fl)).sort((a,b)=>tab==='up'?a.t-b.t:b.t-a.t);
  if(!A.F.length)return html`<div><${Ttl}>משחקים ותוצאות · עונת ${SEASON}<//><${SeasonEmpty} msg=${'לוח המשחקים של עונת '+SEASON+' טרם נטען לאפליקציה.'} href=${LINKS.basket} cta="לוח המשחקים באתר הרשמי"/></div>`;
  return html`<div><${Ttl}>משחקים ותוצאות · עונת ${SEASON}<//>
- <${StickyBar}><div role="tablist" class="segc grid grid-cols-2 gap-1 p-1 rounded-xl sf mb-3"><${SegInd} k=${tab}/>${[['up','המשחקים הבאים'],['past','המשחקים הקודמים']].map(([k,l])=>html`<button key=${k} data-on=${tab===k?'':undefined} role="tab" aria-selected=${String(!!(tab===k))} onClick=${()=>setTab(k)} class=${'py-2 rounded-lg text-sm font-bold '+(tab===k?'text-white':'mu')}>${l}</button>`)}</div>
+ <${StickyBar}><div class="segc grid grid-cols-2 gap-1 p-1 rounded-xl sf mb-3"><${SegInd} k=${tab}/>${[['up','המשחקים הבאים'],['past','המשחקים הקודמים']].map(([k,l])=>html`<button key=${k} data-on=${tab===k?'':undefined} onClick=${()=>setTab(k)} class=${'py-2 rounded-lg text-sm font-bold '+(tab===k?'text-white':'mu')}>${l}</button>`)}</div>
  <${Chips} o=${[['all','הכל'],...Object.entries(COMPS).map(([k,v])=>[k,CN[k]||v])]} v=${fl} set=${setFl}/><//>
  <div class="mb-1"><div class="on-glass text-xs mu" style=${{gap:'16px'}}><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-home"></span>משחק בית</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded dt-away"></span>משחק חוץ</span></div></div>
  <div key=${tab+fl} class="stg space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-2">${ls.length?ls.map((f,i)=>{const w=f.r&&f.r[0]>f.r[1],mo=monthOf(f.t),newMo=!i||monthOf(ls[i-1].t)!==mo;return html`<${React.Fragment} key=${f.id}>${newMo?html`<div class="md:col-span-2 pt-3 pb-1"><span class="on-glass text-sm font-bold">${mo}</span></div>`:null}<div onClick=${e=>{SCH.y=window.scrollY;openGame(A,f,e)}} class="cv-row sf rounded-xl p-3 flex items-center gap-3 cursor-pointer">
@@ -890,7 +886,7 @@ function Stand(){
  const CT={league:[[BRT.league.u,'הבראקט ב-365scores'],[LINKS.basket,'האתר הרשמי של ליגת ווינר סל']],euro:[[LINKS.e365,'הטבלאות החיות ב-365scores'],[BRT.euro.u,'הבראקט ב-365scores']],cup:[[BRT.cup.u,'הבראקט ב-365scores']],wcup:[[LINKS.wcup365,'גביע ווינר ב-365scores'],[BRT.wcup.u,'הבראקט ב-365scores']]}[k];
  const note=txt=>html`<div class="mb-3"><span class="on-glass box text-xs mu">${txt} · מקור: 365scores</span></div>`;
  return html`<div><${Ttl}>טבלאות · עונת ${SEASON}<//>
- <${StickyBar}><${Chips} o=${[['league','ליגת ווינר'],['euro','יורוקאפ'],['cup','גביע המדינה'],['wcup','גביע ווינר']]} v=${k} set=${setK}/><//>
+ <${StickyBar}><${Chips} o=${[['league','ליגת ווינר סל'],['euro','יורוקאפ'],['cup','גביע המדינה'],['wcup','גביע ווינר סל']]} v=${k} set=${setK}/><//>
  ${ld?html`<${Sk}/>`:html`<div key=${k} class="stg">
  ${none?html`<${SeasonEmpty} msg=${HAS?'אין נתונים למפעל הזה בעונה הנוכחית.':'הטבלאות של עונת '+SEASON+' טרם נטענו לאפליקציה.'} href=${CT[0][0]} cta=${CT[0][1]}/>`
  :k==='league'?html`<div><${Tb} nm="" heads=${['מש׳','נצ׳','הפ׳',PM,'רצף']} endHead="נק׳" rows=${LG.map(r=>({n:r.n,cells:[r.g??(r.w+r.l),r.w,r.l,sgn(r.d),streak(r.s)],end:r.p}))} mk=${i=>i<6?'g':i<10?'p':'r'} lg=${['g','p','r']}/>${note('2 נק׳ לניצחון, נק׳ להפסד')}</div>`
@@ -1612,7 +1608,7 @@ function App(){
  const navOn=mo||EXT[pg]?'more':pg,Pg=PG[pg],unread=notes.filter(n=>!n.r).length;
  /* גובה הכותרת (כולל פס הסטטוס), בשביל סרגלי הסינון וכפתורי החזרה שנצמדים מתחתיה */
  useEffect(()=>{const n=document.getElementById('app-nav');if(!n)return;const set=()=>document.documentElement.style.setProperty('--navh',n.getBoundingClientRect().height+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(n)}catch(e){}return()=>{ro&&ro.disconnect()}},[]);
- useEffect(()=>{const h=document.getElementById('app-hd');if(!h)return;const set=()=>{const v=h.getBoundingClientRect().height-(parseFloat(getComputedStyle(h).paddingBottom)||0);window.__hdh=v;document.documentElement.style.setProperty('--hdh',v+'px')};set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(h)}catch(e){}return()=>{ro&&ro.disconnect()}},[pg]);
+ useEffect(()=>{const h=document.getElementById('app-hd');if(!h)return;const set=()=>document.documentElement.style.setProperty('--hdh',(h.getBoundingClientRect().height-(parseFloat(getComputedStyle(h).paddingBottom)||0))+'px');set();let ro=null;try{ro=new ResizeObserver(set);ro.observe(h)}catch(e){}return()=>{ro&&ro.disconnect()}},[pg]);
  return html`<${Ctx.Provider} value=${A}>
  <${PullRefresh} onRefresh=${S.refresh} off=${!!(EXT[pg]||dr||st||mo||upd)}/>
  ${!(INAPP&&EXT[pg])&&html`<header id="app-hd" class="sticky z-20 glass-bar" style=${{top:0,paddingTop:'var(--sat)',borderBottom:'1px solid var(--gl-bd)'}}><div class="max-w-3xl md:max-w-5xl lg:max-w-6xl mx-auto flex items-center gap-2 px-3 py-2">
