@@ -1,10 +1,10 @@
 /* הגדרות: התראות (תזכורות, רבעים, כרטיס לייב, Now Bar, רקע, מבצעים, לפי מפעל), על האפליקציה, ערוץ עדכונים */
-import { html, useState, Fragment } from '../ui/html.js';
+import { html, useState, useRef, Fragment } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { useApp, Seg, Toggle, FullPage } from '../ui/kit.js';
 import { COMPS } from '../data/constants.js';
 import { DB } from '../data/store.js';
-import { NATIVE, plug, VERSION } from '../core/env.js';
+import { NATIVE, plug, VERSION, LS } from '../core/env.js';
 import { LN, askPerm, scheduleReminder, nbMode } from '../features/notify.js';
 import { channel, setChannel } from '../data/updates.js';
 
@@ -12,6 +12,15 @@ export const NbPick = ({ pf, setPf }) => html`<${Seg} items=${[['c', 'כרטיס
 const Note = ({ children }) => html`<div class="t-xs mu" style=${{ padding: '0 16px 12px', marginTop: -4 }}>${children}</div>`;
 export default function Settings({ onClose }) {
   const A = useApp(), pf = A.pf, sp = (k, v) => A.setPf({ ...pf, [k]: v }), on = pf.on !== 0 && A.perm === 'granted', [chk, setChk] = useState(''), [ch, setCh] = useState(channel);
+  /* גרסאות אלפא נפתחות רק אחרי 7 לחיצות מהירות על מספר הגרסה (כמו "אפשרויות מפתחים" באנדרואיד) */
+  const [alpha, setAlpha] = useState(() => channel() >= 2 || !!LS.get('hpj-alpha', 0)), taps = useRef([]);
+  const tapVersion = () => {
+    if (!NATIVE) return;
+    if (alpha) { A.toast(ch >= 2 ? 'גרסאות אלפא כבר פעילות' : 'גרסאות אלפא כבר פתוחות – אפשר לבחור אותן למטה'); return; }
+    const t = Date.now(); taps.current = taps.current.filter(x => t - x < 1500).concat(t); const n = taps.current.length;
+    if (n >= 7) { taps.current = []; LS.set('hpj-alpha', 1); setAlpha(true); setChannel(2); setCh(2); A.toast('גרסאות אלפא הופעלו'); check(); }
+    else if (n >= 3) A.toast('עוד ' + (7 - n) + (7 - n === 1 ? ' לחיצה' : ' לחיצות') + ' לגרסאות אלפא');
+  };
   const toggle = () => {
     if (on) { A.setPf({ ...pf, on: 0 }); const L = LN(); if (L) L.getPending().then(r => { const n = ((r && r.notifications) || []).map(x => ({ id: x.id })); if (n.length) return L.cancel({ notifications: n }); }).catch(() => { }); A.toast('ההתראות כובו'); return; }
     if (typeof Notification === 'undefined' && !LN()) { A.toast('המכשיר או הדפדפן לא תומכים בהתראות'); return; }
@@ -36,9 +45,9 @@ export default function Settings({ onClose }) {
       ${Object.entries(COMPS).map(([k, l]) => html`<${Toggle} key=${k} on=${pf.comps[k]} set=${v => sp('comps', { ...pf.comps, [k]: +v })} label=${l}/>`)}</section>` : null}
     <section class="glass r-lg pad stack-s"><div class="row" style=${{ gap: 12 }}><img src="icons/club-logo.png" alt="" style=${{ width: 44, height: 44 }}/><div><h2 class="sec-t" style=${{ margin: 0 }}>על האפליקציה</h2><span class="unofficial">לא רשמית</span></div></div>
       <p class="t-s mu" style=${{ margin: 0 }}>אפליקציית אוהדים לא רשמית. היא לא שייכת למועדון הפועל ירושלים ולא פועלת מטעמו. הנתונים מהמקורות הרשמיים: איגוד הכדורסל, EuroLeague / EuroCup, 365scores, אתר המועדון וערוצי היוטיוב הרשמיים.</p></section>
-    <section class="glass r-lg pad stack-s"><h2 class="sec-t" style=${{ margin: 0 }}>עדכוני אפליקציה</h2><div class="t-s mu">גרסה מותקנת: <span class="num">${VERSION()}</span></div>
+    <section class="glass r-lg pad stack-s"><h2 class="sec-t" style=${{ margin: 0 }}>עדכוני אפליקציה</h2><button onClick=${tapVersion} class="t-s mu tap" style=${{ textAlign: 'right', userSelect: 'none', WebkitUserSelect: 'none' }}>גרסה מותקנת: <span class="num">${VERSION()}</span></button>
       ${NATIVE ? html`<${Fragment}><div class="t-s md">אילו עדכונים לקבל</div>
-        <${Seg} items=${[[0, 'רשמיות בלבד'], [1, 'גם בטא'], [2, 'גם אלפא']]} val=${ch} set=${v => { if (v === ch) return; setChannel(v); setCh(v); check(); }} label="ערוץ עדכונים"/>
+        <${Seg} items=${alpha ? [[0, 'רשמיות בלבד'], [1, 'גם בטא'], [2, 'גם אלפא']] : [[0, 'רשמיות בלבד'], [1, 'גם בטא']]} val=${ch} set=${v => { if (v === ch) return; setChannel(v); setCh(v); check(); }} label="ערוץ עדכונים"/>
         <div class="t-xs mu">${ch === 2 ? 'גרסאות אלפא הן המוקדמות ביותר – לפני הבטא והגרסה הרשמית – ועלולות לכלול יותר תקלות.' : ch === 1 ? 'גרסאות ניסיון מגיעות לפני הגרסה הרשמית ועלולות לכלול תקלות.' : 'יוצעו רק גרסאות רשמיות.'}</div>
         <button onClick=${check} class="btn btn-red press" style=${{ width: '100%' }}><${Icon} n="sync" s=${17}/>חיפוש עדכונים</button>${chk ? html`<div class="t-xs mu">${chk}</div>` : null}
         <div class="t-xs mu">האפליקציה בודקת עדכונים בכל פתיחה. כשיש גרסה חדשה צריך לעדכן כדי להמשיך.</div><//>` : html`<div class="t-xs mu">בגרסת הדפדפן האפליקציה מתעדכנת לבד.</div>`}</section>
