@@ -116,8 +116,8 @@ export default function Home() {
   return html`<div class="stack stg">
     <${Carousel} key=${nx ? nx.id : 'x'} start=${pv && nx ? 1 : 0} items=${cards.map(([k, g]) => html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k === 'next' ? L : null}/>`)}/>
     ${me || em ? html`<div class=${me && em ? 'grid2' : ''}>
-      ${me ? html`<button onClick=${() => A.go('stand', 'league')} class="glass r-lg pad-s press" style=${{ textAlign: 'right' }}><div class="t-xs mu">ליגת ווינר סל</div><div class="t-xl num">מקום ${rk + 1}</div><div class="t-xs mu">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div></button>` : null}
-      ${em ? html`<button onClick=${() => A.go('stand', 'euro')} class="glass r-lg pad-s press" style=${{ textAlign: 'right' }}><div class="t-xs mu">יורוקאפ · ${eg[0]}</div><div class="t-xl num">מקום ${er + 1}</div><div class="t-xs mu">${em[1]} נצ׳ · ${em[2]} הפ׳</div></button>` : null}</div>` : null}
+      ${me ? html`<button onClick=${() => A.go('stand', 'league')} class="glass r-lg pad-s press" style=${{ textAlign: 'center' }}><div class="t-xs mu">ליגת ווינר סל</div><div class="t-xs mu num">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div><div class="t-xl num" style=${{ marginTop: 2 }}>מקום ${rk + 1}</div></button>` : null}
+      ${em ? html`<button onClick=${() => A.go('stand', 'euro')} class="glass r-lg pad-s press" style=${{ textAlign: 'center' }}><div class="t-xs mu">יורוקאפ · ${eg[0]}</div><div class="t-xs mu num">${em[1]} נצ׳ · ${em[2]} הפ׳</div><div class="t-xl num" style=${{ marginTop: 2 }}>מקום ${er + 1}</div></button>` : null}</div>` : null}
     <div class="grid-md2 stack"><${Leaders} v=${status.at}/><${News}/></div>
   </div>`;
 }
