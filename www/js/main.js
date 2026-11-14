@@ -237,7 +237,8 @@ function App() {
   useEffect(() => { if (isOvl(pg) && !menu) { const x = ovlShow(pg, false); if (x && x.catch) x.catch(() => { }); } }, [!!(dockL && dockG)]);
   const navOn = pg === 'more' || SUB.includes(pg) ? 'more' : pg, navI = NAV.findIndex(x => x[0] === navOn), unread = notes.filter(n => !n.r).length, ext = ['shop', 'mem'].includes(pg);
   const A = { returning: () => retR.current, pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
-  const title = game ? (game.h ? 'הפועל – ' + game.o : game.o + ' – הפועל') : player ? player[1] : TITLES[pg];
+  /* בעמוד משחק: המפעל והשלב ככותרת, והמשחק (בשמות המלאים) ככותרת משנה */
+  const title = game ? compLabel(game) : player ? player[1] : TITLES[pg], gsub = game ? (game.h ? ME + ' – ' + game.o : game.o + ' – ' + ME) : '';
   const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'more' ? html`<${MorePage} go=${go}/>` : pg === 'mytix' ? html`<${Back} onClick=${() => go('more')}/><${MyTickets}/>` : pg === 'tix' || isOvl(pg) ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את האתר…</div>` : html`<${External} k=${pg}/>`;
   /* בזמן רענון (וגם בפתיחה): שלד במקום הנתונים. העמוד עצמו נשאר מוסתר, כדי שהמסננים בכותרת לא ייעלמו */
   const skel = status.loading && !game && !player && ['home', 'sched', 'stand', 'roster'].includes(pg);
@@ -247,7 +248,7 @@ function App() {
     <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd || pg === 'more')}/>
     <header id="hd" class="bar"><div class="wrap">
       <div class="hd-in">${SITES.includes(pg) && !game && !player ? html`<button onClick=${siteBack} class="back glass-2 press" style=${{ position: 'static' }}><${Icon} n="back" s=${18}/><span>חזרה</span></button>` : html`<img src="icons/club-logo.png" alt="הפועל ירושלים" class="logo"/>`}
-        <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1>${game || player || pg === 'more' || SUB.includes(pg) ? null : html`<div class="sub">עונת ${SEASON}</div>`}` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
+        <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1>${game ? html`<div class="sub trunc">${gsub}</div>` : player || pg === 'more' || SUB.includes(pg) ? null : html`<div class="sub">עונת ${SEASON}</div>`}` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
         ${pg === 'home' && !game && !player ? html`<button onClick=${() => setSettings(true)} class="icon-btn press" aria-label="הגדרות"><${Icon} n="cog" s=${22}/></button>` : null}
         <button onClick=${() => setDrawer(true)} class="icon-btn press" aria-label=${'התראות' + (unread ? ', ' + unread + ' חדשות' : '')}><${Icon} n="bell" s=${22}/>${unread > 0 ? html`<span class="badge">${unread}</span>` : null}</button>
       </div>
