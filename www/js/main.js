@@ -1,5 +1,5 @@
 /* מעטפת האפליקציה: כותרת, סרגל ניווט, תפריט "עוד", לייב, התראות, תזכורות, עדכונים וחיבור לחלק הנייטיב */
-import { html, useState, useEffect, useRef, useCallback, useLayoutEffect, Fragment, cx } from './ui/html.js';
+import { html, useState, useEffect, useRef, useCallback, useLayoutEffect, Fragment, cx, portal } from './ui/html.js';
 import { Icon } from './ui/icons.js';
 import { AppCtx, useDB, VIDC, Sheet, Skel, Back } from './ui/kit.js';
 import { storyImage } from './features/story.js';
@@ -260,9 +260,10 @@ function App() {
 
 /* עמוד "עוד": ארבעה כפתורים גדולים, שתי שורות של שניים, שממלאים את המסך */
 function MorePage({ go }) {
-  return html`<div class="more-grid">${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="more-b glass press">
+  /* מוצג ישירות במסך (לא בתוך העמוד, שיש לו אנימציית כניסה), כדי שהמרווחים יחושבו מהכותרת ומסרגל הניווט */
+  return portal(html`<div class="more-grid fade-in">${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="more-b glass press">
     <span class="ic-circle" style=${{ width: 64, height: 64 }}><${Icon} n=${ic} s=${30}/></span>
-    <span class="t-l xb">${l}</span><span class="t-s mu">${sub}</span></button>`)}</div>`;
+    <span class="t-l xb">${l}</span><span class="t-s mu">${sub}</span></button>`)}</div>`);
 }
 
 /* בחירת גרסת הסטורי של המשחק הבא, עם תצוגה מקדימה של שתי הגרסאות */
