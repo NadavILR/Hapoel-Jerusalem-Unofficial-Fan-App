@@ -1,4 +1,4 @@
-/* משחק בלייב: ליגת ווינר וגביע ווינר – Live Stats של איגוד הכדורסל (באנדרואיד); יורוקאפ – ה-API הרשמי של היורוליג;
+/* משחק בלייב: ליגת ווינר וגביע ווינר – LiveStats של מנהלת ליגת ווינר סל (באנדרואיד); יורוקאפ – ה-API הרשמי של היורוליג;
    כל השאר (וגיבוי) – 365scores. וגם: מהלך המשחק של משחקים שהסתיימו, ומצב בדיקה */
 import { getJSON } from '../core/net.js';
 import { NATIVE, LS, H, D, ilToUtc } from '../core/env.js';
@@ -162,7 +162,7 @@ function pbpLs(d, f) {
 export const lsFinal = d => { const gi = d.gameInfo || {}, bg = (d.boxscore && d.boxscore.gameInfo) || {}, h = +bg.homeScore || 0, a = +bg.awayScore || 0; return isJ(gi.homeTeam) ? [h, a] : [a, h]; };
 
 /* ================= משחקים שהסתיימו: סטטיסטיקה ומהלך המשחק ================= */
-const PAST = {}, PBPC = {}, official = c => c === 'league' || c === 'wcup';
+const PAST = {}, PBPC = {}, official = c => c === 'league' || c === 'wcup' || c === 'super';
 export function pastLs(f) {
   if (!official(f.c)) return Promise.resolve(null); if (PAST[f.id]) return PAST[f.id];
   const id = DB.PBP[f.id] || lsk()[f.id];
@@ -187,7 +187,7 @@ async function livePbp(f) {
 let full = 0;
 export async function pollLive(n, prev) {
   const same = prev && prev.app === n.id;
-  const lsd = NATIVE && ['league', 'wcup'].includes(n.c) ? await lsGame(n).catch(() => null) : null;
+  const lsd = NATIVE && ['league', 'wcup', 'super'].includes(n.c) ? await lsGame(n).catch(() => null) : null;
   if (lsd) {
     const L = { app: n.id, src: 'ls', id: 0, jh: !!n.h, hs: 0, as: 0, r: [0, 0], status: 'pre', st: '', clock: '', q: [], top: [], url: url365(n), at: Date.now() };
     applyLs(L, lsd);

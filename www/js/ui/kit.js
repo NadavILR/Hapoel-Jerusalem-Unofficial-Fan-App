@@ -55,6 +55,8 @@ export const Section = ({ title, aside, children, cls = '' }) => html`<section c
 export const Empty = ({ title, sub, children }) => html`<div class="glass r-lg pad col center" style=${{ alignItems: 'center', gap: 8, padding: '28px 20px' }}>
   <div class="ic-soft"><${Icon} n="ball" s=${20}/></div><div class="t-m">${title}</div>${sub ? html`<div class="t-s mu">${sub}</div>` : null}${children || null}</div>`;
 export const ExtLink = ({ href, children, cls = 'link t-s' }) => html`<a href=${href} target="_blank" rel="noopener noreferrer" class=${cls}>${children}<${Icon} n="ext" s=${13}/></a>`;
+/* שורת המקור בתחתית כל עמוד */
+export const Src = ({ children }) => html`<div class="t-xs mu" style=${{ textAlign: 'center', padding: '2px 8px' }}>${children}</div>`;
 export const LinkRows = ({ items }) => html`<div class="glass lite r-lg" style=${{ overflow: 'hidden' }}>${items.filter(Boolean).map(([href, l], i) => html`<a key=${i} href=${href} target="_blank" rel="noopener noreferrer" class="li press"><span class="ic-soft" style=${{ width: 32, height: 32, borderRadius: 10 }}><${Icon} n="ext" s=${15}/></span><span class="grow b t-s">${l}</span><${Icon} n="fwd" s=${16} cls="mu"/></a>`)}</div>`;
 
 /* גיליון תחתון */

@@ -72,8 +72,19 @@ function App() {
   useDB();
   /* פתיחה ישירה ללשונית (#sched וכו׳ – מסרגל הניווט שמעל אתר הכרטיסים) */
   const [pg, setPg] = useState(() => { const h = (location.hash || '').slice(1); try { if (h) history.replaceState(null, '', location.pathname + location.search); } catch (e) { } return ['sched', 'stand', 'roster', 'mytix', 'shop', 'mem'].includes(h) ? h : 'home'; });
-  useEffect(() => { const f = () => { const h = (location.hash || '').slice(1); if (['home', 'sched', 'stand', 'roster', 'mytix'].includes(h)) { setPg(h); setGame(null); setPlayer(null); window.scrollTo(0, 0); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } } }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
+  useEffect(() => { const f = () => { const h = (location.hash || '').slice(1); if (['home', 'sched', 'stand', 'roster', 'mytix'].includes(h)) { retR.current = false; setPg(h); setGame(null); setPlayer(null); window.scrollTo(0, 0); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } } }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
   const [arg, setArg] = useState(null), [game, setGame] = useState(null), [player, setPlayer] = useState(null), [menu, setMenu0] = useState(false), [menuOut, setMenuOut] = useState(false), [settings, setSettings] = useState(false), [drawer, setDrawer] = useState(false), [upd, setUpd] = useState(null);
+  /* כל עמוד נפתח בראש העמוד: גם אחרי שהתוכן שלו נטען. רק "חזרה" מעמוד משחק ללוח המשחקים משחזרת את המקום שבו היו */
+  const retR = useRef(false);
+  useLayoutEffect(() => { try { history.scrollRestoration = 'manual'; } catch (e) { } }, []);
+  /* כל עמוד נפתח בראש העמוד: גוללים למעלה מיד, ושוב כמה פעמים בשבריר השנייה הראשון (אם התוכן עוד משנה גובה) – אלא אם המשתמש כבר גולל */
+  useLayoutEffect(() => {
+    const keep = () => retR.current && pg === 'sched' && !game && !player; if (keep()) return;
+    let user = false; const u = () => { user = true; }, top = () => { if (!user && !keep() && window.scrollY) window.scrollTo(0, 0); };
+    window.scrollTo(0, 0); addEventListener('touchstart', u, { passive: true }); addEventListener('wheel', u, { passive: true });
+    const r = requestAnimationFrame(top), ts = [80, 200, 450].map(d => setTimeout(top, d));
+    return () => { cancelAnimationFrame(r); ts.forEach(clearTimeout); removeEventListener('touchstart', u); removeEventListener('wheel', u); };
+  }, [pg, arg, game && game.id, player && player[1]]);
   const [toasts, setToasts] = useState([]), [rem, setRem] = useState(() => LS.get('hpj-rem', {})), [notes, setNotes] = useState(() => LS.get('hpj-notes', [])), [pf, setPf] = useState(() => ({ ...PF0, ...LS.get('hpj-pf', {}) }));
   const [perm, setPerm] = useState(NATIVE ? 'default' : typeof Notification !== 'undefined' ? Notification.permission : 'denied');
   const [live, setLive] = useState(savedLive), liveR = useRef(live), [demo, setDemo] = useState(null), taps = useRef([]);
@@ -168,7 +179,7 @@ function App() {
   useEffect(() => { const T = TK(); if (!T) return; T.preload({ url: LINKS.tickets }).catch(() => { }); let h; try { h = T.addListener('closed', e => { const k = (e && e.key) || 'tix'; setPg(x => x === k ? 'more' : x); }); } catch (e) { } return () => { try { h && h.then ? h.then(r => r.remove()) : h && h.remove && h.remove(); } catch (e) { } }; }, []);
   const setMenu = v => { const T = TK(); if (v && isOvl(pg)) T.hide().catch(() => { }); if (!v && menu && isOvl(pg)) ovlShow(pg, false).catch(() => { }); setMenu0(v); };
   const go = (p, a) => {
-    setMenu0(false); const T = TK();
+    retR.current = false; setMenu0(false); const T = TK();
     if (isOvl(p)) { ovlShow(p, pg === p).catch(() => location.assign(OVL[p])); setPg(p); setGame(null); setPlayer(null); return; }
     if (p === 'tix') { window.open(LINKS.tickets, '_blank', 'noopener'); return; }
     if (T) T.hide().catch(() => { });
@@ -178,11 +189,11 @@ function App() {
   const siteBack = () => { const T = TK(); if (isOvl(pg)) { T.back({ key: pg }).catch(() => go('more')); return; } if (FR.n > 1) { FR.n--; FR.skip++; history.back(); return; } go('more'); };
   /* מרכז ההתראות נפתח מעל האתר: החלון של האתר מוסתר בינתיים */
   useEffect(() => { if (!isOvl(pg)) return; const T = TK(); if (drawer) T.hide().catch(() => { }); else ovlShow(pg, false).catch(() => { }); }, [drawer]);
-  const openGame = g => { const T = TK(); if (isOvl(pg)) T.hide().catch(() => { }); setGame(g); window.scrollTo(0, 0); };
-  const openPlayer = p => { setGame(null); if (pg !== 'roster') setPg('roster'); setPlayer(p); window.scrollTo(0, 0); };
-  const back = () => { if (game) setGame(null); else if (player) setPlayer(null); };
+  const openGame = g => { retR.current = false; const T = TK(); if (isOvl(pg)) T.hide().catch(() => { }); setGame(g); window.scrollTo(0, 0); };
+  const openPlayer = p => { retR.current = false; setGame(null); if (pg !== 'roster') setPg('roster'); setPlayer(p); window.scrollTo(0, 0); };
+  const back = () => { retR.current = true; if (game) setGame(null); else if (player) setPlayer(null); };
   /* לחיצה על כרטיס הלייב במגש ההתראות: האפליקציה נפתחת בעמוד המשחק */
-  const openAt = t => { const f = DB.F.slice().sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0]; if (!f || Math.abs(f.t - t) > 6 * H) return; const T = TK(); if (T) T.hide().catch(() => { }); setSettings(false); setMenu0(false); setDrawer(false); setPlayer(null); setPg('home'); setGame(f); window.scrollTo(0, 0); };
+  const openAt = t => { retR.current = false; const f = DB.F.slice().sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0]; if (!f || Math.abs(f.t - t) > 6 * H) return; const T = TK(); if (T) T.hide().catch(() => { }); setSettings(false); setMenu0(false); setDrawer(false); setPlayer(null); setPg('home'); setGame(f); window.scrollTo(0, 0); };
   const openR = useRef(); openR.current = openAt;
   useEffect(() => { const P = plug('LiveActivity'); if (!P || !P.takeOpen) return; const f = () => P.takeOpen().then(r => { if (r && r.t) openR.current(+r.t); }).catch(() => { }); f(); const v = () => { if (document.visibilityState === 'visible') f(); }; document.addEventListener('visibilitychange', v); return () => document.removeEventListener('visibilitychange', v); }, [DB.ok]);
 
@@ -225,7 +236,7 @@ function App() {
   useLayoutEffect(() => { document.documentElement.classList.toggle('ld-on', !!(dockL && dockG)); }, [!!(dockL && dockG)]);
   useEffect(() => { if (isOvl(pg) && !menu) { const x = ovlShow(pg, false); if (x && x.catch) x.catch(() => { }); } }, [!!(dockL && dockG)]);
   const navOn = pg === 'more' || SUB.includes(pg) ? 'more' : pg, navI = NAV.findIndex(x => x[0] === navOn), unread = notes.filter(n => !n.r).length, ext = ['shop', 'mem'].includes(pg);
-  const A = { pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
+  const A = { returning: () => retR.current, pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
   const title = game ? (game.h ? 'הפועל – ' + game.o : game.o + ' – הפועל') : player ? player[1] : TITLES[pg];
   const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'more' ? html`<${MorePage} go=${go}/>` : pg === 'mytix' ? html`<${Back} onClick=${() => go('more')}/><${MyTickets}/>` : pg === 'tix' || isOvl(pg) ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את האתר…</div>` : html`<${External} k=${pg}/>`;
   /* בזמן רענון (וגם בפתיחה): שלד במקום הנתונים. העמוד עצמו נשאר מוסתר, כדי שהמסננים בכותרת לא ייעלמו */
@@ -245,7 +256,7 @@ function App() {
     <main class="wrap"><div key=${game ? 'g' + game.id : player ? 'p' + player[1] : 'p' + pg} class=${ext ? '' : 'pg-in'}>${skel ? skeleton : null}${skel && pg === 'home' ? null : html`<div hidden=${skel}>${page}</div>`}</div>
       ${ext || pg === 'more' ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
         <span onClick=${tapFoot} class="glass-2 r-md t-xs mu" style=${{ padding: '6px 16px', userSelect: 'none', lineHeight: 1.6 }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית<br/>נדב רובינסון © גרסה ${VERSION()}</span>
-        <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu tap row" style=${{ padding: '4px 16px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a></footer>`}</main>
+        ${game || player || pg === 'stand' ? null : html`<a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu tap row" style=${{ padding: '4px 16px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a>`}</footer>`}</main>
     <nav id="nav" class="bar" aria-label="ניווט ראשי" ref=${el => { if (el) document.documentElement.style.setProperty('--navh', el.offsetHeight + 'px'); }}>
       ${dockL && dockG ? html`<button class="dock press" onClick=${() => openAt(dockG.t)} aria-label=${'משחק בלייב: ' + ME + ' ' + dockL.r[0] + ' – ' + dockL.r[1] + ' ' + dockG.o + '. לעמוד המשחק'}><${MiniScore} g=${dockG} L=${dockL}/></button>` : null}
       <div class="nav-in"><span class="nav-ind" style=${{ transform: `translateX(${-navI * 100}%)`, opacity: navI < 0 ? 0 : 1 }}></span>

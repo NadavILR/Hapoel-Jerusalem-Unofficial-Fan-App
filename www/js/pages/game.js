@@ -1,16 +1,16 @@
 /* עמוד משחק: תוצאה (או לייב), תקציר, רבעים, סטטיסטיקה קבוצתית ואישית, מהלך המשחק */
 import { html, useState, useEffect, useRef, cx, portal } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
-import { useApp, useNow, Crest, Seg, Back, LinkRows } from '../ui/kit.js';
+import { useApp, useNow, Crest, Seg, Back, Src } from '../ui/kit.js';
 import { fresh } from './home.js';
-import { LiveScore, MiniScore, Quarters, TeamStats, BoxScore, PlayByPlay } from '../ui/score.js';
+import { LiveScore, MiniScore, Quarters, TeamStats, BoxScore, PlayByPlay, srcName } from '../ui/score.js';
 import { ME, LINKS } from '../data/constants.js';
-import { DB, compLabel, gsOf, url365, officialUrl } from '../data/store.js';
+import { DB, compLabel, gsOf } from '../data/store.js';
 import { pastLs, pastPbp, gsLs, lsFinal } from '../data/live.js';
 import { ytId, hlUrl } from '../data/media.js';
 import { fdLong } from '../core/env.js';
 
-const official = c => c === 'league' || c === 'wcup';
+const official = c => c === 'league' || c === 'wcup' || c === 'super';
 function Highlight({ g }) {
   const id = ytId(g);
   return id ? html`<div class="r-lg fade-in" style=${{ overflow: 'hidden', aspectRatio: '16/9', background: '#000' }}><iframe key=${id} src=${'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&playsinline=1'} title="תקציר המשחק" style=${{ width: '100%', height: '100%', border: 0 }} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe></div>`
@@ -64,7 +64,7 @@ export default function Game({ g: g0 }) {
           <div class="col" style=${{ alignItems: 'center', gap: 6, width: 110 }}><${Crest} n=${aw} s=${68}/><div class=${cx('t-s', wn === 1 ? 'xb' : 'md')}>${aw}</div></div></div>
           <div class="t-xs row center" style=${{ marginTop: 12, gap: 4 }}><${Icon} n="pin" s=${13}/>${g.v || (g.h ? 'משחק בית' : 'משחק חוץ')}</div>`}
       </div>
-      ${live ? html`<div class="t-xs mu" style=${{ textAlign: 'center' }}>סטטיסטיקות בלייב ${live.src === 'el' ? 'מהאתר הרשמי של היורוקאפ' : live.src === 'ls' ? 'מה-Live Stats של איגוד הכדורסל' : 'מ-365scores'} · ${fresh(live, now)}</div>` : null}
+      ${live ? html`<div class="t-xs mu" style=${{ textAlign: 'center' }}>עודכן ${fresh(live, now)}</div>` : null}
       ${gs ? html`<${Seg} items=${tabs} val=${tab} set=${setTab} label="פרטי המשחק"/>
         <div key=${tab} class="stack fade-in">${tab === 'b' && plays ? html`<${PlayByPlay} pbp=${plays} g=${g}/>`
           : tab === 'g' ? html`<${Quarters} g=${gg} gs=${gs}/>${g.r && !live ? html`<${Highlight} g=${g}/>` : null}`
@@ -72,6 +72,6 @@ export default function Game({ g: g0 }) {
       : html`${g.r && !live ? html`<${Highlight} g=${g}/>` : null}
         ${plays ? html`<${PlayByPlay} pbp=${plays} g=${g}/>` : null}
         ${pf && pf.length ? html`<${BoxScore} g=${gg} gs=${{}} pf=${pf}/>` : !g.r ? html`<${PreGame} g=${g}/>` : html`<div class="glass r-lg pad t-s mu">הסטטיסטיקה המפורטת של המשחק לא נטענה לאפליקציה.</div>`}`}
-      <${LinkRows} items=${[[url365(g), 'עמוד המשחק ב-365scores'], [officialUrl(g), /^https:\/\/(basket\.co\.il\/game|www\.euroleague)/.test(g.ou || '') ? 'עמוד המשחק באתר המפעל הרשמי' : 'אתר המפעל הרשמי']]}/>
+      <${Src}>${g.c === 'prep' ? '' : 'הסטטיסטיקה, התוצאות לפי רבעים ומהלך המשחק: ' + srcName(gs || (live && { src: live.src }), g.c) + ' · '}המועד והמיקום: האתר הרשמי של הפועל ירושלים · שמות הקבוצות, הסמלים, המפעל והשלב: 365Scores<//>
     </div></div>`;
 }

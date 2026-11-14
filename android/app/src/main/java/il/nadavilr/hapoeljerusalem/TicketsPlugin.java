@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Message;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
@@ -100,6 +101,7 @@ public class TicketsPlugin extends Plugin {
 
     private static void hideSite(Site s) {
         if (s.box != null) s.box.setVisibility(View.INVISIBLE);
+        CookieManager.getInstance().flush();
         if (s.pull != null) s.pull.setRefreshing(false);
         if (s.back != null) s.back.setEnabled(false);
     }
@@ -122,10 +124,32 @@ public class TicketsPlugin extends Plugin {
         st.setBuiltInZoomControls(false);
         st.setDisplayZoomControls(false);
         st.setMediaPlaybackRequiresUserGesture(false);
+        /* Pop-up windows the site opens (window.open / target=_blank) open in the device's default browser */
+        st.setSupportMultipleWindows(true);
+        st.setJavaScriptCanOpenWindowsAutomatically(true);
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.setBackgroundColor(dark ? MainActivity.INK : 0xFFFFFFFF);
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onCreateWindow(WebView v, boolean dialog, boolean user, Message msg) {
+                /* The pop-up's address is known only once it starts loading: a temporary WebView catches it and hands it to the browser */
+                WebView tmp = new WebView(a);
+                tmp.setWebViewClient(new WebViewClient() {
+                    private boolean done;
+                    private void open(Uri u) {
+                        if (done || u == null) return; done = true;
+                        try { a.startActivity(new Intent(Intent.ACTION_VIEW, u).addCategory(Intent.CATEGORY_BROWSABLE)); } catch (Exception ignored) { }
+                        tmp.stopLoading(); tmp.post(tmp::destroy);
+                    }
+                    @Override public boolean shouldOverrideUrlLoading(WebView w, WebResourceRequest req) { open(req.getUrl()); return true; }
+                    @Override public void onPageStarted(WebView w, String u, android.graphics.Bitmap f) { if (u != null && !u.startsWith("about:")) open(Uri.parse(u)); }
+                });
+                CookieManager.getInstance().setAcceptThirdPartyCookies(tmp, true);
+                ((WebView.WebViewTransport) msg.obj).setWebView(tmp);
+                msg.sendToTarget();
+                return true;
+            }
+        });
         SwipeRefreshLayout box = new SwipeRefreshLayout(a);
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
@@ -134,7 +158,7 @@ public class TicketsPlugin extends Plugin {
                 try { a.startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { }
                 return true;
             }
-            @Override public void onPageFinished(WebView v, String u) { box.setRefreshing(false); }
+            @Override public void onPageFinished(WebView v, String u) { box.setRefreshing(false); CookieManager.getInstance().flush(); }
         });
         /* Pull down at the top of the site: reload the page that is open now (the site stays on it) */
         box.addView(web, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));

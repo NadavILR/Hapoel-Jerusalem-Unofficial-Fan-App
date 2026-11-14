@@ -3,10 +3,10 @@ import { NATIVE } from '../core/env.js';
 import { SITE } from './constants.js';
 import { DB, applyData, keepResults, changed } from './store.js';
 import { loadLeague, loadBrackets, loadLabels } from './s365.js';
-import { loadIsrael } from './basket.js';
+import { loadIsrael, BK } from './basket.js';
 import { loadEuro } from './euro.js';
 import { loadNews } from './media.js';
-import { loadVenues } from './club.js';
+import { loadClub } from './club.js';
 
 export const status = { loading: false, at: null, live: false };
 let running = null;
@@ -22,11 +22,12 @@ export function refresh() {
        המקורות החיים מקבלים עד 12 שניות, כדי שהשלד לא יישאר אם אחד מהם לא עונה */
     if (DB.ok) {
       const ok = await Promise.race([new Promise(r => setTimeout(() => r([0]), 12000)), Promise.all([
-        loadEuro().catch(() => 0),
-        (NATIVE ? loadIsrael().catch(() => 0) : Promise.resolve(0)).then(async n => n + (await loadLeague().catch(() => 0))),
+        /* המועדים: קודם מהמפעלים (יורוקאפ, basket.co.il), ובסוף מהאתר הרשמי של הפועל – שקובע את התאריך, השעה והמיקום.
+           טבלת ליגת ווינר: מהאתר הרשמי (basket.co.il); 365scores רק כשהאתר לא זמין (בדפדפן) */
+        Promise.all([loadEuro().catch(() => 0), NATIVE ? loadIsrael().catch(() => 0) : 0])
+          .then(async ([a, b]) => a + b + (NATIVE ? await loadClub().catch(() => 0) : 0) + (BK.tbl ? 0 : await loadLeague().catch(() => 0))),
         loadBrackets().catch(() => 0),
         NATIVE ? loadNews().then(() => 0).catch(() => 0) : 0,
-        NATIVE ? loadVenues().catch(() => 0) : 0,
       ])]);
       if (ok.some(n => n > 0) || fresh) status.at = new Date();
       keepResults();

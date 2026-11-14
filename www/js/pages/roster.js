@@ -1,6 +1,6 @@
 /* סגל: שחקנים (עם סינון לפי עמדה), צוות האימון, בעלי תפקידים; עמוד שחקן */
 import { html, useState, cx } from '../ui/html.js';
-import { useApp, Chips, HeaderSlot, Photo, usePhoto, Empty, ExtLink, Seg, Back, LinkRows } from '../ui/kit.js';
+import { useApp, Chips, HeaderSlot, Photo, usePhoto, Empty, ExtLink, Seg, Back, Src } from '../ui/kit.js';
 import { SplitTable, isDnp } from '../ui/score.js';
 import { ME, COMPS, CN, LINKS } from '../data/constants.js';
 import { DB, gsOf, posGroups } from '../data/store.js';
@@ -24,7 +24,7 @@ export default function Roster() {
         <div class="rel" style=${{ aspectRatio: '4/4.4' }}><${Photo} u=${p[6]} k=${p[9]} fallback=${p[0]} cls="abs-fill"/><span class="pcard-no">${p[0]}</span></div>
         <div style=${{ padding: '9px 12px 11px' }}><div class="b" style=${{ lineHeight: 1.25 }}>${p[1]}</div><div class="t-xs mu">${p[2]} · ${p[3]} מ׳</div></div></button>`)}</div>`
       : list(v === 'st' ? DB.ST : DB.OF)}
-    <div class="t-xs mu">מקור: האתר הרשמי של המועדון · הסטטיסטיקה האישית מ-365scores</div>
+    <${Src}>השחקנים ותמונותיהם, צוות האימון ובעלי התפקידים: האתר הרשמי של הפועל ירושלים<//>
   </div>`;
 }
 
@@ -61,12 +61,12 @@ export function Player({ p }) {
       <section class="glass r-lg pad-s"><div class="sec-t" style=${{ padding: '2px 4px 8px' }}>סטטיסטיקה אישית · עונת ${SEASON}</div>
         ${ks.length ? html`<${Seg} items=${[['a', 'ממוצע למשחק'], ['t', 'סה״כ']]} val=${md} set=${setMd} label="תצוגה"/>
           <div key=${md} class="fade-in" style=${{ marginTop: 8 }}><${SplitTable} head="מפעל" heads=${HD} rows=${[...ks.map(k => ({ key: k, name: html`<span class="md">${CN[k] || COMPS[k]}</span>`, cells: fm(by[k]), hi: 2 })), ...(ks.length > 1 ? [{ key: 'all', cls: 'b', name: 'כל המפעלים', cells: fm(tt) }] : [])]}/></div>
-          <div class="t-xs mu" style=${{ padding: '8px 4px 0' }}>מש׳ = משחקים שבהם נכלל בסגל · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · בלי משחקי הכנה · הנתונים מ-365scores</div>`
-        : html`<div class="t-s mu" style=${{ padding: '0 4px 4px' }}>${p[7] ? 'השחקן עוד לא נכלל בסגל של משחק עם נתונים העונה.' : 'השחקן לא נמצא ב-365scores, ולכן אין לו סטטיסטיקה אישית.'}</div>`}</section>
+          <div class="t-xs mu" style=${{ padding: '8px 4px 0' }}>מש׳ = משחקים שבהם נכלל בסגל · ר״ה = ריבאונד התקפה · ר״ג = ריבאונד הגנה · בלי משחקי הכנה</div>`
+        : html`<div class="t-s mu" style=${{ padding: '0 4px 4px' }}>${p[7] ? 'השחקן עוד לא נכלל בסגל של משחק עם נתונים העונה.' : 'השחקן לא נמצא ב-365Scores, ולכן אין לו סטטיסטיקה אישית.'}</div>`}</section>
       ${log.length ? html`<section class="glass r-lg pad-s"><div class="sec-t" style=${{ padding: '2px 4px 8px' }}>משחק אחר משחק</div>
         <${SplitTable} head="משחק" wide=${[0, 7, 8, 9]} heads=${['תוצאה', ...PH]} rows=${log.map(([f, w]) => ({ key: f.id, cls: '', hi: 2,
           name: html`<span class="col" style=${{ lineHeight: 1.2 }}><span class="t-xs b trunc">${f.h ? '' : '@ '}${f.o}</span><span class="t-xxs mu">${fmt.dm(f.t)} · ${CN[f.c] || COMPS[f.c]}</span></span>`,
           cells: [html`<span class=${f.r[0] > f.r[1] ? 'res-w b nowrap' : 'res-l b nowrap'}>${f.r[0]}–${f.r[1]}</span>`, ...(isDnp(w) ? [html`<span class="mu t-xs nowrap">לא שיחק</span>`] : prw(w))] }))}/></section>` : null}
-      ${p[8] || p[9] ? html`<${LinkRows} items=${[p[8] && ['https://www.365scores.com/en-us/basketball/player/' + p[8], 'הדף המלא ב-365scores'], p[9] && ['https://hapoel.co.il/player.asp?PlayerId=' + p[9], 'הדף באתר הרשמי של המועדון']]}/>` : null}
+      <${Src}>המידע והסטטיסטיקה של השחקן: 365Scores<//>
     </div></div>`;
 }

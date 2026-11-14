@@ -86,7 +86,7 @@ const Leaders = memo(function Leaders({ v }) {
   if (!d || !d.comps.length) return null;
   const c = d.comps[Math.min(ci, d.comps.length - 1)], open = a => { const p = DB.PL.find(x => x[7] === a.id); if (p) A.openPlayer(p); };
   const face = a => { const p = DB.PL.find(x => x[7] === a.id); return p && p[6] ? html`<${Photo} u=${p[6]} k=${p[9]} cls="abs-fill"/>` : html`<img src=${'https://imagecache.365scores.com/image/upload/f_png,w_160,h_200,c_limit,q_auto:eco,d_Athletes:default.png/v' + a.iv + '/Athletes/' + a.id} alt="" loading="lazy" referrerPolicy="no-referrer" class="ph abs-fill"/>`; };
-  return html`<section class="glass r-lg pad"><div class="row between" style=${{ marginBottom: 10 }}><h2 class="sec-t" style=${{ margin: 0 }}>מובילי הפועל</h2><span class="t-xs mu">ממוצע למשחק · 365scores</span></div>
+  return html`<section class="glass r-lg pad"><div class="row between" style=${{ marginBottom: 10 }}><h2 class="sec-t" style=${{ margin: 0 }}>מובילי הפועל</h2><span class="t-xs mu">ממוצע למשחק · 365Scores</span></div>
     ${d.comps.length > 1 ? html`<${Seg} items=${d.comps.map((x, i) => [i, x.name])} val=${ci} set=${setCi} cls="" label="מפעל"/>` : null}
     <div key=${c.id} class="grid3 fade-in" style=${{ marginTop: 12 }}>${LCAT.map(([tid, l]) => { const rr = c.cat[tid] || [], a = rr[0]; return html`<div key=${tid} style=${{ minWidth: 0, textAlign: 'center' }}>
       <div class="t-xs mu b" style=${{ marginBottom: 6 }}>${l}</div>

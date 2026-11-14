@@ -3,7 +3,10 @@ import { getText, cellsOf, rowsOf } from '../core/net.js';
 import { ilToUtc } from '../core/env.js';
 import { bName } from './constants.js';
 import { DB, bgId } from './store.js';
+/* BK.tbl: הטבלה נטענה מהאתר הרשמי בפעם האחרונה */
+export const BK = { tbl: 0 };
 export async function loadIsrael() {
+  BK.tbl = 0;
   const page = await getText('https://basket.co.il/team.asp?TeamId=2114'), by = {};
   for (const r of rowsOf(page)) {
     const id = (/GameId=(\d+)/.exec(r) || [])[1]; if (!id || by[id]) continue;
@@ -25,6 +28,6 @@ export async function loadIsrael() {
     const c = cellsOf(r);
     if (/^\d+$/.test(c[0]) && c.length >= 6 && /^\d+$/.test(c[3])) rows.push({ n: bName(c[1]), g: +c[3], w: +c[4], l: +c[5], p: +c[2], d: /^[+-]?\d+$/.test(c[6] || '') ? parseInt(c[6], 10) : null, s: /^[+-]\d+$/.test(c[21] || '') ? parseInt(c[21], 10) : null });
   }
-  if (rows.length >= 8) DB.LG = rows;
+  if (rows.length >= 8) { DB.LG = rows; BK.tbl = 1; }
   return n;
 }

@@ -54,7 +54,8 @@ export function Quarters({ g, gs }) {
 }
 const pc = (m, a) => a ? Math.round(m / a * 100) : 0;
 const sd = p => ({ m: pc(p[0], p[1]) + '%', s: p[0] + '/' + p[1], v: pc(p[0], p[1]) }), nv = x => ({ m: String(x), s: '', v: x });
-const srcName = gs => gs && gs.src === 'el' ? 'האתר הרשמי של היורוקאפ' : gs && gs.src === 'ls' ? 'ה-Live Stats של איגוד הכדורסל' : '365scores';
+/* מקור הסטטיסטיקה ומהלך המשחק: לפי מה שנטען בפועל, ואם עוד לא נטען – לפי המפעל */
+export const srcName = (gs, c) => { const s = gs && gs.src || (c === 'euro' ? 'el' : ['league', 'wcup', 'super'].includes(c) ? 'ls' : ''); return s === 'el' ? 'האתר הרשמי של היורוקאפ (EuroLeague API)' : s === 'ls' ? 'LiveStats של מנהלת ליגת ווינר סל' : '365Scores'; };
 export function TeamStats({ g, gs }) {
   const hj = !!g.h, hm = hj ? ME : g.o, aw = hj ? g.o : ME, sw = x => hj ? x : [x[1], x[0]], pt = g.r ? sw(g.r) : null, fg = gs.fg && sw(gs.fg), p3 = gs.p3 && sw(gs.p3), ft = gs.ft && sw(gs.ft), T = gs.t || {};
   const p2 = fg && p3 ? fg.map((x, i) => [x[0] - p3[i][0], x[1] - p3[i][1]]) : null, ok = p2 && p2.every(x => x[0] >= 0 && x[1] >= x[0]);
@@ -67,8 +68,7 @@ export function TeamStats({ g, gs }) {
     ${rows.map(([l, a, b]) => { const t = a.v + b.v, w = t ? a.v / t * 100 : 50; return html`<div key=${l} style=${{ padding: '9px 0', borderTop: '1px solid var(--line)' }}>
       <div class="row between t-s"><span class="row" style=${{ gap: 6, width: 96 }}><b class="num">${a.m}</b>${a.s ? html`<span class="t-xxs mu num">${a.s}</span>` : null}</span><span class="t-xs mu grow" style=${{ textAlign: 'center' }}>${l}</span><span class="row" style=${{ gap: 6, width: 96, justifyContent: 'flex-end' }}>${b.s ? html`<span class="t-xxs mu num">${b.s}</span>` : null}<b class="num">${b.m}</b></span></div>
       <div class="bar2" style=${{ marginTop: 6 }}><i class=${jSide === 0 ? 'j' : 'o'} style=${{ width: w + '%' }}></i><i class=${jSide === 0 ? 'o' : 'j'} style=${{ width: (100 - w) + '%' }}></i></div></div>`; })}
-    <div class="legend" style=${{ marginTop: 8 }}><span><i style=${{ background: 'var(--red)' }}></i>${ME}</span><span><i style=${{ background: 'rgb(var(--tx-rgb) / .3)' }}></i>${g.o}</span></div>
-    <div class="t-xs mu" style=${{ marginTop: 4 }}>הנתונים מ${srcName(gs)}.</div></div>`;
+    <div class="legend" style=${{ marginTop: 8 }}><span><i style=${{ background: 'var(--red)' }}></i>${ME}</span><span><i style=${{ background: 'rgb(var(--tx-rgb) / .3)' }}></i>${g.o}</span></div></div>`;
 }
 const isDnp = w => w[3] === '0:00' && w.slice(4, 19).every(v => !v);
 const HEADS = ['דק׳', 'נק׳', 'ריב׳', 'אס׳', 'חט׳', 'חס׳', 'מהשדה', 'שלוש', 'עונשין', 'ר״ה', 'ר״ג', 'איב׳', 'עב׳'];
@@ -85,8 +85,7 @@ export function SplitTable({ head, heads, rows, wide = [] }) {
 export function BoxScore({ g, gs, pf }) {
   const [si, setSi] = useState(0), pl = gs.pl && gs.pl[0] && gs.pl[1] && (gs.pl[0].length || gs.pl[1].length) ? gs.pl : null;
   if (!pl) return pf && pf.length ? html`<div class="glass r-lg pad"><div class="sec-t" style=${{ marginBottom: 6 }}>שחקנים בולטים</div>
-    ${pf.map(([n, v], i) => { const m = String(n).match(/^(.*?)\s*\((.*)\)$/); return html`<div key=${i} class="row between t-s" style=${{ padding: '8px 0', borderTop: i ? '1px solid var(--line)' : 0 }}><span><span class="b">${m ? m[1] : n}</span>${m ? html`<span class="t-xs mu"> · ${m[2]}</span>` : null}</span><b class="num">${v}</b></div>`; })}
-    <div class="t-xs mu" style=${{ marginTop: 6 }}>הטבלה המלאה זמינה בעמוד המשחק ב-365scores.</div></div>` : html`<div class="glass r-lg pad t-s mu">הסטטיסטיקה האישית של המשחק לא נטענה לאפליקציה.</div>`;
+    ${pf.map(([n, v], i) => { const m = String(n).match(/^(.*?)\s*\((.*)\)$/); return html`<div key=${i} class="row between t-s" style=${{ padding: '8px 0', borderTop: i ? '1px solid var(--line)' : 0 }}><span><span class="b">${m ? m[1] : n}</span>${m ? html`<span class="t-xs mu"> · ${m[2]}</span>` : null}</span><b class="num">${v}</b></div>`; })}</div>` : html`<div class="glass r-lg pad t-s mu">הסטטיסטיקה האישית של המשחק לא נטענה לאפליקציה.</div>`;
   /* חמישייה פותחת לפי מספר החולצה, אחריה שאר מי ששיחקו, ובסוף מי שלא שיחקו – כל קבוצה לפי מספר החולצה */
   const ord = r => { const num = w => { const v = parseInt(w[1], 10); return isNaN(v) ? 999 : v; }, grp = w => w[2] ? 0 : isDnp(w) ? 2 : 1; return r.slice().sort((a, b) => grp(a) - grp(b) || num(a) - num(b)); };
   const ws = ord(pl[si]), sum = i => ws.reduce((t, w) => t + w[i], 0);
