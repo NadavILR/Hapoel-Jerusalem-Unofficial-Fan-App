@@ -71,13 +71,16 @@ function App() {
   /* פתיחה ישירה ללשונית (#sched וכו׳ – מסרגל הניווט שמעל אתר הכרטיסים) */
   const [pg, setPg] = useState(() => { const h = (location.hash || '').slice(1); try { if (h) history.replaceState(null, '', location.pathname + location.search); } catch (e) { } return ['sched', 'stand', 'roster', 'mytix', 'shop', 'mem'].includes(h) ? h : 'home'; });
   useEffect(() => { const f = () => { const h = (location.hash || '').slice(1); if (['home', 'sched', 'stand', 'roster', 'mytix'].includes(h)) { setPg(h); setGame(null); setPlayer(null); window.scrollTo(0, 0); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } } }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
-  const [arg, setArg] = useState(null), [game, setGame] = useState(null), [player, setPlayer] = useState(null), [menu, setMenu0] = useState(false), [settings, setSettings] = useState(false), [drawer, setDrawer] = useState(false), [upd, setUpd] = useState(null);
+  const [arg, setArg] = useState(null), [game, setGame] = useState(null), [player, setPlayer] = useState(null), [menu, setMenu0] = useState(false), [menuOut, setMenuOut] = useState(false), [settings, setSettings] = useState(false), [drawer, setDrawer] = useState(false), [upd, setUpd] = useState(null);
   const [toasts, setToasts] = useState([]), [rem, setRem] = useState(() => LS.get('hpj-rem', {})), [notes, setNotes] = useState(() => LS.get('hpj-notes', [])), [pf, setPf] = useState(() => ({ ...PF0, ...LS.get('hpj-pf', {}) }));
   const [perm, setPerm] = useState(NATIVE ? 'default' : typeof Notification !== 'undefined' ? Notification.permission : 'denied');
   const [live, setLive] = useState(savedLive), liveR = useRef(live), [demo, setDemo] = useState(null), taps = useRef([]);
   useEffect(() => LS.set('hpj-notes', notes.slice(0, 30)), [notes]); useEffect(() => LS.set('hpj-pf', pf), [pf]); useEffect(() => LS.set('hpj-rem', rem), [rem]);
   const toast = useCallback(t => { const id = Math.random(); setToasts(x => [...x.slice(-2), { id, t }]); setTimeout(() => setToasts(x => x.filter(y => y.id !== id)), 3500); }, []);
 
+  /* תפריט "עוד": כשנסגר נשאר על המסך לרגע לאנימציית הסגירה (ההפך של אנימציית הפתיחה) */
+  const menuWas = useRef(false);
+  useEffect(() => { if (menuWas.current && !menu) { setMenuOut(true); const t = setTimeout(() => setMenuOut(false), 200); menuWas.current = false; return () => clearTimeout(t); } menuWas.current = menu; if (menu) setMenuOut(false); }, [menu]);
   /* ---------- נתונים ---------- */
   useEffect(() => { refresh(); loadOnce(); }, []);
   useEffect(() => every(() => hlScan().then(n => { if (n) changed(); }).catch(() => { }), 10 * MIN), [DB.F.length]);
@@ -227,8 +230,8 @@ function App() {
       ${ext ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
         <span onClick=${tapFoot} class="glass-2 r-md t-xs mu" style=${{ padding: '6px 16px', userSelect: 'none', lineHeight: 1.6 }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית<br/>נדב רובינסון © גרסה ${VERSION()}</span>
         <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu tap row" style=${{ padding: '4px 16px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a></footer>`}</main>
-    ${menu ? html`<${Fragment}><div style=${{ position: 'fixed', inset: 0, zIndex: 39 }} onClick=${() => setMenu(false)}></div>
-      <nav class="menu glass-3" aria-label="עוד" style=${{ bottom: 'calc(var(--navh, 72px) + 10px)' }}>${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="li press" style=${{ width: '100%', textAlign: 'right' }}><span class=${pg === k ? 'ic-circle' : 'ic-soft'}><${Icon} n=${ic} s=${18}/></span><span class="grow"><span class="b" style=${{ display: 'block' }}>${l}</span><span class="li-s trunc" style=${{ display: 'block' }}>${sub}</span></span></button>`)}</nav><//>` : null}
+    ${menu || menuOut ? html`<${Fragment}>${menu ? html`<div style=${{ position: 'fixed', inset: 0, zIndex: 39 }} onClick=${() => setMenu(false)}></div>` : null}
+      <nav class=${cx('menu glass-3', !menu && 'out')} aria-label="עוד" aria-hidden=${menu ? undefined : 'true'} style=${{ bottom: 'calc(var(--navh, 72px) + 10px)' }}>${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="li press" style=${{ width: '100%', textAlign: 'right' }}><span class=${pg === k ? 'ic-circle' : 'ic-soft'}><${Icon} n=${ic} s=${18}/></span><span class="grow"><span class="b" style=${{ display: 'block' }}>${l}</span><span class="li-s trunc" style=${{ display: 'block' }}>${sub}</span></span></button>`)}</nav><//>` : null}
     <nav id="nav" class="bar" aria-label="ניווט ראשי" ref=${el => { if (el) document.documentElement.style.setProperty('--navh', el.offsetHeight + 'px'); }}>
       ${dockL && dockG ? html`<button class="dock press" onClick=${() => openAt(dockG.t)} aria-label=${'משחק בלייב: ' + ME + ' ' + dockL.r[0] + ' – ' + dockL.r[1] + ' ' + dockG.o + '. לעמוד המשחק'}><${MiniScore} g=${dockG} L=${dockL}/></button>` : null}
       <div class="nav-in"><span class="nav-ind" style=${{ transform: `translateX(${-navI * 100}%)`, opacity: navI < 0 ? 0 : 1 }}></span>
