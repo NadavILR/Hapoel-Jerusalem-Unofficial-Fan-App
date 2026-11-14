@@ -36,7 +36,7 @@ const MORE = [['mytix', 'הכרטיסים שלי', 'qr', 'כרטיסים ומנ�
 const TITLES = { more: 'עוד', sched: 'משחקים ותוצאות', stand: 'טבלאות', roster: 'סגל הקבוצה', mytix: 'הכרטיסים שלי', tix: 'כרטיסים', shop: 'חנות המועדון', mem: 'מנוי ואזור אישי' };
 const TK = () => plug('Tickets');
 /* העמודים שנפתחים מעמוד "עוד" – כפתור החזרה שלהם מחזיר לשם */
-const SUB = ['mytix', 'tix', 'shop', 'mem'];
+const SUB = ['mytix', 'tix', 'shop', 'mem'], SITES = ['tix', 'shop', 'mem'];
 
 /* משיכה למטה לרענון */
 function PullRefresh({ onRefresh, off }) {
@@ -157,9 +157,11 @@ function App() {
 
   /* ---------- ניווט ---------- */
   const botPx = () => { const n = document.getElementById('nav'); return Math.round((n ? n.offsetHeight : 64) * (window.devicePixelRatio || 1)); };
+  /* האתר נפתח מתחת לכותרת של האפליקציה (בה "חזרה" במקום הסמל) */
+  const topPx = () => { const h = document.getElementById('hd'); return Math.round((h ? h.getBoundingClientRect().bottom : 64) * (window.devicePixelRatio || 1)); };
   /* כרטיסים / חנות / מנוי באנדרואיד: חלון נייטיב לכל אתר (עם משיכה לרענון), מעל האפליקציה וסרגל הניווט גלוי מתחתיו */
   const OVL = { tix: LINKS.tickets, shop: EXT.shop, mem: EXT.mem }, isOvl = k => !!(TK() && OVL[k]);
-  const ovlShow = (k, home) => { const T = TK(); if (T) return T.show({ key: k, url: OVL[k], bottom: botPx(), home, title: TITLES[k] }); };
+  const ovlShow = (k, home) => { const T = TK(); if (T) return T.show({ key: k, url: OVL[k], bottom: botPx(), top: topPx(), home }); };
   useEffect(() => { const T = TK(); if (!T) return; T.preload({ url: LINKS.tickets }).catch(() => { }); let h; try { h = T.addListener('closed', e => { const k = (e && e.key) || 'tix'; setPg(x => x === k ? 'more' : x); }); } catch (e) { } return () => { try { h && h.then ? h.then(r => r.remove()) : h && h.remove && h.remove(); } catch (e) { } }; }, []);
   const setMenu = v => { const T = TK(); if (v && isOvl(pg)) T.hide().catch(() => { }); if (!v && menu && isOvl(pg)) ovlShow(pg, false).catch(() => { }); setMenu0(v); };
   const go = (p, a) => {
@@ -169,6 +171,10 @@ function App() {
     if (T) T.hide().catch(() => { });
     FR.n = 0; FR.skip = 0; setPg(p); setArg(a || null); setGame(null); setPlayer(null); window.scrollTo(0, 0);
   };
+  /* "חזרה" בכותרת של אתר: קודם לעמוד הקודם בתוך האתר, ומהעמוד הראשון שלו – לעמוד "עוד" */
+  const siteBack = () => { const T = TK(); if (isOvl(pg)) { T.back({ key: pg }).catch(() => go('more')); return; } if (FR.n > 1) { FR.n--; FR.skip++; history.back(); return; } go('more'); };
+  /* מרכז ההתראות נפתח מעל האתר: החלון של האתר מוסתר בינתיים */
+  useEffect(() => { if (!isOvl(pg)) return; const T = TK(); if (drawer) T.hide().catch(() => { }); else ovlShow(pg, false).catch(() => { }); }, [drawer]);
   const openGame = g => { const T = TK(); if (isOvl(pg)) T.hide().catch(() => { }); setGame(g); window.scrollTo(0, 0); };
   const openPlayer = p => { setGame(null); if (pg !== 'roster') setPg('roster'); setPlayer(p); window.scrollTo(0, 0); };
   const back = () => { if (game) setGame(null); else if (player) setPlayer(null); };
@@ -226,9 +232,9 @@ function App() {
   return html`<${AppCtx.Provider} value=${A}>
     <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd)}/>
     <header id="hd" class="bar"><div class="wrap">
-      <div class="hd-in"><img src="icons/club-logo.png" alt="הפועל ירושלים" class="logo"/>
+      <div class="hd-in">${SITES.includes(pg) && !game && !player ? html`<button onClick=${siteBack} class="back glass-2 press" style=${{ position: 'static' }}><${Icon} n="back" s=${18}/><span>חזרה</span></button>` : html`<img src="icons/club-logo.png" alt="הפועל ירושלים" class="logo"/>`}
         <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1><div class="sub">${game || player ? '' : 'עונת ' + SEASON}</div>` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
-        ${['home', 'sched', 'stand', 'roster'].includes(pg) && !game ? html`<button onClick=${() => setSettings(true)} class="icon-btn press" aria-label="הגדרות"><${Icon} n="cog" s=${22}/></button>` : null}
+        ${pg === 'home' && !game && !player ? html`<button onClick=${() => setSettings(true)} class="icon-btn press" aria-label="הגדרות"><${Icon} n="cog" s=${22}/></button>` : null}
         <button onClick=${() => setDrawer(true)} class="icon-btn press" aria-label=${'התראות' + (unread ? ', ' + unread + ' חדשות' : '')}><${Icon} n="bell" s=${22}/>${unread > 0 ? html`<span class="badge">${unread}</span>` : null}</button>
       </div>
       <div id="hd-slot"></div></div></header>
