@@ -1,16 +1,22 @@
 /* עדכוני האפליקציה (אנדרואיד): הגרסה האחרונה ב-GitHub Releases לפי ערוץ העדכונים */
 import { getText } from '../core/net.js';
-import { NATIVE, LS, VERSION } from '../core/env.js';
+import { NATIVE, LS, VERSION, plug } from '../core/env.js';
 import { REPO } from './constants.js';
 const DL = 'https://github.com/' + REPO + '/releases/download/';
 export const vcmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
 const relVer = tag => String(tag || '').replace(/^v/, '').replace(/-(beta|alpha)$/, '').replace(/^(\d+\.\d{2,})\.0$/, '$1');
 /* 0 – רשמיות בלבד, 1 – גם בטא (אין יותר ערוץ אלפא: מי שבחר בו בעבר מקבל בטא) */
 export const channel = () => +LS.get('hpj-beta', 0) >= 1 ? 1 : 0;
-export const setChannel = v => LS.set('hpj-beta', v);
+/* הבחירה נשמרת גם באחסון של האפליקציה באנדרואיד (נכתב מיד), כי האחסון של הדף לפעמים לא הספיק להישמר לפני שההתקנה של
+   העדכון סגרה את האפליקציה – והבחירה בבטא אבדה. בפתיחה: הערך של האנדרואיד קובע */
+export const setChannel = v => { LS.set('hpj-beta', v); const U = plug('Updater'); if (U && U.setBeta) U.setBeta({ on: v >= 1 }).catch(() => { }); };
+const ready = (() => { const U = plug('Updater'); if (!U || !U.getBeta) return Promise.resolve();
+  return Promise.race([U.getBeta().then(r => { if (r && r.known) LS.set('hpj-beta', r.on ? 1 : 0); else if (channel()) U.setBeta({ on: true }).catch(() => { }); }).catch(() => { }), new Promise(r => setTimeout(r, 1500))]); })();
+export const channelReady = () => ready;
 const notesOf = t => String(t || '').split('\n').map(l => /^\s*-\s+(.+)/.exec(l)).filter(Boolean).map(m => m[1].replace(/`|\*\*/g, '').trim()).filter(x => !/^להתקנה/.test(x)).slice(0, 60);
 const unHtml = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 async function fromApi() {
+  await ready;
   const ch = channel(), u = 'https://api.github.com/repos/' + REPO + '/releases' + (ch ? '?per_page=15' : '/latest');
   const raw = NATIVE ? await getText(u) : await (async () => { const r = await fetch(u, { cache: 'no-store', headers: { Accept: 'application/vnd.github+json' } }); if (!r.ok) throw new Error('http ' + r.status); return r.text(); })();
   const one = j => {
@@ -25,6 +31,7 @@ async function fromApi() {
 }
 /* גיבוי: פיד ה-releases הציבורי (בלי מגבלת הבקשות של ה-API) */
 async function fromAtom() {
+  await ready;
   const ch = channel(), t = await getText('https://github.com/' + REPO + '/releases.atom?t=' + Date.now()); let best = null;
   const re = ch ? /\/releases\/tag\/(v\d+\.\d+(?:\.\d+)?(?:-beta)?)["<]/g : /\/releases\/tag\/(v\d+\.\d+(?:\.\d+)?)["<]/g;
   for (const m of t.matchAll(re)) { const v = relVer(m[1]); if (!best || vcmp(v, best.v) > 0) best = { v, tag: m[1] }; }

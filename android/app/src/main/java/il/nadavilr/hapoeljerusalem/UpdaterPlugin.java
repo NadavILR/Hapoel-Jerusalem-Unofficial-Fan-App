@@ -29,6 +29,25 @@ public class UpdaterPlugin extends Plugin {
 
     private static final String ALLOWED = "https://github.com/NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App/releases/download/";
 
+    /* The beta choice is kept here, in the app's own storage, written at once (commit). In the page's storage it was
+       sometimes lost: the choice is followed right away by an update, and installing it closes the app before the page's
+       storage reached the disk */
+    @PluginMethod
+    public void getBeta(PluginCall call) {
+        android.content.SharedPreferences p = getContext().getSharedPreferences("hpj_updates", android.content.Context.MODE_PRIVATE);
+        JSObject r = new JSObject();
+        r.put("known", p.contains("beta"));
+        r.put("on", p.getBoolean("beta", false));
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void setBeta(PluginCall call) {
+        boolean on = Boolean.TRUE.equals(call.getBoolean("on", false));
+        getContext().getSharedPreferences("hpj_updates", android.content.Context.MODE_PRIVATE).edit().putBoolean("beta", on).commit();
+        call.resolve();
+    }
+
     @PluginMethod
     public void canInstall(PluginCall call) {
         JSObject r = new JSObject();

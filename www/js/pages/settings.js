@@ -1,17 +1,18 @@
 /* הגדרות: התראות (תזכורות, רבעים, כרטיס לייב, Now Bar, רקע, מבצעים, לפי מפעל), על האפליקציה, ערוץ עדכונים */
-import { html, useState, useRef, Fragment } from '../ui/html.js';
+import { html, useState, useRef, useEffect, Fragment } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { useApp, Seg, Toggle, FullPage } from '../ui/kit.js';
 import { COMPS } from '../data/constants.js';
 import { DB } from '../data/store.js';
 import { NATIVE, plug, VERSION, LS } from '../core/env.js';
 import { LN, askPerm, scheduleReminder, nbMode } from '../features/notify.js';
-import { channel, setChannel } from '../data/updates.js';
+import { channel, setChannel, channelReady } from '../data/updates.js';
 
 export const NbPick = ({ pf, setPf }) => html`<${Seg} items=${[['c', 'כרטיס התוצאה'], ['m', 'Now Bar · שורה'], ['t', 'Now Bar · טקסט']]} val=${nbMode(pf)} set=${k => setPf({ ...pf, nb: k })} label="תצוגת הלייב"/>`;
 const Note = ({ children }) => html`<div class="t-xs mu" style=${{ padding: '0 16px 12px', marginTop: -4 }}>${children}</div>`;
 export default function Settings({ onClose }) {
   const A = useApp(), pf = A.pf, sp = (k, v) => A.setPf({ ...pf, [k]: v }), on = pf.on !== 0 && A.perm === 'granted', [chk, setChk] = useState(''), [ch, setCh] = useState(channel);
+  useEffect(() => { channelReady().then(() => setCh(channel())); }, []);
   /* גרסאות בטא: מופעלות ומבוטלות רק ב-7 לחיצות מהירות על מספר הגרסה (כמו "אפשרויות מפתחים" באנדרואיד) */
   const taps = useRef([]);
   const tapVersion = () => {
