@@ -5,7 +5,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/widget_bg" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="6dp" android:paddingBottom="6dp" android:layoutDirection="rtl">
   <ImageView android:id="@+id/w_home_crest" android:layout_width="58dp" android:layout_height="58dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
   <TextView
-        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_hs" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_hs" android:layout_width="64dp" android:gravity="start" android:maxLines="1" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
   <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:paddingStart="6dp" android:paddingEnd="6dp">
     <TextView
         android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#FFFFFF" android:textSize="12dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:includeFontPadding="false" />
@@ -23,6 +23,6 @@
     </LinearLayout>
   </LinearLayout>
   <TextView
-        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_as" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
+        android:fontFamily="@font/noto_sans_hebrew" android:id="@+id/w_as" android:layout_width="64dp" android:gravity="end" android:maxLines="1" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textColor="#FFFFFF" android:textSize="36dp" android:textStyle="bold" android:includeFontPadding="false" android:fontFeatureSettings="tnum" />
   <ImageView android:id="@+id/w_away_crest" android:layout_width="58dp" android:layout_height="58dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
 </LinearLayout>

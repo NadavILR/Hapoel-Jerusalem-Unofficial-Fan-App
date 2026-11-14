@@ -114,7 +114,7 @@ final class LiveGame {
 
     /** Downloads a crest (365scores image server only), cached. Call off the main thread. */
     static Bitmap crest(String url) {
-        if (url == null || !url.startsWith("https://imagecache.365scores.com/")) return null;
+        if (url == null || !url.startsWith("https://")) return null;
         synchronized (CRESTS) {
             if (CRESTS.containsKey(url)) return CRESTS.get(url);
         }

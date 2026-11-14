@@ -174,6 +174,9 @@ public class NextGameWidget extends AppWidgetProvider {
                 d.homeImg = l.optString("homeImg", "");
                 d.awayImg = l.optString("awayImg", "");
                 d.meHome = l.optBoolean("meHome", true);
+                /* the opponent's crest, if the live snapshot has none: the one in the app's game list */
+                String oi = LiveScheduler.game(c, d.t).optString("img", "");
+                if (!oi.isEmpty()) { if (d.meHome) { if (d.awayImg.isEmpty()) d.awayImg = oi; } else if (d.homeImg.isEmpty()) d.homeImg = oi; }
                 return d;
             }
         } catch (Exception ignored) {
@@ -292,8 +295,9 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, 0));
             return v;
         }
-        if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]);
-        if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]);
+        /* no crest for the opponent: an empty space, never Hapoel's crest on both sides */
+        if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]); else v.setImageViewResource(R.id.w_home_crest, android.R.color.transparent);
+        if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]); else v.setImageViewResource(R.id.w_away_crest, android.R.color.transparent);
         v.setContentDescription(R.id.w_home_crest, d.home);
         v.setContentDescription(R.id.w_away_crest, d.away);
         v.setTextViewText(R.id.w_comp, rlm + (d.comp.isEmpty() ? d.home + " – " + d.away : d.comp));
