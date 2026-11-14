@@ -19,7 +19,7 @@ import Standings from './pages/standings.js';
 import Roster, { Player } from './pages/roster.js';
 import Game from './pages/game.js';
 import MyTickets from './pages/mytickets.js';
-import External, { FR } from './pages/external.js';
+import External, { FR, EXT } from './pages/external.js';
 import Settings from './pages/settings.js';
 import Drawer from './pages/drawer.js';
 import UpdateGate from './pages/updategate.js';
@@ -155,16 +155,19 @@ function App() {
 
   /* ---------- ניווט ---------- */
   const botPx = () => { const n = document.getElementById('nav'); return Math.round((n ? n.offsetHeight : 64) * (window.devicePixelRatio || 1)); };
-  const tixShow = home => { const T = TK(); if (T) return T.show({ url: LINKS.tickets, bottom: botPx(), home }); };
-  useEffect(() => { const T = TK(); if (!T) return; T.preload({ url: LINKS.tickets }).catch(() => { }); let h; try { h = T.addListener('closed', () => setPg(x => x === 'tix' ? 'home' : x)); } catch (e) { } return () => { try { h && h.then ? h.then(r => r.remove()) : h && h.remove && h.remove(); } catch (e) { } }; }, []);
-  const setMenu = v => { const T = TK(); if (v && pg === 'tix' && T) T.hide().catch(() => { }); if (!v && menu && pg === 'tix' && T) tixShow(false).catch(() => { }); setMenu0(v); };
+  /* כרטיסים / חנות / מנוי באנדרואיד: חלון נייטיב לכל אתר (עם משיכה לרענון), מעל האפליקציה וסרגל הניווט גלוי מתחתיו */
+  const OVL = { tix: LINKS.tickets, shop: EXT.shop, mem: EXT.mem }, isOvl = k => !!(TK() && OVL[k]);
+  const ovlShow = (k, home) => { const T = TK(); if (T) return T.show({ key: k, url: OVL[k], bottom: botPx(), home }); };
+  useEffect(() => { const T = TK(); if (!T) return; T.preload({ url: LINKS.tickets }).catch(() => { }); let h; try { h = T.addListener('closed', e => { const k = (e && e.key) || 'tix'; setPg(x => x === k ? 'home' : x); }); } catch (e) { } return () => { try { h && h.then ? h.then(r => r.remove()) : h && h.remove && h.remove(); } catch (e) { } }; }, []);
+  const setMenu = v => { const T = TK(); if (v && isOvl(pg)) T.hide().catch(() => { }); if (!v && menu && isOvl(pg)) ovlShow(pg, false).catch(() => { }); setMenu0(v); };
   const go = (p, a) => {
     setMenu0(false); const T = TK();
-    if (p === 'tix') { if (T) { T.show({ url: LINKS.tickets, bottom: botPx(), home: pg === 'tix' }).catch(() => location.assign(LINKS.tickets)); setPg('tix'); setGame(null); setPlayer(null); return; } window.open(LINKS.tickets, '_blank', 'noopener'); return; }
+    if (isOvl(p)) { ovlShow(p, pg === p).catch(() => location.assign(OVL[p])); setPg(p); setGame(null); setPlayer(null); return; }
+    if (p === 'tix') { window.open(LINKS.tickets, '_blank', 'noopener'); return; }
     if (T) T.hide().catch(() => { });
     FR.n = 0; FR.skip = 0; setPg(p); setArg(a || null); setGame(null); setPlayer(null); window.scrollTo(0, 0);
   };
-  const openGame = g => { const T = TK(); if (T && pg === 'tix') T.hide().catch(() => { }); setGame(g); window.scrollTo(0, 0); };
+  const openGame = g => { const T = TK(); if (isOvl(pg)) T.hide().catch(() => { }); setGame(g); window.scrollTo(0, 0); };
   const openPlayer = p => { setGame(null); if (pg !== 'roster') setPg('roster'); setPlayer(p); window.scrollTo(0, 0); };
   const back = () => { if (game) setGame(null); else if (player) setPlayer(null); };
   /* לחיצה על כרטיס הלייב במגש ההתראות: האפליקציה נפתחת בעמוד המשחק */
@@ -181,7 +184,6 @@ function App() {
   const backR = useRef(); backR.current = () => {
     if (VIDC.close) { VIDC.close(); return true; } if (menu) { setMenu(false); return true; } if (settings) { setSettings(false); return true; } if (drawer) { setDrawer(false); return true; }
     if (game) { setGame(null); return true; } if (player) { setPlayer(null); return true; }
-    if (NATIVE && (pg === 'shop' || pg === 'mem') && FR.n > 1) { FR.n--; FR.skip++; history.back(); return true; }
     if (pg !== 'home') { go('home'); return true; } return false;
   };
   useEffect(() => { window.hpjBack = () => backR.current(); }, []);
@@ -209,10 +211,11 @@ function App() {
   /* פס הלייב: בכל העמודים, חוץ מעמוד המשחק עצמו וממסך הבית (שם הכרטיס האדום כבר מציג את התוצאה) */
   const dockL = !upd && L && L.status === 'live' && !(game && game.id === L.app) && !(pg === 'home' && !game && !player) ? L : null, dockG = dockL ? DB.F.find(f => f.id === dockL.app) : null;
   useLayoutEffect(() => { document.documentElement.classList.toggle('ld-on', !!(dockL && dockG)); }, [!!(dockL && dockG)]);
+  useEffect(() => { if (isOvl(pg) && !menu) { const x = ovlShow(pg, false); if (x && x.catch) x.catch(() => { }); } }, [!!(dockL && dockG)]);
   const navOn = menu || ['mytix', 'tix', 'shop', 'mem'].includes(pg) ? 'more' : pg, navI = NAV.findIndex(x => x[0] === navOn), unread = notes.filter(n => !n.r).length, ext = ['shop', 'mem'].includes(pg);
   const A = { pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
   const title = game ? (game.h ? 'הפועל – ' + game.o : game.o + ' – הפועל') : player ? player[1] : TITLES[pg];
-  const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'mytix' ? html`<${MyTickets}/>` : pg === 'tix' ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את אתר הכרטיסים…</div>` : html`<${External} k=${pg}/>`;
+  const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'mytix' ? html`<${MyTickets}/>` : pg === 'tix' || isOvl(pg) ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את האתר…</div>` : html`<${External} k=${pg}/>`;
   /* בזמן רענון (וגם בפתיחה): שלד במקום הנתונים. העמוד עצמו נשאר מוסתר, כדי שהמסננים בכותרת לא ייעלמו */
   const skel = status.loading && !game && !player && ['home', 'sched', 'stand', 'roster'].includes(pg);
   const skeleton = pg === 'home' ? html`<div class="stack" aria-busy="true" aria-label="טוען"><div class="sk" style=${{ height: 420, borderRadius: 16 }}></div><div class="grid2"><div class="sk" style=${{ height: 92 }}></div><div class="sk" style=${{ height: 92 }}></div></div><div class="sk" style=${{ height: 260 }}></div></div>` : html`<${Skel} n=${8} h=${pg === 'roster' ? 120 : 64}/>`;
