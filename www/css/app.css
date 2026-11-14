@@ -210,7 +210,8 @@ main.wrap { padding-top: 12px; padding-bottom: calc(var(--navh, 72px) + 28px); }
 
 /* תפריט "עוד" */
 .menu { position: fixed; left: 12px; z-index: 46; width: 260px; border-radius: 22px; overflow: hidden; transform-origin: bottom left; animation: pop .22s var(--ease) both; }
-.menu.out { animation: popOut .2s var(--ease) both; pointer-events: none; }
+.menu { will-change: transform, opacity; }
+.menu.out { animation: popOut .18s cubic-bezier(.4, 0, 1, 1) both; pointer-events: none; }
 @keyframes popOut { to { opacity: 0; transform: scale(.94) translateY(6px); } }
 
 /* ---------- שכבות: מסך מלא, גיליון, חלון ---------- */

@@ -80,7 +80,8 @@ function App() {
 
   /* תפריט "עוד": כשנסגר נשאר על המסך לרגע לאנימציית הסגירה (ההפך של אנימציית הפתיחה) */
   const menuWas = useRef(false);
-  useEffect(() => { if (menuWas.current && !menu) { setMenuOut(true); const t = setTimeout(() => setMenuOut(false), 200); menuWas.current = false; return () => clearTimeout(t); } menuWas.current = menu; if (menu) setMenuOut(false); }, [menu]);
+  /* useLayoutEffect: מתחלף לפני שהמסך מצויר – בלי פריים שבו התפריט נעלם ומופיע שוב */
+  useLayoutEffect(() => { if (menuWas.current && !menu) { setMenuOut(true); const t = setTimeout(() => setMenuOut(false), 200); menuWas.current = false; return () => clearTimeout(t); } menuWas.current = menu; if (menu) setMenuOut(false); }, [menu]);
   /* ---------- נתונים ---------- */
   useEffect(() => { refresh(); loadOnce(); }, []);
   useEffect(() => every(() => hlScan().then(n => { if (n) changed(); }).catch(() => { }), 10 * MIN), [DB.F.length]);
