@@ -16,10 +16,14 @@ export default function Settings({ onClose }) {
   const [alpha, setAlpha] = useState(() => channel() >= 2 || !!LS.get('hpj-alpha', 0)), taps = useRef([]);
   const tapVersion = () => {
     if (!NATIVE) return;
-    if (alpha) { A.toast(ch >= 2 ? 'גרסאות אלפא כבר פעילות' : 'גרסאות אלפא כבר פתוחות – אפשר לבחור אותן למטה'); return; }
+    /* אותן 7 לחיצות גם מבטלות: האפשרות "גם אלפא" נעלמת, והעדכונים עוברים ל"גם בטא" */
     const t = Date.now(); taps.current = taps.current.filter(x => t - x < 1500).concat(t); const n = taps.current.length;
-    if (n >= 7) { taps.current = []; LS.set('hpj-alpha', 1); setAlpha(true); setChannel(2); setCh(2); A.toast('גרסאות אלפא הופעלו'); check(); }
-    else if (n >= 3) A.toast('עוד ' + (7 - n) + (7 - n === 1 ? ' לחיצה' : ' לחיצות') + ' לגרסאות אלפא');
+    if (n >= 7) {
+      taps.current = [];
+      if (alpha) { LS.set('hpj-alpha', 0); setAlpha(false); if (ch >= 2) { setChannel(1); setCh(1); } A.toast('גרסאות אלפא בוטלו – מקבלים עכשיו גרסאות רשמיות ובטא'); }
+      else { LS.set('hpj-alpha', 1); setAlpha(true); setChannel(2); setCh(2); A.toast('גרסאות אלפא הופעלו'); }
+      check();
+    } else if (n >= 3) A.toast('עוד ' + (7 - n) + (7 - n === 1 ? ' לחיצה' : ' לחיצות') + (alpha ? ' לביטול גרסאות אלפא' : ' לגרסאות אלפא'));
   };
   const toggle = () => {
     if (on) { A.setPf({ ...pf, on: 0 }); const L = LN(); if (L) L.getPending().then(r => { const n = ((r && r.notifications) || []).map(x => ({ id: x.id })); if (n.length) return L.cancel({ notifications: n }); }).catch(() => { }); A.toast('ההתראות כובו'); return; }
