@@ -24,7 +24,7 @@ export default function UpdateGate({ u }) {
       <div class="t-s mu">כדי להמשיך להשתמש באפליקציה צריך לעדכן</div>
       ${notes.length ? html`<div class="glass r-lg pad" style=${{ width: '100%', textAlign: 'right' }}><div class="sec-t" style=${{ marginBottom: 6 }}>מה חדש</div>${notes.map((n, i) => html`<div key=${i} class="row t-s" style=${{ alignItems: 'flex-start', gap: 8, padding: '4px 0' }}><span class="dot" style=${{ width: 6, height: 6, marginTop: 8 }}></span><span>${n}</span></div>`)}</div>` : null}
     </div>
-    <div class="wrap" style=${{ maxWidth: 460, width: '100%', marginTop: 'auto', paddingTop: 18 }}>
+    <div class="wrap gate-foot" style=${{ maxWidth: 460, width: '100%' }}>
       ${st === 'perm' ? html`<div class="t-xs mu" style=${{ textAlign: 'center', marginBottom: 10 }}>אשרו בהגדרות שנפתחו "התרת התקנה ממקור זה", חזרו לכאן ולחצו שוב "עדכון עכשיו"</div>` : null}
       ${st === 'inst' ? html`<div class="t-xs mu" style=${{ textAlign: 'center', marginBottom: 10 }}>במסך ההתקנה שנפתח לחצו "עדכון". אם הוא לא נפתח, לחצו שוב</div>` : null}
       ${st === 'err' ? html`<div class="t-xs red" style=${{ textAlign: 'center', marginBottom: 10 }}>ההורדה נכשלה. בדקו את החיבור ונסו שוב</div>` : null}

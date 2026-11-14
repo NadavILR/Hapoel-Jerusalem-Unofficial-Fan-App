@@ -396,7 +396,10 @@ html.pulling main.wrap { transition: none; }
 
 /* מסך העדכון */
 /* מסך העדכון: הכל מיושר לראש המסך, "מה חדש" בגובה הטקסט שלו, והמסך כולו נגלל כשצריך; הכפתור בתחתית */
-.gate { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto; padding: calc(var(--sat) + 28px) 20px calc(var(--sab) + 24px); }
+.gate { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto; padding: calc(var(--sat) + 28px) 20px 0; }
+/* כפתור העדכון נעול בתחתית המסך; כש"מה חדש" מגיע אליו, טשטוש עדין מעל הכפתור מפריד ביניהם */
+.gate-foot { position: sticky; bottom: 0; margin-top: auto; padding-top: 18px; padding-bottom: calc(var(--sab) + 24px); isolation: isolate; }
+.gate-foot::before { content: ""; position: absolute; left: -20px; right: -20px; top: -24px; bottom: 0; z-index: -1; pointer-events: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); background: linear-gradient(to bottom, rgb(var(--bg-rgb) / 0), rgb(var(--bg-rgb) / .55) 45%, rgb(var(--bg-rgb) / .8)); -webkit-mask-image: linear-gradient(to bottom, transparent, #000 32px); mask-image: linear-gradient(to bottom, transparent, #000 32px); }
 .prog { height: 8px; border-radius: 9px; background: var(--faint); overflow: hidden; }
 .prog > i { display: block; height: 100%; background: var(--red); border-radius: 9px; transition: width .3s var(--ease); }
 
