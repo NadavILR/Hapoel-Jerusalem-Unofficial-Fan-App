@@ -12,18 +12,15 @@ export const NbPick = ({ pf, setPf }) => html`<${Seg} items=${[['c', 'כרטיס
 const Note = ({ children }) => html`<div class="t-xs mu" style=${{ padding: '0 16px 12px', marginTop: -4 }}>${children}</div>`;
 export default function Settings({ onClose }) {
   const A = useApp(), pf = A.pf, sp = (k, v) => A.setPf({ ...pf, [k]: v }), on = pf.on !== 0 && A.perm === 'granted', [chk, setChk] = useState(''), [ch, setCh] = useState(channel);
-  /* גרסאות אלפא נפתחות רק אחרי 7 לחיצות מהירות על מספר הגרסה (כמו "אפשרויות מפתחים" באנדרואיד) */
-  const [alpha, setAlpha] = useState(() => channel() >= 2 || !!LS.get('hpj-alpha', 0)), taps = useRef([]);
+  /* גרסאות בטא: מופעלות ומבוטלות רק ב-7 לחיצות מהירות על מספר הגרסה (כמו "אפשרויות מפתחים" באנדרואיד) */
+  const taps = useRef([]);
   const tapVersion = () => {
     if (!NATIVE) return;
-    /* אותן 7 לחיצות גם מבטלות: האפשרות "גם אלפא" נעלמת, והעדכונים עוברים ל"גם בטא" */
     const t = Date.now(); taps.current = taps.current.filter(x => t - x < 1500).concat(t); const n = taps.current.length;
     if (n >= 7) {
-      taps.current = [];
-      if (alpha) { LS.set('hpj-alpha', 0); setAlpha(false); if (ch >= 2) { setChannel(1); setCh(1); } A.toast('גרסאות אלפא בוטלו – מקבלים עכשיו גרסאות רשמיות ובטא'); }
-      else { LS.set('hpj-alpha', 1); setAlpha(true); setChannel(2); setCh(2); A.toast('גרסאות אלפא הופעלו'); }
-      check();
-    } else if (n >= 3) A.toast('עוד ' + (7 - n) + (7 - n === 1 ? ' לחיצה' : ' לחיצות') + (alpha ? ' לביטול גרסאות אלפא' : ' לגרסאות אלפא'));
+      taps.current = []; const on = ch < 1;
+      setChannel(on ? 1 : 0); setCh(on ? 1 : 0); A.toast(on ? 'גרסאות בטא הופעלו' : 'גרסאות בטא בוטלו – יוצעו רק גרסאות רשמיות'); check();
+    } else if (n >= 3) A.toast('עוד ' + (7 - n) + (7 - n === 1 ? ' לחיצה' : ' לחיצות') + (ch >= 1 ? ' לביטול גרסאות בטא' : ' לגרסאות בטא'));
   };
   const toggle = () => {
     if (on) { A.setPf({ ...pf, on: 0 }); const L = LN(); if (L) L.getPending().then(r => { const n = ((r && r.notifications) || []).map(x => ({ id: x.id })); if (n.length) return L.cancel({ notifications: n }); }).catch(() => { }); A.toast('ההתראות כובו'); return; }
@@ -50,9 +47,7 @@ export default function Settings({ onClose }) {
     <section class="glass r-lg pad stack-s"><div class="row" style=${{ gap: 12 }}><img src="icons/club-logo.png" alt="" style=${{ width: 44, height: 44 }}/><div><h2 class="sec-t" style=${{ margin: 0 }}>על האפליקציה</h2><span class="unofficial">לא רשמית</span></div></div>
       <p class="t-s mu" style=${{ margin: 0 }}>אפליקציית אוהדים לא רשמית. היא לא שייכת למועדון הפועל ירושלים ולא פועלת מטעמו. הנתונים מהמקורות הרשמיים: איגוד הכדורסל, EuroLeague / EuroCup, 365scores, אתר המועדון וערוצי היוטיוב הרשמיים.</p></section>
     <section class="glass r-lg pad stack-s"><div><h2 class="sec-t" style=${{ margin: 0 }}>עדכוני אפליקציה</h2><button onClick=${tapVersion} class="t-s mu" style=${{ display: 'block', textAlign: 'right', userSelect: 'none', WebkitUserSelect: 'none', padding: '2px 0' }}>גרסה מותקנת: <span class="num">${VERSION()}</span></button></div>
-      ${NATIVE ? html`<${Fragment}><div class="t-s md">אילו עדכונים לקבל</div>
-        <${Seg} items=${alpha ? [[0, 'רשמיות בלבד'], [1, 'גם בטא'], [2, 'גם אלפא']] : [[0, 'רשמיות בלבד'], [1, 'גם בטא']]} val=${ch} set=${v => { if (v === ch) return; setChannel(v); setCh(v); check(); }} label="ערוץ עדכונים"/>
-        <div class="t-xs mu">${ch === 2 ? 'גרסאות אלפא הן המוקדמות ביותר – לפני הבטא והגרסה הרשמית – ועלולות לכלול יותר תקלות.' : ch === 1 ? 'גרסאות ניסיון מגיעות לפני הגרסה הרשמית ועלולות לכלול תקלות.' : 'יוצעו רק גרסאות רשמיות.'}</div>
+      ${NATIVE ? html`<${Fragment}><div class="t-xs mu">${ch >= 1 ? 'גרסאות בטא פעילות: יוצעו גם גרסאות ניסיון, שמגיעות לפני הגרסה הרשמית ועלולות לכלול תקלות.' : 'יוצעו רק גרסאות רשמיות.'}</div>
         <button onClick=${check} class="btn btn-red press" style=${{ width: '100%' }}><${Icon} n="sync" s=${17}/>חיפוש עדכונים</button>${chk ? html`<div class="t-xs mu">${chk}</div>` : null}
         <div class="t-xs mu">האפליקציה בודקת עדכונים בכל פתיחה. כשיש גרסה חדשה צריך לעדכן כדי להמשיך.</div><//>` : html`<div class="t-xs mu">בגרסת הדפדפן האפליקציה מתעדכנת לבד.</div>`}</section>
   </div><//>`;
