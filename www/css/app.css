@@ -340,7 +340,7 @@ html.dark .dt-a { background: #fff; color: var(--ink); }
 .box .st { font-weight: 800; }
 
 /* הבראקטים */
-.brk { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 0 18px 4px; margin: 0 -14px; overscroll-behavior-x: contain; scroll-padding: 0 18px;
+.brk { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 14px 18px 4px; margin: 0 -14px; overscroll-behavior-x: contain; scroll-padding: 0 18px;
   /* כמו המסננים: עד קצה המסך, עם דהייה עדינה בצדדים במקום חיתוך */
   -webkit-mask-image: linear-gradient(to left, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to left, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
 .brk::-webkit-scrollbar { display: none; }
