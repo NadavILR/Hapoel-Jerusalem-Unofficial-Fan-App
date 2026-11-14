@@ -6,6 +6,7 @@ import { loadLeague, loadBrackets, loadLabels } from './s365.js';
 import { loadIsrael } from './basket.js';
 import { loadEuro } from './euro.js';
 import { loadNews } from './media.js';
+import { loadVenues } from './club.js';
 
 export const status = { loading: false, at: null, live: false };
 let running = null;
@@ -25,6 +26,7 @@ export function refresh() {
         (NATIVE ? loadIsrael().catch(() => 0) : Promise.resolve(0)).then(async n => n + (await loadLeague().catch(() => 0))),
         loadBrackets().catch(() => 0),
         NATIVE ? loadNews().then(() => 0).catch(() => 0) : 0,
+        NATIVE ? loadVenues().catch(() => 0) : 0,
       ])]);
       if (ok.some(n => n > 0) || fresh) status.at = new Date();
       keepResults();
