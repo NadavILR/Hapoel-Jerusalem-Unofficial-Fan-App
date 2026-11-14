@@ -4,11 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Message;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
@@ -17,180 +12,116 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * The club's sites as screens of the app – tickets ("tix"), shop ("shop") and membership ("mem"): one WebView per site
- * over the app, leaving the app's bottom navigation visible. Each site keeps its own page and history between visits.
- * Pulling down at the top of a site reloads the page that is open in it (it stays on that page).
- * The tickets site is created and loaded in the background at start (preload), so its tab opens instantly.
+ * The tickets site as a screen of the app: a second WebView placed over the app, leaving the app's own
+ * bottom navigation bar visible underneath it. It is created and loaded in the background when the app
+ * starts (preload), so opening the tickets tab is instant, and it keeps its state between visits.
  */
 @CapacitorPlugin(name = "Tickets")
 public class TicketsPlugin extends Plugin {
 
-    private static final class Site {
-        LinearLayout box;
-        SwipeRefreshLayout pull;
-        Runnable goBack;
-        WebView web;
-        OnBackPressedCallback back;
-    }
-
-    private final Map<String, Site> sites = new HashMap<>();
-
-    private static String key(PluginCall call) {
-        String k = call.getString("key");
-        return k == null || k.isEmpty() ? "tix" : k;
-    }
+    private WebView web;
+    private OnBackPressedCallback back;
 
     @PluginMethod
     public void preload(PluginCall call) {
-        String url = call.getString("url"), k = key(call);
-        getActivity().runOnUiThread(() -> { site(k, url); call.resolve(); });
+        String url = call.getString("url");
+        getActivity().runOnUiThread(() -> {
+            ensure(url);
+            call.resolve();
+        });
     }
 
     @PluginMethod
     public void show(PluginCall call) {
-        String url = call.getString("url"), k = key(call);
+        String url = call.getString("url");
         int bottom = call.getInt("bottom", 0);
         boolean home = Boolean.TRUE.equals(call.getBoolean("home", false));
         getActivity().runOnUiThread(() -> {
-            /* one site on screen at a time */
-            for (Map.Entry<String, Site> e : sites.entrySet()) if (!e.getKey().equals(k)) hideSite(e.getValue());
-            Site s = site(k, url);
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) s.box.getLayoutParams();
+            ensure(url);
+            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) web.getLayoutParams();
             lp.bottomMargin = Math.max(0, bottom);
-            int top = call.getInt("top", 0);
-            lp.topMargin = top > 0 ? top : MainActivity.statusBarPx(getActivity());
-            s.box.setLayoutParams(lp);
-            if (home && url != null) s.web.loadUrl(url);
-            s.box.setVisibility(View.VISIBLE);
-            s.box.bringToFront();
-            s.back.setEnabled(true);
+            lp.topMargin = MainActivity.statusBarPx(getActivity()); // below the transparent status bar
+            web.setLayoutParams(lp);
+            if (home && url != null) web.loadUrl(url);
+            web.setVisibility(View.VISIBLE);
+            web.bringToFront();
+            back.setEnabled(true);
             call.resolve();
         });
     }
 
-    /** The header's "חזרה": back inside the site, and from its first page close it (the app returns to "עוד"). */
-    @PluginMethod
-    public void back(PluginCall call) {
-        String k = key(call);
-        getActivity().runOnUiThread(() -> { Site s = sites.get(k); if (s != null && s.goBack != null) s.goBack.run(); call.resolve(); });
-    }
-
-    /** Hides every site (or only the one in "key"). */
     @PluginMethod
     public void hide(PluginCall call) {
-        String k = call.getString("key");
         getActivity().runOnUiThread(() -> {
-            for (Map.Entry<String, Site> e : sites.entrySet()) if (k == null || k.equals(e.getKey())) hideSite(e.getValue());
+            hideView();
             call.resolve();
         });
     }
 
-    private static void hideSite(Site s) {
-        if (s.box != null) s.box.setVisibility(View.INVISIBLE);
-        CookieManager.getInstance().flush();
-        if (s.pull != null) s.pull.setRefreshing(false);
-        if (s.back != null) s.back.setEnabled(false);
+    private void hideView() {
+        if (web != null) web.setVisibility(View.INVISIBLE);
+        if (back != null) back.setEnabled(false);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private Site site(String k, String url) {
-        Site s = sites.get(k);
-        if (s != null) return s;
-        Activity a = getActivity();
-        boolean dark = MainActivity.isDark(a);
-        s = new Site();
-        WebView web = new WebView(a);
-        WebSettings st = web.getSettings();
-        st.setJavaScriptEnabled(true);
-        st.setDomStorageEnabled(true);
-        st.setDatabaseEnabled(true);
-        st.setLoadWithOverviewMode(true);
-        st.setUseWideViewPort(true);
-        st.setSupportZoom(false);
-        st.setBuiltInZoomControls(false);
-        st.setDisplayZoomControls(false);
-        st.setMediaPlaybackRequiresUserGesture(false);
-        /* Pop-up windows the site opens (window.open / target=_blank) open in the device's default browser */
-        st.setSupportMultipleWindows(true);
-        st.setJavaScriptCanOpenWindowsAutomatically(true);
+    private void ensure(String url) {
+        if (web != null) return;
+        Activity activity = getActivity();
+        web = new WebView(activity);
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setLoadWithOverviewMode(true);
+        s.setUseWideViewPort(true);
+        // No pinch / double-tap zoom anywhere in the app
+        s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        s.setDisplayZoomControls(false);
+        s.setMediaPlaybackRequiresUserGesture(false);
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
-        web.setBackgroundColor(dark ? MainActivity.INK : 0xFFFFFFFF);
-        web.setWebChromeClient(new WebChromeClient() {
-            @Override public boolean onCreateWindow(WebView v, boolean dialog, boolean user, Message msg) {
-                /* The pop-up's address is known only once it starts loading: a temporary WebView catches it and hands it to the browser */
-                WebView tmp = new WebView(a);
-                tmp.setWebViewClient(new WebViewClient() {
-                    private boolean done;
-                    private void open(Uri u) {
-                        if (done || u == null) return; done = true;
-                        try { a.startActivity(new Intent(Intent.ACTION_VIEW, u).addCategory(Intent.CATEGORY_BROWSABLE)); } catch (Exception ignored) { }
-                        tmp.stopLoading(); tmp.post(tmp::destroy);
-                    }
-                    @Override public boolean shouldOverrideUrlLoading(WebView w, WebResourceRequest req) { open(req.getUrl()); return true; }
-                    @Override public void onPageStarted(WebView w, String u, android.graphics.Bitmap f) { if (u != null && !u.startsWith("about:")) open(Uri.parse(u)); }
-                });
-                CookieManager.getInstance().setAcceptThirdPartyCookies(tmp, true);
-                ((WebView.WebViewTransport) msg.obj).setWebView(tmp);
-                msg.sendToTarget();
-                return true;
-            }
-        });
-        SwipeRefreshLayout box = new SwipeRefreshLayout(a);
+        web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
-            @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
-                Uri u = req.getUrl(); String sc = u.getScheme();
-                if ("http".equals(sc) || "https".equals(sc)) return false;
-                try { a.startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri u = request.getUrl();
+                String scheme = u.getScheme();
+                if ("http".equals(scheme) || "https".equals(scheme)) return false; // stays in the tickets screen
+                try {
+                    activity.startActivity(new Intent(Intent.ACTION_VIEW, u)); // tel:, mailto:, payment apps...
+                } catch (Exception ignored) {
+                }
                 return true;
             }
-            @Override public void onPageFinished(WebView v, String u) { box.setRefreshing(false); CookieManager.getInstance().flush(); }
         });
-        /* Pull down at the top of the site: reload the page that is open now (the site stays on it) */
-        box.addView(web, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        box.setColorSchemeColors(MainActivity.RED);
-        box.setProgressBackgroundColorSchemeColor(dark ? MainActivity.INK : 0xFFFFFFFF);
-        box.setOnChildScrollUpCallback((parent, child) -> web.getScrollY() > 0 || web.canScrollVertically(-1));
-        box.setOnRefreshListener(web::reload);
-        /* The site sits under the app's own header (which shows "חזרה" in place of the club logo); the app passes its
-           height as "top". The window is just the pull-to-refresh box with the site in it */
-        LinearLayout col = new LinearLayout(a);
-        col.setOrientation(LinearLayout.VERTICAL);
-        col.setBackgroundColor(dark ? MainActivity.INK : 0xFFFFFFFF);
-        col.setClickable(true);
-        col.addView(box, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        col.setVisibility(View.INVISIBLE);
-        ((ViewGroup) getBridge().getWebView().getParent()).addView(col, new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        web.setVisibility(View.INVISIBLE);
+        ViewGroup parent = (ViewGroup) getBridge().getWebView().getParent();
+        parent.addView(web, new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         if (url != null) web.loadUrl(url);
-        /* Back: the previous page inside the site, and from its first page close the screen */
-        final Site self = s;
-        Runnable goBack = () -> {
-            if (web.canGoBack()) web.goBack();
-            else { hideSite(self); JSObject e = new JSObject(); e.put("key", k); notifyListeners("closed", e); }
+
+        // Back button: like the app's other screens - back to the previous page inside the tickets site,
+        // and from its first page close the tickets screen and return to the app's home screen.
+        back = new OnBackPressedCallback(false) {
+            @Override
+            public void handleOnBackPressed() {
+                if (web.canGoBack()) {
+                    web.goBack();
+                } else {
+                    hideView();
+                    notifyListeners("closed", new JSObject());
+                }
+            }
         };
-        s.goBack = goBack;
-        s.back = new OnBackPressedCallback(false) {
-            @Override public void handleOnBackPressed() { goBack.run(); }
-        };
-        ((AppCompatActivity) a).getOnBackPressedDispatcher().addCallback(s.back);
-        s.box = col;
-        s.pull = box;
-        s.web = web;
-        sites.put(k, s);
-        return s;
+        ((AppCompatActivity) activity).getOnBackPressedDispatcher().addCallback(back);
     }
 }

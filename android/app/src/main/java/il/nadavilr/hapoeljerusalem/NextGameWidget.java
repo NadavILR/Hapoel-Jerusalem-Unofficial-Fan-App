@@ -122,9 +122,16 @@ public class NextGameWidget extends AppWidgetProvider {
         Bitmap[] crests = d != null ? crests(c, d) : new Bitmap[2];
         for (int id : ids) {
             try {
-                // One size only: one row, five columns (hpj_widget_info.xml). Lying down (landscape) the row is wide
-                // and low, so it gets its own layout; Android picks the one for the current orientation
-                m.updateAppWidget(id, new RemoteViews(row(c, d, crests, true), row(c, d, crests, false)));
+                RemoteViews v;
+                if (Build.VERSION.SDK_INT >= 31) {
+                    // Android picks the biggest layout that fits the widget's size
+                    Map<SizeF, RemoteViews> map = new HashMap<>();
+                    for (int k = 0; k < LAYOUTS.length; k++) map.put(new SizeF(SIZES[k][0], SIZES[k][1]), build(c, k, d, crests));
+                    v = new RemoteViews(map);
+                } else {
+                    v = build(c, pick(m.getAppWidgetOptions(id)), d, crests);
+                }
+                m.updateAppWidget(id, v);
             } catch (Exception ignored) {
             }
         }
@@ -279,12 +286,10 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     /** One row and the wide strip – the user's design: the countdown in four boxes, or the live score. */
-    private static RemoteViews row(Context c, Model d, Bitmap[] cr) { return row(c, d, cr, false); }
-
-    private static RemoteViews row(Context c, Model d, Bitmap[] cr, boolean land) {
+    private static RemoteViews row(Context c, Model d, Bitmap[] cr) {
         String rlm = "\u200F";
         boolean live = d != null && d.live;
-        RemoteViews v = new RemoteViews(c.getPackageName(), live ? (land ? R.layout.widget_row_live_land : R.layout.widget_row_live) : (land ? R.layout.widget_row_land : R.layout.widget_row));
+        RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
         if (d == null) {
             v.setTextViewText(R.id.w_comp, "");
             v.setTextViewText(R.id.w_when, "אין משחקים קרובים");
@@ -328,7 +333,7 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setChronometerCountDown(R.id.w_chrono2, true);
         }
         if (Build.VERSION.SDK_INT >= 31) {
-            float w = twoDigits(c, land ? 16 : 22);
+            float w = twoDigits(c);
             v.setViewLayoutWidth(R.id.w_mm_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
             v.setViewLayoutWidth(R.id.w_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
         }
@@ -336,9 +341,9 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     /** The width of two digits in the countdown's font (22dp bold, tabular digits), so a clip shows just "MM" / "SS". */
-    private static float twoDigits(Context c, int sp) {
+    private static float twoDigits(Context c) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-        p.setTextSize(sp * c.getResources().getDisplayMetrics().density);
+        p.setTextSize(22 * c.getResources().getDisplayMetrics().density);
         p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
         if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
         return (float) Math.ceil(p.measureText("00")) + 1f;
