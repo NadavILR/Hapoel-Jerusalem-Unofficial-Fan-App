@@ -17,14 +17,15 @@ export function refresh() {
     for (const u of NATIVE ? [SITE + 'data.json', 'data.json'] : ['data.json']) {
       try { const r = await fetch(u + '?t=' + Date.now(), { cache: 'no-store' }); if (r.ok && applyData(await r.json())) { fresh = true; break; } } catch (e) { }
     }
+    /* בזמן הרענון המסכים מציגים שלד: לא מציגים את קובץ הנתונים (שעלול להיות ישן) לפני שהמקורות החיים עדכנו אותו.
+       המקורות החיים מקבלים עד 12 שניות, כדי שהשלד לא יישאר אם אחד מהם לא עונה */
     if (DB.ok) {
-      changed();
-      const ok = await Promise.all([
+      const ok = await Promise.race([new Promise(r => setTimeout(() => r([0]), 12000)), Promise.all([
         loadEuro().catch(() => 0),
         (NATIVE ? loadIsrael().catch(() => 0) : Promise.resolve(0)).then(async n => n + (await loadLeague().catch(() => 0))),
         loadBrackets().catch(() => 0),
         NATIVE ? loadNews().then(() => 0).catch(() => 0) : 0,
-      ]);
+      ])]);
       if (ok.some(n => n > 0) || fresh) status.at = new Date();
       keepResults();
     }

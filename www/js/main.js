@@ -1,13 +1,13 @@
 /* מעטפת האפליקציה: כותרת, סרגל ניווט, תפריט "עוד", לייב, התראות, תזכורות, עדכונים וחיבור לחלק הנייטיב */
 import { html, useState, useEffect, useRef, useCallback, useLayoutEffect, Fragment, cx } from './ui/html.js';
 import { Icon } from './ui/icons.js';
-import { AppCtx, useDB, VIDC, Sheet } from './ui/kit.js';
+import { AppCtx, useDB, VIDC, Sheet, Skel } from './ui/kit.js';
 import { storyImage } from './features/story.js';
 import { MiniScore } from './ui/score.js';
 import { NATIVE, LS, H, MIN, plug, SEASON, VERSION, every, visible } from './core/env.js';
 import { ME, LINKS, COMPS, PF0 } from './data/constants.js';
 import { DB, markResult, liveGsCache, egCode, compLabel, crestSrcs, jerseyMap, changed, gsOf } from './data/store.js';
-import { refresh, loadOnce } from './data/refresh.js';
+import { refresh, loadOnce, status } from './data/refresh.js';
 import { gsScan, squadOf } from './data/s365.js';
 import { hlScan } from './data/media.js';
 import { pollLive, savedLive, saveLive, mkDemo, demoTick, demoNames } from './data/live.js';
@@ -209,6 +209,9 @@ function App() {
   const A = { pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
   const title = game ? (game.h ? 'הפועל – ' + game.o : game.o + ' – הפועל') : player ? player[1] : TITLES[pg];
   const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'mytix' ? html`<${MyTickets}/>` : pg === 'tix' ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את אתר הכרטיסים…</div>` : html`<${External} k=${pg}/>`;
+  /* בזמן רענון (וגם בפתיחה): שלד במקום הנתונים. העמוד עצמו נשאר מוסתר, כדי שהמסננים בכותרת לא ייעלמו */
+  const skel = status.loading && !game && !player && ['home', 'sched', 'stand', 'roster'].includes(pg);
+  const skeleton = pg === 'home' ? html`<div class="stack" aria-busy="true" aria-label="טוען"><div class="sk" style=${{ height: 420, borderRadius: 16 }}></div><div class="grid2"><div class="sk" style=${{ height: 92 }}></div><div class="sk" style=${{ height: 92 }}></div></div><div class="sk" style=${{ height: 260 }}></div></div>` : html`<${Skel} n=${8} h=${pg === 'roster' ? 120 : 64}/>`;
 
   return html`<${AppCtx.Provider} value=${A}>
     <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd)}/>
@@ -220,7 +223,7 @@ function App() {
       </div>
       <div id="hd-slot"></div></div></header>
     <div class="toasts" aria-live="polite">${toasts.map(t => html`<div key=${t.id} class="toast">${t.t}</div>`)}</div>
-    <main class="wrap"><div key=${game ? 'g' + game.id : player ? 'p' + player[1] : 'p' + pg} class=${ext ? '' : 'pg-in'}>${page}</div>
+    <main class="wrap"><div key=${game ? 'g' + game.id : player ? 'p' + player[1] : 'p' + pg} class=${ext ? '' : 'pg-in'}>${skel ? skeleton : null}${skel && pg === 'home' ? null : html`<div hidden=${skel}>${page}</div>`}</div>
       ${ext ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
         <span onClick=${tapFoot} class="glass-2 r-md t-xs mu" style=${{ padding: '6px 16px', userSelect: 'none', lineHeight: 1.6 }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית<br/>נדב רובינסון © גרסה ${VERSION()}</span>
         <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu tap row" style=${{ padding: '4px 16px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a></footer>`}</main>

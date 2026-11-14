@@ -238,7 +238,7 @@ html.dark .toast { background: #fff; color: var(--ink); }
 .tbl tr.me td { background: rgb(var(--red-rgb) / .09); color: var(--red-tx); font-weight: 800; }
 .tbl .pos { width: 30px; }
 .tbl td.mark, .tbl th.mark { width: 4px; padding: 0; }
-.mk-g { background: #16A34A; } .mk-p { background: var(--ink); } html.dark .mk-p { background: #fff; } .mk-r { background: var(--red); }
+.mk-g { background: #16A34A; } .mk-p { background: #7C3AED; } html.dark .mk-p { background: #A78BFA; } .mk-r { background: var(--red); }
 .tscroll { overflow-x: auto; scrollbar-width: none; }
 .tscroll::-webkit-scrollbar { display: none; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--mu); }
@@ -302,7 +302,10 @@ html.dark .crest-l { background: #fff; color: var(--ink); }
 @keyframes liveIn { from { opacity: 0; transform: scale(.8); } }
 
 /* אריח תאריך בלוח המשחקים: בית – אדום, חוץ – דיו */
-.dt { width: 52px; flex-shrink: 0; border-radius: 14px; text-align: center; padding: 6px 0 5px; line-height: 1.1; }
+.dt { width: 56px; flex-shrink: 0; border-radius: 14px; text-align: center; padding: 6px 0; line-height: 1.1; }
+/* השעה בתוך אריח התאריך, מתחת למספר היום */
+.dt .h { font-size: 11.5px; font-weight: 700; margin-top: 3px; padding-top: 3px; border-top: 1px solid rgb(255 255 255 / .3); margin-inline: 6px; white-space: nowrap; }
+html.dark .dt-a .h { border-top-color: rgb(40 40 40 / .25); }
 .dt .d { font-size: 20px; font-weight: 800; }
 .dt .w { font-size: 11px; font-weight: 600; opacity: .9; }
 .dt-h { background: var(--red); color: #fff; }
@@ -339,8 +342,11 @@ html.dark .dt-a { background: #fff; color: var(--ink); }
 /* הבראקטים */
 .brk { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
 .brk::-webkit-scrollbar { display: none; }
-.brk .stage { flex: 0 0 168px; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; }
-.brk .st-t { font-size: 12px; font-weight: 800; text-align: center; color: var(--red-tx); background: rgb(var(--red-rgb) / .1); border-radius: 999px; padding: 3px 0; margin-bottom: 2px; }
+.brk .stage { flex: 0 0 168px; display: flex; flex-direction: column; }
+/* כל שלב באותו גובה, וכל צמד באמצע המשבצת שלו: צמד של השלב הבא יוצא בדיוק באמצע בין שני הצמדים שלפניו */
+.brk .slots { flex: 1; display: flex; flex-direction: column; }
+.brk .slot { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 4px 0; }
+.brk .st-t { font-size: 12px; font-weight: 800; text-align: center; color: var(--red-tx); background: rgb(var(--red-rgb) / .1); border-radius: 999px; padding: 3px 8px; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brk .m { border-radius: 14px; padding: 6px 10px; font-size: 13px; }
 .brk .m .tm { display: flex; align-items: center; gap: 6px; height: 26px; }
 .brk .m .tm.win { font-weight: 800; }
@@ -423,3 +429,9 @@ html.dark .btn-red, html.dark .seg-ind { box-shadow: inset 0 1px 0 rgb(255 255 2
 @keyframes ltShine { from { transform: translateX(110%); } to { transform: translateX(-110%); } }
 .lv-dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: blink 1.4s ease-in-out infinite; }
 .lv-q { margin-top: 12px; border-radius: 12px; padding: 8px; font-size: 12px; background: rgb(40 40 40 / .35); }
+
+/* הסימון של המקום בטבלה מופיע גם בשורה של הפועל (שהרקע שלה צבוע) */
+.tbl tr.me td.mk-g, .tbl td.mk-g { background: #16A34A; }
+.tbl tr.me td.mk-p, .tbl td.mk-p { background: #7C3AED; }
+html.dark .tbl tr.me td.mk-p, html.dark .tbl td.mk-p { background: #A78BFA; }
+.tbl tr.me td.mk-r, .tbl td.mk-r { background: var(--red); }

@@ -42,7 +42,7 @@ function Bracket({ k }) {
     <div class="glass-2 r-md" style=${{ padding: '8px 14px' }}><h2 class="sec-t" style=${{ margin: 0 }}>${T.t}</h2><div class="t-xs mu">${T.f}</div></div>
     ${!has ? html`<${Note}>הבראקט של עונת ${SEASON} עוד לא פורסם. הצמדים יופיעו כאן כשייקבעו.<//>` : ghost ? html`<${Note}>הזוגות עוד לא נקבעו – הם יופיעו כאן כשייקבעו<//>` : null}
     <div class="brk">${T.r.map(([n, bo, c], i) => html`<div key=${n} class="stage"><div class="st-t">${n}${bo > 1 ? ' · הטוב מ-' + bo : ''}</div>
-      ${Array.from({ length: Math.max(c, raw[i].length) }, (_, j) => html`<${Match} key=${j} m=${raw[i][j]} bo=${bo} ghost=${ghost}/>`)}</div>`)}</div>
+      <div class="slots">${Array.from({ length: Math.max(c, raw[i].length) }, (_, j) => html`<div key=${j} class="slot"><${Match} m=${raw[i][j]} bo=${bo} ghost=${ghost}/></div>`)}</div></div>`)}</div>
     ${has && !ghost ? html`<div class="t-xs mu">לחיצה על צמד עם קישור פותחת אותו ב-365scores</div>` : null}
   </section>`;
 }
