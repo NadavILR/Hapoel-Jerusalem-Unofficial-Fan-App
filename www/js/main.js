@@ -1,7 +1,7 @@
 /* מעטפת האפליקציה: כותרת, סרגל ניווט, תפריט "עוד", לייב, התראות, תזכורות, עדכונים וחיבור לחלק הנייטיב */
 import { html, useState, useEffect, useRef, useCallback, useLayoutEffect, Fragment, cx } from './ui/html.js';
 import { Icon } from './ui/icons.js';
-import { AppCtx, useDB, VIDC, Sheet, Skel } from './ui/kit.js';
+import { AppCtx, useDB, VIDC, Sheet, Skel, Back } from './ui/kit.js';
 import { storyImage } from './features/story.js';
 import { MiniScore } from './ui/score.js';
 import { NATIVE, LS, H, MIN, plug, SEASON, VERSION, every, visible } from './core/env.js';
@@ -33,8 +33,10 @@ let sq = 0; addEventListener('scroll', () => { if (sq) return; sq = requestAnima
 
 const NAV = [['home', 'בית', 'home'], ['sched', 'משחקים', 'cal'], ['stand', 'טבלאות', 'table'], ['roster', 'סגל', 'users'], ['more', 'עוד', 'more']];
 const MORE = [['mytix', 'הכרטיסים שלי', 'qr', 'כרטיסים ומנויים ששמרת'], ['tix', 'כרטיסים', 'tix', 'רכישת כרטיסים למשחקים'], ['shop', 'חנות', 'bag', 'החנות הרשמית'], ['mem', 'מנוי', 'card', 'אזור המנויים']];
-const TITLES = { sched: 'משחקים ותוצאות', stand: 'טבלאות', roster: 'סגל הקבוצה', mytix: 'הכרטיסים שלי', tix: 'כרטיסים', shop: 'חנות המועדון', mem: 'מנוי ואזור אישי' };
+const TITLES = { more: 'עוד', sched: 'משחקים ותוצאות', stand: 'טבלאות', roster: 'סגל הקבוצה', mytix: 'הכרטיסים שלי', tix: 'כרטיסים', shop: 'חנות המועדון', mem: 'מנוי ואזור אישי' };
 const TK = () => plug('Tickets');
+/* העמודים שנפתחים מעמוד "עוד" – כפתור החזרה שלהם מחזיר לשם */
+const SUB = ['mytix', 'tix', 'shop', 'mem'];
 
 /* משיכה למטה לרענון */
 function PullRefresh({ onRefresh, off }) {
@@ -157,8 +159,8 @@ function App() {
   const botPx = () => { const n = document.getElementById('nav'); return Math.round((n ? n.offsetHeight : 64) * (window.devicePixelRatio || 1)); };
   /* כרטיסים / חנות / מנוי באנדרואיד: חלון נייטיב לכל אתר (עם משיכה לרענון), מעל האפליקציה וסרגל הניווט גלוי מתחתיו */
   const OVL = { tix: LINKS.tickets, shop: EXT.shop, mem: EXT.mem }, isOvl = k => !!(TK() && OVL[k]);
-  const ovlShow = (k, home) => { const T = TK(); if (T) return T.show({ key: k, url: OVL[k], bottom: botPx(), home }); };
-  useEffect(() => { const T = TK(); if (!T) return; T.preload({ url: LINKS.tickets }).catch(() => { }); let h; try { h = T.addListener('closed', e => { const k = (e && e.key) || 'tix'; setPg(x => x === k ? 'home' : x); }); } catch (e) { } return () => { try { h && h.then ? h.then(r => r.remove()) : h && h.remove && h.remove(); } catch (e) { } }; }, []);
+  const ovlShow = (k, home) => { const T = TK(); if (T) return T.show({ key: k, url: OVL[k], bottom: botPx(), home, title: TITLES[k] }); };
+  useEffect(() => { const T = TK(); if (!T) return; T.preload({ url: LINKS.tickets }).catch(() => { }); let h; try { h = T.addListener('closed', e => { const k = (e && e.key) || 'tix'; setPg(x => x === k ? 'more' : x); }); } catch (e) { } return () => { try { h && h.then ? h.then(r => r.remove()) : h && h.remove && h.remove(); } catch (e) { } }; }, []);
   const setMenu = v => { const T = TK(); if (v && isOvl(pg)) T.hide().catch(() => { }); if (!v && menu && isOvl(pg)) ovlShow(pg, false).catch(() => { }); setMenu0(v); };
   const go = (p, a) => {
     setMenu0(false); const T = TK();
@@ -184,6 +186,7 @@ function App() {
   const backR = useRef(); backR.current = () => {
     if (VIDC.close) { VIDC.close(); return true; } if (menu) { setMenu(false); return true; } if (settings) { setSettings(false); return true; } if (drawer) { setDrawer(false); return true; }
     if (game) { setGame(null); return true; } if (player) { setPlayer(null); return true; }
+    if (SUB.includes(pg)) { go('more'); return true; }
     if (pg !== 'home') { go('home'); return true; } return false;
   };
   useEffect(() => { window.hpjBack = () => backR.current(); }, []);
@@ -212,10 +215,10 @@ function App() {
   const dockL = !upd && L && L.status === 'live' && !(game && game.id === L.app) && !(pg === 'home' && !game && !player) ? L : null, dockG = dockL ? DB.F.find(f => f.id === dockL.app) : null;
   useLayoutEffect(() => { document.documentElement.classList.toggle('ld-on', !!(dockL && dockG)); }, [!!(dockL && dockG)]);
   useEffect(() => { if (isOvl(pg) && !menu) { const x = ovlShow(pg, false); if (x && x.catch) x.catch(() => { }); } }, [!!(dockL && dockG)]);
-  const navOn = menu || ['mytix', 'tix', 'shop', 'mem'].includes(pg) ? 'more' : pg, navI = NAV.findIndex(x => x[0] === navOn), unread = notes.filter(n => !n.r).length, ext = ['shop', 'mem'].includes(pg);
+  const navOn = pg === 'more' || SUB.includes(pg) ? 'more' : pg, navI = NAV.findIndex(x => x[0] === navOn), unread = notes.filter(n => !n.r).length, ext = ['shop', 'mem'].includes(pg);
   const A = { pg, go, openGame, openPlayer, back, toast, rem, togRem, notes, setNotes, pf, setPf, perm, setPerm, notify, live: L, refresh, checkUpdate: checkUpd, openSettings: () => setSettings(true), storyUI };
   const title = game ? (game.h ? 'הפועל – ' + game.o : game.o + ' – הפועל') : player ? player[1] : TITLES[pg];
-  const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'mytix' ? html`<${MyTickets}/>` : pg === 'tix' || isOvl(pg) ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את האתר…</div>` : html`<${External} k=${pg}/>`;
+  const page = game ? html`<${Game} g=${game}/>` : player ? html`<${Player} p=${player}/>` : pg === 'home' ? html`<${Home}/>` : pg === 'sched' ? html`<${Schedule}/>` : pg === 'stand' ? html`<${Standings} arg=${arg}/>` : pg === 'roster' ? html`<${Roster}/>` : pg === 'more' ? html`<${MorePage} go=${go}/>` : pg === 'mytix' ? html`<${Back} onClick=${() => go('more')} label="לעמוד עוד"/><${MyTickets}/>` : pg === 'tix' || isOvl(pg) ? html`<div class="t-s mu" style=${{ textAlign: 'center', padding: 40 }}>טוען את האתר…</div>` : html`<${External} k=${pg}/>`;
   /* בזמן רענון (וגם בפתיחה): שלד במקום הנתונים. העמוד עצמו נשאר מוסתר, כדי שהמסננים בכותרת לא ייעלמו */
   const skel = status.loading && !game && !player && ['home', 'sched', 'stand', 'roster'].includes(pg);
   const skeleton = pg === 'home' ? html`<div class="stack" aria-busy="true" aria-label="טוען"><div class="sk" style=${{ height: 420, borderRadius: 16 }}></div><div class="grid2"><div class="sk" style=${{ height: 92 }}></div><div class="sk" style=${{ height: 92 }}></div></div><div class="sk" style=${{ height: 260 }}></div></div>` : html`<${Skel} n=${8} h=${pg === 'roster' ? 120 : 64}/>`;
@@ -231,21 +234,26 @@ function App() {
       <div id="hd-slot"></div></div></header>
     <div class="toasts" aria-live="polite">${toasts.map(t => html`<div key=${t.id} class="toast">${t.t}</div>`)}</div>
     <main class="wrap"><div key=${game ? 'g' + game.id : player ? 'p' + player[1] : 'p' + pg} class=${ext ? '' : 'pg-in'}>${skel ? skeleton : null}${skel && pg === 'home' ? null : html`<div hidden=${skel}>${page}</div>`}</div>
-      ${ext ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
+      ${ext || pg === 'more' ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
         <span onClick=${tapFoot} class="glass-2 r-md t-xs mu" style=${{ padding: '6px 16px', userSelect: 'none', lineHeight: 1.6 }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית<br/>נדב רובינסון © גרסה ${VERSION()}</span>
         <a href=${LINKS.club} target="_blank" rel="noopener noreferrer" class="glass-2 r-full t-xs mu tap row" style=${{ padding: '4px 16px', textDecoration: 'underline' }}>לאתר הרשמי של המועדון</a></footer>`}</main>
-    ${menu || menuOut ? html`<${Fragment}>${menu ? html`<div style=${{ position: 'fixed', inset: 0, zIndex: 39 }} onClick=${() => setMenu(false)}></div>` : null}
-      <nav class=${cx('menu glass-3', !menu && 'out')} aria-label="עוד" aria-hidden=${menu ? undefined : 'true'} style=${{ bottom: 'calc(var(--navh, 72px) + 10px)' }}>${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="li press" style=${{ width: '100%', textAlign: 'right' }}><span class=${pg === k ? 'ic-circle' : 'ic-soft'}><${Icon} n=${ic} s=${18}/></span><span class="grow"><span class="b" style=${{ display: 'block' }}>${l}</span><span class="li-s trunc" style=${{ display: 'block' }}>${sub}</span></span></button>`)}</nav><//>` : null}
     <nav id="nav" class="bar" aria-label="ניווט ראשי" ref=${el => { if (el) document.documentElement.style.setProperty('--navh', el.offsetHeight + 'px'); }}>
       ${dockL && dockG ? html`<button class="dock press" onClick=${() => openAt(dockG.t)} aria-label=${'משחק בלייב: ' + ME + ' ' + dockL.r[0] + ' – ' + dockL.r[1] + ' ' + dockG.o + '. לעמוד המשחק'}><${MiniScore} g=${dockG} L=${dockL}/></button>` : null}
       <div class="nav-in"><span class="nav-ind" style=${{ transform: `translateX(${-navI * 100}%)`, opacity: navI < 0 ? 0 : 1 }}></span>
-        ${NAV.map(([k, l, ic]) => { const on = k === navOn; return html`<button key=${k} class=${cx('nav-b', on && 'on')} aria-current=${on && k !== 'more' ? 'page' : undefined} aria-expanded=${k === 'more' ? String(menu) : undefined} onClick=${() => k === 'more' ? setMenu(!menu) : go(k)}><span class="pill"><${Icon} n=${ic} s=${22} w=${on ? 2.3 : 2}/></span>${l}</button>`; })}</div></nav>
+        ${NAV.map(([k, l, ic]) => { const on = k === navOn; return html`<button key=${k} class=${cx('nav-b', on && 'on')} aria-current=${on && k !== 'more' ? 'page' : undefined} onClick=${() => go(k)}><span class="pill"><${Icon} n=${ic} s=${22} w=${on ? 2.3 : 2}/></span>${l}</button>`; })}</div></nav>
     ${drawer ? html`<${Drawer} onClose=${() => setDrawer(false)}/>` : null}
     ${settings ? html`<${Settings} onClose=${() => setSettings(false)}/>` : null}
     ${pick ? html`<${StoryPick} g=${pick.g} done=${v => { pick.done(v); setPick(null); }}/>` : null}
     ${busy != null ? html`<div class="glass-3 r-full t-s b" style=${{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 'calc(var(--navh, 72px) + 16px)', zIndex: 60, padding: '10px 18px' }}>מכין סרטון לסטורי… ${Math.round(busy * 100)}%</div>` : null}
     ${upd ? html`<${UpdateGate} u=${upd}/>` : null}
   <//>`;
+}
+
+/* עמוד "עוד": ארבעה כפתורים גדולים, שתי שורות של שניים, שממלאים את המסך */
+function MorePage({ go }) {
+  return html`<div class="more-grid">${MORE.map(([k, l, ic, sub]) => html`<button key=${k} onClick=${() => go(k)} class="more-b glass press">
+    <span class="ic-circle" style=${{ width: 64, height: 64 }}><${Icon} n=${ic} s=${30}/></span>
+    <span class="t-l xb">${l}</span><span class="t-s mu">${sub}</span></button>`)}</div>`;
 }
 
 /* בחירת גרסת הסטורי של המשחק הבא, עם תצוגה מקדימה של שתי הגרסאות */
