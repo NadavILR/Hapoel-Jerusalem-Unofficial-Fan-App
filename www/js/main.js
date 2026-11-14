@@ -91,7 +91,10 @@ function App() {
 
   /* ---------- התראות ---------- */
   useEffect(() => { const L = LN(); if (!L) return; L.checkPermissions().then(r => { const p = permOf(r); setPerm(p);
-    if (p === 'default' && !LS.get('hpj-asked', 0)) { LS.set('hpj-asked', 1); setTimeout(() => askPerm().then(q => { setPerm(q); if (q === 'granted') setPf(x => ({ ...x, on: 1 })); }), 800); } }).catch(() => { }); }, []);
+  }).catch(() => { }); }, []);
+  /* פתיחה ראשונה באנדרואיד: המכשיר שואל על התראות ועל פעולה ברקע (MainActivity), והתוצאה מגיעה לכאן –
+     ההתראות והמעקב ברקע מופעלים באפליקציה מיד */
+  useEffect(() => { window.hpjFirstRun = granted => { setPerm(granted ? 'granted' : 'denied'); if (granted) setPf(x => ({ ...x, on: 1, bg: 1 })); }; return () => { delete window.hpjFirstRun; }; }, []);
   const nfR = useRef(); nfR.current = (t, c, k, m) => {
     if (pf.on === 0) return; if (k && !pf[k]) return; if (c && pf.comps && !pf.comps[c]) return;
     setNotes(n => [{ id: Date.now() + Math.random(), t, ts: Date.now(), r: 0 }, ...n].slice(0, 30)); toast(t);

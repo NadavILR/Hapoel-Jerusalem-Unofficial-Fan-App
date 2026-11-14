@@ -25,6 +25,12 @@ import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.PowerManager;
+import android.provider.Settings;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
@@ -72,6 +78,7 @@ public class MainActivity extends BridgeActivity {
             }
         });
 
+        firstRunPermissions();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {
                 app.evaluateJavascript("(function(){try{return !!(window.hpjBack&&window.hpjBack())}catch(e){return false}})()", r -> {
@@ -79,6 +86,54 @@ public class MainActivity extends BridgeActivity {
                 });
             }
         });
+    }
+
+    /* ---------- First launch: notifications, then running in the background ----------
+       Once per installation (by the install time – Android's backup restores the app's own data after a reinstall,
+       but not this), Android asks to allow notifications; right after it, to let the app run in the background
+       (no battery optimisation) so the live score keeps updating when the app is closed. The page is told the result
+       (window.hpjFirstRun) and turns its notifications and background tracking on. */
+    private static final int REQ_NOTIF = 7101;
+    private boolean firstRun;
+
+    private void firstRunPermissions() {
+        try {
+            long installed = getPackageManager().getPackageInfo(getPackageName(), 0).firstInstallTime;
+            SharedPreferences p = getSharedPreferences("hpj_first_run", MODE_PRIVATE);
+            if (p.getLong("asked", 0) == installed) return;
+            p.edit().putLong("asked", installed).apply();
+        } catch (Exception e) { return; }
+        firstRun = true;
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF);
+        else afterNotifications(true);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(code, perms, res);
+        if (code == REQ_NOTIF && firstRun) afterNotifications(res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private void afterNotifications(boolean granted) {
+        firstRun = false;
+        tellPage(granted);
+        if (!granted || Build.VERSION.SDK_INT < 23) return;
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName()))
+                startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName())));
+        } catch (Exception ignored) { }
+    }
+
+    /** The page may still be loading: try for a few seconds. */
+    private void tellPage(boolean granted) {
+        if (bridge == null) return;
+        String js = "(function(){if(window.hpjFirstRun){window.hpjFirstRun(" + granted + ");return true}return false})()";
+        final int[] tries = {0};
+        Runnable[] r = new Runnable[1];
+        r[0] = () -> bridge.getWebView().evaluateJavascript(js, v -> { if (!"true".equals(v) && ++tries[0] < 20) bridge.getWebView().postDelayed(r[0], 500); });
+        bridge.getWebView().post(r[0]);
     }
 
     @Override

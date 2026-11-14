@@ -395,7 +395,8 @@ html.pulling main.wrap { transition: none; }
 .qr-box { background: #fff; border-radius: 24px; padding: 16px; }
 
 /* מסך העדכון */
-.gate { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: center; padding: calc(var(--sat) + 24px) 20px calc(var(--sab) + 24px); }
+/* מסך העדכון: הכל מיושר לראש המסך, "מה חדש" בגובה הטקסט שלו, והמסך כולו נגלל כשצריך; הכפתור בתחתית */
+.gate { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto; padding: calc(var(--sat) + 28px) 20px calc(var(--sab) + 24px); }
 .prog { height: 8px; border-radius: 9px; background: var(--faint); overflow: hidden; }
 .prog > i { display: block; height: 100%; background: var(--red); border-radius: 9px; transition: width .3s var(--ease); }
 
