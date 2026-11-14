@@ -12,6 +12,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONObject;
 
 /**
  * The club's sites as screens of the app – login ("auth"), tickets ("tix"), shop ("shop") and membership ("mem"): one
@@ -126,6 +128,13 @@ public class TicketsPlugin extends Plugin {
         try { w.stopLoading(); w.destroy(); } catch (Exception ignored) { }
     }
 
+    /** The login pages of the club's sites (the club's account system and the Cognito login behind it). */
+    private static boolean isLogin(String h) {
+        return h != null && (h.equals("auth.hapoel.co.il") || h.endsWith(".amazoncognito.com") || h.startsWith("cognito-"));
+    }
+
+    private static String host(String u) { try { return u == null ? null : Uri.parse(u).getHost(); } catch (Exception e) { return null; } }
+
     /** Google Wallet "save" links: to the Google Wallet app (falls back to whatever handles the link, e.g. Chrome). */
     private static boolean isWallet(Uri u) {
         String h = u.getHost(), p = u.getPath();
@@ -158,6 +167,16 @@ public class TicketsPlugin extends Plugin {
         } catch (Exception ignored) { }
         return true;
     }
+
+    /* Inside a pop-up: the page's link to the window that opened it ("window.opener") goes through the app. A login page
+       that ends with opener.postMessage(...) + window.close() (the club's login, opened by the shop) then hands the login
+       to the site and closes – as in a regular browser */
+    private static final String SHIM = "(function(){if(window.__hpjOp)return;window.__hpjOp=1;"
+        + "var g=function(u){try{HPJPopup.go(u==null?'':String(u))}catch(e){}};"
+        + "var loc={reload:function(){g('')},assign:g,replace:g,get href(){return ''},set href(u){g(u)}};"
+        + "var op={closed:false,postMessage:function(d){try{HPJPopup.post(JSON.stringify(d===undefined?null:d),location.origin)}catch(e){}},focus:function(){},close:function(){},HandlePopupResult:g,get location(){return loc},set location(u){g(u)}};"
+        + "try{Object.defineProperty(window,'opener',{configurable:true,get:function(){return op},set:function(){}})}catch(e){}"
+        + "var c=window.close;window.close=function(){try{HPJPopup.close()}catch(e){}try{c.call(window)}catch(e){}};})();";
 
     @SuppressLint("SetJavaScriptEnabled")
     private static void setup(WebView web, boolean dark) {
@@ -193,15 +212,54 @@ public class TicketsPlugin extends Plugin {
                 WebView pw = new WebView(a);
                 setup(pw, dark);
                 pw.setWebChromeClient(this);
+                /* A login window (the shop's "התחברות לחשבון האוהד"): the site opens it, it goes to the club's login, and
+                   comes back to the site with the login done. In a regular browser it then closes itself and the site
+                   refreshes (through localStorage, which does not reach across the app's windows) – here: as soon as it is
+                   back on the site after the login page, the window closes and the site's page reloads, logged in */
+                final boolean[] away = { false };
+                final String home = host(v.getUrl());
+                final Runnable done = () -> {
+                    int i = s.popWebs.indexOf(pw); if (i < 0) return;
+                    while (s.popWebs.size() > i) closeTopPop(s);
+                    CookieManager.getInstance().flush();
+                    v.reload();
+                };
+                final java.util.function.Predicate<String> back = u -> {
+                    String h = host(u);
+                    if (isLogin(h)) { away[0] = true; return false; }
+                    if (!away[0] || h == null || home == null || !h.equals(home)) return false;
+                    if (u.contains("option=oauthredirect") || u.contains("code=") || u.contains("state=")) return false;
+                    a.runOnUiThread(done); return true;
+                };
+                /* window.opener of the pop-up: messages go to the page that opened it, and window.close() closes the pop-up */
+                pw.addJavascriptInterface(new Object() {
+                    @JavascriptInterface public void post(String json, String origin) {
+                        a.runOnUiThread(() -> v.evaluateJavascript("(function(){var d;try{d=JSON.parse(" + JSONObject.quote(json) + ")}catch(e){d=" + JSONObject.quote(json) + "}"
+                            + "window.dispatchEvent(new MessageEvent('message',{data:d,origin:" + JSONObject.quote(origin == null ? "" : origin) + "}))})()", null));
+                    }
+                    /* the pop-up sends the opening page somewhere (or reloads it, with "") – and closes */
+                    @JavascriptInterface public void go(String u) {
+                        a.runOnUiThread(() -> {
+                            int i = s.popWebs.indexOf(pw); if (i >= 0) { while (s.popWebs.size() > i) closeTopPop(s); }
+                            CookieManager.getInstance().flush();
+                            if (u == null || u.isEmpty()) v.reload(); else v.loadUrl(u);
+                        });
+                    }
+                    @JavascriptInterface public void close() {
+                        a.runOnUiThread(() -> { if (away[0]) { done.run(); return; } int i = s.popWebs.indexOf(pw); if (i >= 0) { while (s.popWebs.size() > i) closeTopPop(s); } });
+                    }
+                }, "HPJPopup");
                 pw.setWebViewClient(new WebViewClient() {
                     @Override public boolean shouldOverrideUrlLoading(WebView w, WebResourceRequest req) {
+                        if (back.test(req.getUrl().toString())) return true;
                         if (!external(a, req.getUrl())) return false;
                         /* the pop-up only led out of the app (e.g. to Google Wallet): close it */
                         if (w.copyBackForwardList().getSize() == 0) w.post(() -> { int i = s.popWebs.indexOf(w); if (i >= 0 && i == s.popWebs.size() - 1) closeTopPop(s); });
                         return true;
                     }
-                    @Override public void onPageStarted(WebView w, String u, android.graphics.Bitmap f) { report(k, u); }
-                    @Override public void onPageFinished(WebView w, String u) { CookieManager.getInstance().flush(); }
+                    @Override public void onPageStarted(WebView w, String u, android.graphics.Bitmap f) { report(k, u); if (back.test(u)) { w.stopLoading(); return; } w.evaluateJavascript(SHIM, null); }
+                    @Override public void onPageFinished(WebView w, String u) { w.evaluateJavascript(SHIM, null); CookieManager.getInstance().flush(); if (back.test(u)) return;
+                        String h = host(u); if (away[0] && h != null && h.equals(home)) w.postDelayed(() -> { if (s.popWebs.contains(pw)) done.run(); }, 3000); }
                 });
                 /* the in-app browser: a bar with "סגירה" and the site's address, and the page under it */
                 LinearLayout pop = new LinearLayout(a);
