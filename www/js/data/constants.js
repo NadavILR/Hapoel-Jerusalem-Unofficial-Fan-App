@@ -7,7 +7,7 @@ export const compShort = c => CN[c] || COMPS[c] || '';
 export const SITE = 'https://nadavilr.github.io/Hapoel-Jerusalem-Unofficial-Fan-App/';
 export const REPO = 'NadavILR/Hapoel-Jerusalem-Unofficial-Fan-App';
 export const LINKS = {
-  tickets: 'https://tickets.hapoel.co.il/', shop: 'https://shop.hapoel.co.il/#', club: 'https://hapoel.co.il',
+  tickets: 'https://tickets.hapoel.co.il/', shop: 'https://shop.hapoel.co.il', club: 'https://hapoel.co.il',
   memberAuth: 'https://auth.hapoel.co.il/fanza?external_url=true', memberPortal: 'https://fortress.arena-jer.co.il/HPJRMBB/NfcMemberPortal/',
   e365: 'https://www.365scores.com/en-us/basketball/league/eurocup-329/standings', basket: 'https://basket.co.il',
   eurocup: 'https://www.euroleaguebasketball.net/en/eurocup/', team365: 'https://www.365scores.com/basketball/team/hapoel-jerusalem-634',

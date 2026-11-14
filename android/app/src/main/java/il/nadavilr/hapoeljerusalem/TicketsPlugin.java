@@ -178,6 +178,12 @@ public class TicketsPlugin extends Plugin {
         + "try{Object.defineProperty(window,'opener',{configurable:true,get:function(){return op},set:function(){}})}catch(e){}"
         + "var c=window.close;window.close=function(){try{HPJPopup.close()}catch(e){}try{c.call(window)}catch(e){}};})();";
 
+    /* On a site's page: the shop's "התחברות לחשבון האוהד" opens its login (…?option=oauthredirect…) in a pop-up and waits
+       for a signal from it that does not reach across the app's windows. Instead the login opens in the site's own window –
+       the login's other way, which brings the site back to the shop logged in, exactly as in a browser */
+    private static final String SAME_WINDOW_LOGIN = "(function(){if(window.__hpjWo)return;window.__hpjWo=1;var o=window.open;"
+        + "window.open=function(u){try{var s=String(u||'');if(/[?&]option=oauthredirect/.test(s)){location.href=s;return {closed:false,close:function(){},focus:function(){},postMessage:function(){}};}}catch(e){}return o.apply(window,arguments);};})();";
+
     @SuppressLint("SetJavaScriptEnabled")
     private static void setup(WebView web, boolean dark) {
         WebSettings st = web.getSettings();
@@ -316,9 +322,9 @@ public class TicketsPlugin extends Plugin {
         SwipeRefreshLayout pull = new SwipeRefreshLayout(a);
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) { return external(a, req.getUrl()); }
-            @Override public void onPageStarted(WebView v, String u, android.graphics.Bitmap f) { report(k, u); }
+            @Override public void onPageStarted(WebView v, String u, android.graphics.Bitmap f) { report(k, u); v.evaluateJavascript(SAME_WINDOW_LOGIN, null); }
             @Override public void doUpdateVisitedHistory(WebView v, String u, boolean reload) { report(k, u); }
-            @Override public void onPageFinished(WebView v, String u) { pull.setRefreshing(false); CookieManager.getInstance().flush(); report(k, u); }
+            @Override public void onPageFinished(WebView v, String u) { v.evaluateJavascript(SAME_WINDOW_LOGIN, null); pull.setRefreshing(false); CookieManager.getInstance().flush(); report(k, u); }
         });
         /* Pull down at the top of the site: reload the page that is open now (the site stays on it) */
         pull.addView(web, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
