@@ -47,7 +47,7 @@ export default function Settings({ onClose }) {
     <section class="glass r-lg pad stack-s"><div class="row" style=${{ gap: 12 }}><img src="icons/club-logo.png" alt="" style=${{ width: 44, height: 44 }}/><div><h2 class="sec-t" style=${{ margin: 0 }}>על האפליקציה</h2><span class="unofficial">לא רשמית</span></div></div>
       <p class="t-s mu" style=${{ margin: 0 }}>אפליקציית אוהדים לא רשמית. היא לא שייכת למועדון הפועל ירושלים ולא פועלת מטעמו. הנתונים מהמקורות הרשמיים: איגוד הכדורסל, EuroLeague / EuroCup, 365scores, אתר המועדון וערוצי היוטיוב הרשמיים.</p></section>
     <section class="glass r-lg pad stack-s"><div><h2 class="sec-t" style=${{ margin: 0 }}>עדכוני אפליקציה</h2><button onClick=${tapVersion} class="t-s mu" style=${{ display: 'block', textAlign: 'right', userSelect: 'none', WebkitUserSelect: 'none', padding: '2px 0' }}>גרסה מותקנת: <span class="num">${VERSION()}</span></button></div>
-      ${NATIVE ? html`<${Fragment}><div class="t-xs mu">${ch >= 1 ? 'גרסאות בטא פעילות: יוצעו גם גרסאות ניסיון, שמגיעות לפני הגרסה הרשמית ועלולות לכלול תקלות.' : 'יוצעו רק גרסאות רשמיות.'}</div>
+      ${NATIVE ? html`<${Fragment}>
         <button onClick=${check} class="btn btn-red press" style=${{ width: '100%' }}><${Icon} n="sync" s=${17}/>חיפוש עדכונים</button>${chk ? html`<div class="t-xs mu">${chk}</div>` : null}
         <div class="t-xs mu">האפליקציה בודקת עדכונים בכל פתיחה. כשיש גרסה חדשה צריך לעדכן כדי להמשיך.</div><//>` : html`<div class="t-xs mu">בגרסת הדפדפן האפליקציה מתעדכנת לבד.</div>`}</section>
   </div><//>`;
