@@ -83,6 +83,18 @@ jobs:
             sed -i 's/ מי שהאפליקציה כבר מותקנת אצלו יקבל את העדכון גם מתוך האפליקציה\./ זו גרסה ניסיונית: היא מוצעת כעדכון בתוך האפליקציה רק למי שבחר בהגדרות לקבל גם גרסאות ניסיון (בטא)./' release-notes.md
           fi
           cat release-notes.md
+      - name: Remove the 2.x releases (renumbered as betas 1.183–1.190)
+        # 2.0 (published twice as official), beta 2.1 (renumbered as 1.206) and the 2.0–2.7 alphas were renumbered as betas 1.183–1.190 (at the owner's
+        # request). Their releases and tags are removed so no copy of the app is offered "2.x" as an update.
+        # Only these exact tags; harmless once they are gone.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for t in v2.0 v2.1-beta v2.0-alpha v2.1-alpha v2.2-alpha v2.3-alpha v2.4-alpha v2.5-alpha v2.6-alpha v2.7-alpha; do
+            gh release delete "$t" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" && echo "removed release $t" || echo "no release $t"
+            git push --delete origin "refs/tags/$t" 2>/dev/null && echo "removed tag $t" || true
+          done
       - name: Publish the release for this version
         uses: softprops/action-gh-release@v2
         with:
