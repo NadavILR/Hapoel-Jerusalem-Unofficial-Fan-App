@@ -37,6 +37,8 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/hpj_widget_info" />
         </receiver>
+        <!-- In-app updates: opens Android's install confirmation as soon as the download is installed (UpdaterPlugin) -->
+        <receiver android:name=".InstallReceiver" android:exported="false" />
         <receiver android:name=".LiveAlarmReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

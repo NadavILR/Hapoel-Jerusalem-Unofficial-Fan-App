@@ -1,7 +1,9 @@
 package il.nadavilr.hapoeljerusalem;
 
 import android.content.Context;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageInstaller;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -42,6 +44,24 @@ public class UpdaterPlugin extends Plugin {
             getContext().startActivity(i);
         } catch (Exception ignored) { }
         call.resolve();
+    }
+
+    private static void installSession(Context ctx, File apk) throws Exception {
+        PackageInstaller pi = ctx.getPackageManager().getPackageInstaller();
+        PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+        params.setAppPackageName(ctx.getPackageName());
+        params.setSize(apk.length());
+        int id = pi.createSession(params);
+        try (PackageInstaller.Session session = pi.openSession(id)) {
+            try (InputStream in = new java.io.FileInputStream(apk); OutputStream os = session.openWrite("app.apk", 0, apk.length())) {
+                byte[] buf = new byte[65536];
+                for (int n; (n = in.read(buf)) > 0; ) os.write(buf, 0, n);
+                session.fsync(os);
+            }
+            Intent done = new Intent(ctx, InstallReceiver.class);
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+            session.commit(PendingIntent.getBroadcast(ctx, id, done, flags).getIntentSender());
+        }
     }
 
     @PluginMethod
@@ -89,11 +109,16 @@ public class UpdaterPlugin extends Plugin {
                         }
                     }
                 }
-                Uri uri = FileProvider.getUriForFile(ctx, ctx.getPackageName() + ".fileprovider", out);
-                Intent install = new Intent(Intent.ACTION_VIEW);
-                install.setDataAndType(uri, "application/vnd.android.package-archive");
-                install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                ctx.startActivity(install);
+                /* One tap is enough: the APK goes into an install session and Android's confirmation screen opens right
+                   away (InstallReceiver). If the session cannot be used, the installer is opened with the file as before */
+                try { installSession(ctx, out); }
+                catch (Exception e) {
+                    Uri uri = FileProvider.getUriForFile(ctx, ctx.getPackageName() + ".fileprovider", out);
+                    Intent install = new Intent(Intent.ACTION_VIEW);
+                    install.setDataAndType(uri, "application/vnd.android.package-archive");
+                    install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(install);
+                }
                 call.resolve();
             } catch (Exception e) {
                 call.reject("download failed: " + e.getMessage());

@@ -1,15 +1,20 @@
 /* מסך עדכון חובה: גרסה חדשה – הורדה והתקנה מתוך האפליקציה */
-import { html, useState, portal } from '../ui/html.js';
+import { html, useState, useEffect, useRef, portal } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { plug, VERSION } from '../core/env.js';
 export default function UpdateGate({ u }) {
   const [st, setSt] = useState(''), [p, setP] = useState(-1), notes = (u.notes || []).filter(Boolean), busy = st === 'dl';
+  /* אם אנדרואיד ביקש קודם אישור להתקנה ממקור זה: כשחוזרים מהגדרות המכשיר, ההורדה וההתקנה ממשיכות לבד – בלי לחיצה נוספת */
+  const runR = useRef(null);
+  useEffect(() => { const v = () => { if (document.visibilityState !== 'visible' || st !== 'perm' || !runR.current) return; const U = plug('Updater'); if (U) U.canInstall().then(c => { if (c && c.allowed) runR.current(); }).catch(() => { }); }; document.addEventListener('visibilitychange', v); return () => document.removeEventListener('visibilitychange', v); }, [st]);
   const run = async () => {
     const U = plug('Updater'); if (!U) { location.href = u.url; return; }
     try { const c = await U.canInstall(); if (!c || !c.allowed) { setSt('perm'); await U.openInstallSettings(); return; } } catch (e) { }
+    if (st === 'dl') return;
     setSt('dl'); setP(0); let h = null; try { h = await U.addListener('progress', e => setP(Math.round((e && e.p) || 0))); } catch (e) { }
     try { await U.downloadAndInstall({ url: u.url }); setSt('inst'); } catch (e) { setSt('err'); } finally { try { h && h.remove && Promise.resolve(h.remove()).catch(() => { }); } catch (e) { } }
   };
+  runR.current = run;
   return portal(html`<div class="gate fade-in" role="dialog" aria-modal="true" aria-label="עדכון חדש זמין"><div class="full-bg"></div>
     <div class="wrap col" style=${{ flex: 1, justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 14, maxWidth: 460 }}>
       <img src="icons/icon-192.png" alt="" class="pop-in" style=${{ width: 92, height: 92, borderRadius: 26, boxShadow: 'var(--shadow-lg)' }}/>

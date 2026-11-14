@@ -233,7 +233,7 @@ function App() {
     <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd)}/>
     <header id="hd" class="bar"><div class="wrap">
       <div class="hd-in">${SITES.includes(pg) && !game && !player ? html`<button onClick=${siteBack} class="back glass-2 press" style=${{ position: 'static' }}><${Icon} n="back" s=${18}/><span>חזרה</span></button>` : html`<img src="icons/club-logo.png" alt="הפועל ירושלים" class="logo"/>`}
-        <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1><div class="sub">${game || player ? '' : 'עונת ' + SEASON}</div>` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
+        <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1>${game || player || pg === 'more' || SUB.includes(pg) ? null : html`<div class="sub">עונת ${SEASON}</div>`}` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
         ${pg === 'home' && !game && !player ? html`<button onClick=${() => setSettings(true)} class="icon-btn press" aria-label="הגדרות"><${Icon} n="cog" s=${22}/></button>` : null}
         <button onClick=${() => setDrawer(true)} class="icon-btn press" aria-label=${'התראות' + (unread ? ', ' + unread + ' חדשות' : '')}><${Icon} n="bell" s=${22}/>${unread > 0 ? html`<span class="badge">${unread}</span>` : null}</button>
       </div>
