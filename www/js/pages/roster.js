@@ -51,7 +51,7 @@ export function Player({ p }) {
   const tt = ks.reduce((t, k) => t.map((x, i) => x + by[k][i]), new Array(17).fill(0)), fm = md === 'a' ? avgRow : totRow, ag = ageOf(p[5]);
   const HD = ['מש׳', 'דק׳', 'נק׳', 'ריב׳', 'אס׳', 'חט׳', 'חס׳', md === 'a' ? 'FG%' : 'FG', md === 'a' ? '3P%' : '3P', md === 'a' ? 'FT%' : 'FT', 'ר״ה', 'ר״ג', 'איב׳', 'עב׳'];
   const facts = Array.isArray(DB.FACTS[p[1]]) ? DB.FACTS[p[1]].filter(x => Array.isArray(x) && x.length > 1) : [];
-  return html`<div><${Back} onClick=${A.back} label="לסגל"/>
+  return html`<div><${Back} onClick=${A.back}/>
     <div class="stack stg">
       <div class="glass-red r-lg row" style=${{ overflow: 'hidden', padding: 0, alignItems: 'stretch' }}>
         <div class="rel shrink0" style=${{ width: 136, aspectRatio: '4/5' }}><${Photo} u=${p[6]} k=${p[9]} fallback=${p[0]} cls="abs-fill"/></div>

@@ -26,7 +26,7 @@ export default function External({ k }) {
   useEffect(() => { const n = document.getElementById('nav'); if (!n) return; const f = () => setBt(n.offsetHeight); f(); let ro; try { ro = new ResizeObserver(f); ro.observe(n); } catch (e) { } return () => ro && ro.disconnect(); }, []);
   useLayoutEffect(() => { const h = e => { if (/^(frame|child)-src/.test(e.effectiveDirective || e.violatedDirective || '')) { BLOCKED = true; setBlk(true); } }; document.addEventListener('securitypolicyviolation', h); return () => document.removeEventListener('securitypolicyviolation', h); }, [k]);
   const A = useApp();
-  if (blk) return html`<${Back} onClick=${() => A.go('more')} label="לעמוד עוד"/><${Fallback} k=${k}/>`;
+  if (blk) return html`<${Back} onClick=${() => A.go('more')}/><${Fallback} k=${k}/>`;
   /* חזרה: קודם לעמוד הקודם בתוך האתר, ומהעמוד הראשון שלו – לעמוד "עוד" */
   const back = () => { if (FR.n > 1) { FR.n--; FR.skip++; history.back(); } else A.go('more'); };
   return html`<div class="bar" style=${{ position: 'fixed', left: 0, right: 0, top: 0, paddingTop: 'var(--sat)', zIndex: 33 }}><div class="wrap row" style=${{ minHeight: 56, gap: 10 }}><button onClick=${back} class="back glass-2 press" style=${{ position: 'static' }}><${Icon} n="back" s=${18}/><span>חזרה</span></button><span class="t-l trunc">${INFO[k][0]}</span></div></div>

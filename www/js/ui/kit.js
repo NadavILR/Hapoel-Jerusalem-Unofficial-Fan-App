@@ -66,7 +66,7 @@ export function Sheet({ onClose, children, label }) {
 /* מסך מלא מעל האפליקציה (הגדרות, התראות) */
 export function FullPage({ title, onClose, children, right }) {
   return portal(html`<div class="full" role="dialog" aria-modal="true" aria-label=${title}><div class="full-bg"></div>
-    <div class="full-hd bar"><div class="wrap row" style=${{ minHeight: 58 }}><button class="icon-btn press" onClick=${onClose} aria-label="חזרה"><${Icon} n="back" s=${22}/></button><div class="grow t-l">${title}</div>${right || null}</div></div>
+    <div class="full-hd bar"><div class="wrap row" style=${{ minHeight: 58 }}><button class="back glass-2 press" style=${{ position: 'static' }} onClick=${onClose}><${Icon} n="back" s=${18}/><span>חזרה</span></button><div class="grow t-l">${title}</div>${right || null}</div></div>
     <div class="wrap" style=${{ padding: '14px 14px calc(30px + var(--sab))' }}>${children}</div></div>`);
 }
 /* תקציר יוטיוב בחלון בתוך האפליקציה */
@@ -84,5 +84,6 @@ export function HeaderSlot({ children }) {
   return el ? portal(html`<div class="hd-filters fx-in">${children}</div>`, el) : null;
 }
 /* כפתור חזרה נעול מתחת לכותרת */
+/* כל כפתורי החזרה באפליקציה: "חזרה" */
 export const Back = ({ onClick, label = 'חזרה' }) => html`<div class="back-row"><button onClick=${onClick} class="back glass-2 press"><${Icon} n="back" s=${18}/><span>${label}</span></button></div>`;
 export const W = (a, b) => a > b ? 'ניצחון' : 'הפסד';
