@@ -449,4 +449,6 @@ html.dark .tbl tr.me td.mk-p, html.dark .tbl td.mk-p { background: #A78BFA; }
 /* עמוד "עוד": 2×2 כפתורים גדולים שממלאים את הגובה שבין הכותרת לסרגל הניווט */
 /* הרשת נעוצה בין הכותרת לסרגל הניווט – תמיד 12px מכל צד, בכל גודל מסך, והכפתורים מתמתחים לפי המקום */
 .more-grid { z-index: 5; position: fixed; top: calc(var(--hdh, 64px) + 12px); bottom: calc(var(--navh, 72px) + 12px); left: 14px; right: 14px; max-width: 692px; margin-inline: auto; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; }
+.more-grid.n3 > :first-child { grid-column: 1 / -1; }
+.more-grid.n2 { grid-template-columns: 1fr; }
 .more-b { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: var(--r-lg); padding: 16px 10px; text-align: center; }
