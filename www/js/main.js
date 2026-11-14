@@ -233,7 +233,7 @@ function App() {
   const skeleton = pg === 'home' ? html`<div class="stack" aria-busy="true" aria-label="טוען"><div class="sk" style=${{ height: 420, borderRadius: 16 }}></div><div class="grid2"><div class="sk" style=${{ height: 92 }}></div><div class="sk" style=${{ height: 92 }}></div></div><div class="sk" style=${{ height: 260 }}></div></div>` : html`<${Skel} n=${8} h=${pg === 'roster' ? 120 : 64}/>`;
 
   return html`<${AppCtx.Provider} value=${A}>
-    <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd)}/>
+    <${PullRefresh} onRefresh=${refresh} off=${!!(ext || drawer || settings || menu || upd || pg === 'more')}/>
     <header id="hd" class="bar"><div class="wrap">
       <div class="hd-in">${SITES.includes(pg) && !game && !player ? html`<button onClick=${siteBack} class="back glass-2 press" style=${{ position: 'static' }}><${Icon} n="back" s=${18}/><span>חזרה</span></button>` : html`<img src="icons/club-logo.png" alt="הפועל ירושלים" class="logo"/>`}
         <div class="grow">${title ? html`<h1 class="ttl trunc" style=${{ margin: 0 }}>${title}</h1>${game || player || pg === 'more' || SUB.includes(pg) ? null : html`<div class="sub">עונת ${SEASON}</div>`}` : html`<h1 class="ttl" style=${{ margin: 0 }}>${ME}</h1><span class="unofficial">אפליקציית אוהדים · לא רשמית</span>`}</div>
