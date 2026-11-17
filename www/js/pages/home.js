@@ -2,7 +2,7 @@
 import { html, useState, useEffect, useRef, useLayoutEffect, memo, portal, cx } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { useApp, useNow, Crest, Seg, Empty, ExtLink, VideoPop, usePhoto, Photo } from '../ui/kit.js';
-import { LiveScore, Pts, LiveQ } from '../ui/score.js';
+import { LiveScore, Pts, LiveQ, LiveSides } from '../ui/score.js';
 import { ME, LINKS } from '../data/constants.js';
 import { DB, compLabel, won, gsOf } from '../data/store.js';
 import { H, D, SEASON, fdLong, dtf } from '../core/env.js';
@@ -23,15 +23,10 @@ function Countdown({ t, now, red }) {
    (כל הכרטיסים בקרוסלה באותו גובה), כך שאין רווח מת */
 function HomeLive({ L, g, intro, now, open, share }) {
   const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME, on = L.status === 'live';
-  const side = n => html`<div class="col" style=${{ alignItems: 'center', textAlign: 'center', minWidth: 0 }}><${Crest} n=${n} s=${48}/><div class="t-s" style=${{ marginTop: 4, lineHeight: 1.25, fontWeight: n === ME ? 800 : 400 }}>${n}</div></div>`;
   return html`<div class="col grow">
     <div class="row between t-s" style=${{ minHeight: 26 }}>${on ? html`<span class="live-pill">לייב</span>` : html`<span class="b">${L.status === 'end' ? 'סיום' : 'ממתינים לשריקת הפתיחה'}</span>`}<span class="b num">${on ? L.st : ''}${on && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
     <div class=${cx('lv-title', intro && 'live-in')} aria-label="הפועל לייב"><span>הפועל</span><span class=${cx('live-tag', on && 'on')}><span class="lt-clip" aria-hidden="true"></span>לייב</span></div>
-    <div style=${{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)', alignItems: 'center', gap: 8 }}>
-      ${side(hm)}
-      <div class="row center num" style=${{ gap: 8, fontSize: 36, fontWeight: 600, lineHeight: 1.1 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ fontSize: 24, opacity: .6 }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
-      ${side(aw)}
-    </div>
+    <${LiveSides} L=${L} hm=${hm} aw=${aw}/>
     <${LiveQ} L=${L} hm=${hm} aw=${aw}/>
     <${WithShare} share=${share}><button onClick=${open} class="gc-btn on-red press"><${Icon} n="cal" s=${16}/>לעמוד המשחק</button><//>
   </div>`;

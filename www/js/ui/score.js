@@ -12,6 +12,15 @@ export function Pts({ v, k }) {
   return html`<span class="rel" style=${{ display: 'inline-block' }}>${v}${d ? html`<span key=${d.id} class="pts-pop ltr">+${d.n}</span>` : null}</span>`;
 }
 const stLabel = L => L.status === 'live' ? (L.st || 'לייב') : L.status === 'end' ? 'סיום' : 'לפני שריקת הפתיחה';
+/* הסמלים, השמות והתוצאה בלייב – אותו עיצוב בעמוד המשחק ובכרטיס הלייב במסך הבית */
+export function LiveSides({ L, hm, aw, big = 1 }) {
+  const cs = big ? 64 : 52, side = n => html`<div class="col" style=${{ alignItems: 'center', gap: 6, textAlign: 'center' }}><${Crest} n=${n} s=${cs}/><div class=${cx('t-s', n === ME ? 'xb' : 'md')} style=${{ lineHeight: 1.25 }}>${n}</div></div>`;
+  return html`<div style=${{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)', alignItems: 'center', gap: 8 }}>
+    ${side(hm)}
+    <div class="row center sc-big" style=${{ gap: 10, fontSize: big ? 50 : 44 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ opacity: .55, fontSize: '.6em' }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
+    ${side(aw)}
+  </div>`;
+}
 /* טבלת התוצאה לפי רבעים בלייב – בכרטיס הלייב במסך הבית ובעמוד המשחק, עם עמודת סה״כ כמו במשחק שהסתיים */
 export function LiveQ({ L, hm, aw }) {
   const q = (L.q || []).filter(x => x && x.n); if (!q.length) return null;
@@ -25,16 +34,11 @@ export function LiveQ({ L, hm, aw }) {
 }
 /* התוצאה בלייב (בכרטיס האדום ובעמוד המשחק) */
 export function LiveScore({ L, g, big }) {
-  const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME, cs = big ? 64 : 52;
-  const side = n => html`<div class="col" style=${{ alignItems: 'center', gap: 6, textAlign: 'center' }}><${Crest} n=${n} s=${cs}/><div class=${cx('t-s', n === ME ? 'xb' : 'md')} style=${{ lineHeight: 1.25 }}>${n}</div></div>`;
+  const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME;
   return html`<div>
     <div class="row between t-s" style=${{ marginBottom: 10 }}>${L.status === 'live' ? html`<span class="live-pill">לייב</span>` : html`<span class="b">${stLabel(L)}</span>`}
       <span class="b num">${L.status === 'live' ? L.st : ''}${L.status === 'live' && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
-    <div style=${{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)', alignItems: 'center', gap: 8 }}>
-      ${side(hm)}
-      <div class="row center sc-big" style=${{ gap: 10, fontSize: big ? 50 : 44 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ opacity: .55, fontSize: '.6em' }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
-      ${side(aw)}
-    </div>
+    <${LiveSides} L=${L} hm=${hm} aw=${aw} big=${big ? 1 : 0}/>
     <${LiveQ} L=${L} hm=${hm} aw=${aw}/>
   </div>`;
 }
