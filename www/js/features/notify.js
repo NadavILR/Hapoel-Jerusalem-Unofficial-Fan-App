@@ -10,6 +10,9 @@ export const NT = {
   hour: f => ({ title: 'יושב סופר את הדקות... עוד שעה מתחילים!!!', l1: compLabel(f), l2: NT.match(f) }),
   start: f => ({ title: 'המשחק התחיל', l1: compLabel(f), l2: NT.match(f) }),
   quarter: (f, r, q) => ({ title: NT.qt(q), l2: NT.score(f, r) }),
+  /* התחלת רבע (שני ואילך) / הארכה */
+  qs: q => q === 2 ? 'התחלת רבע שני' : q === 3 ? 'התחלת רבע שלישי' : q === 4 ? 'התחלת רבע רביעי' : 'התחלת הארכה ' + (q - 4),
+  qstart: (f, r, q) => ({ title: NT.qs(q), l2: NT.score(f, r) }),
   fin: (f, r, ot) => ({ title: (ot ? 'סיום המשחק (לאחר הארכה) - ' : 'סיום המשחק – ') + (r[0] > r[1] ? 'ניצחון' : 'הפסד'), l2: NT.score(f, r) }),
   line: m => m.title + (m.l1 ? ' · ' + m.l1 : '') + ' · ' + m.l2,
   ln: m => ({ title: m.title, body: m.l2, largeBody: (m.l1 ? m.l1 + '\n' : '') + m.l2 }),

@@ -63,6 +63,7 @@ public class LiveActivityPlugin extends Plugin {
         String kind = call.getString("kind", "");
         if ("start".equals(kind)) GameAlerts.start(c, g, tipOff);
         else if ("quarter".equals(kind)) GameAlerts.quarter(c, g, call.getInt("q", 1), tipOff);
+        else if ("qstart".equals(kind)) GameAlerts.quarterStart(c, g, call.getInt("q", 2), tipOff);
         else if ("final".equals(kind)) GameAlerts.fin(c, g, Boolean.TRUE.equals(call.getBoolean("ot", false)), tipOff);
         JSObject r = new JSObject();
         r.put("notifications", NotificationManagerCompat.from(c).areNotificationsEnabled());
