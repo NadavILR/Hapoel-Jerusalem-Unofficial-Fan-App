@@ -398,14 +398,22 @@ public class LiveScoreService extends Service {
     private void alerts(LiveGame x) {
         if (x == null || !alertsOn()) return;
         if (LiveScheduler.alertOnce(this, tipOff, "start")) GameAlerts.start(this, x, tipOff);
-        int q = quarter(x.status);
-        // The quarter that just ended: a break after it, or the next quarter already started
-        int ended = q == 0 ? lastQuarter : (lastQuarter > 0 && q > lastQuarter ? lastQuarter : 0);
+        String st = x.status == null ? "" : x.status;
+        // A break is announced only when the status says so ("סיום רבע 1", "מחצית", "End of …"); any other status the
+        // app does not know (e.g. "פסק זמן" from 365scores during a timeout) changes nothing – it once announced the
+        // end of the 1st quarter a minute into the game
+        boolean brk = st.contains("סיום") || st.contains("סוף") || st.contains("מחצית") || st.contains("הפסקה") || st.matches("(?i).*\\b(end|half|break)\\b.*");
+        int q = quarter(st);
+        if (q == 0 && !brk) return;
+        int ended = brk ? (q > 0 ? q : st.contains("מחצית") || st.toLowerCase(java.util.Locale.ROOT).contains("half") ? 2 : 0)
+            : (lastQuarter > 0 && q > lastQuarter ? lastQuarter : 0);
+        // a quarter takes at least 10 minutes: never an end of quarter N before N×10 minutes from the scheduled tip-off
+        if (ended > 0 && System.currentTimeMillis() < tipOff + ended * 10L * MIN) ended = 0;
         // After the 4th quarter / an overtime only when the score is tied (another overtime follows); otherwise the
         // game is over and the final notification says it
         boolean announce = ended > 0 && (ended < 4 || x.hs == x.as || q > ended);
         if (announce && LiveScheduler.alertOnce(this, tipOff, "q" + ended)) GameAlerts.quarter(this, x, ended, tipOff);
-        if (q > 0) {
+        if (q > 0 && !brk) {
             lastQuarter = q;
             maxQuarter = Math.max(maxQuarter, q);
         }
