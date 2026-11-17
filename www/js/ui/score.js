@@ -12,6 +12,17 @@ export function Pts({ v, k }) {
   return html`<span class="rel" style=${{ display: 'inline-block' }}>${v}${d ? html`<span key=${d.id} class="pts-pop ltr">+${d.n}</span>` : null}</span>`;
 }
 const stLabel = L => L.status === 'live' ? (L.st || 'לייב') : L.status === 'end' ? 'סיום' : 'לפני שריקת הפתיחה';
+/* טבלת התוצאה לפי רבעים בלייב – בכרטיס הלייב במסך הבית ובעמוד המשחק, עם עמודת סה״כ כמו במשחק שהסתיים */
+export function LiveQ({ L, hm, aw }) {
+  const q = (L.q || []).filter(x => x && x.n); if (!q.length) return null;
+  /* סה״כ: התוצאה עצמה (כמו המספרים הגדולים), ואם אין – סכום הרבעים */
+  const sum = k => { const v = k === 'h' ? L.hs : L.as; return v != null && v !== '' ? v : q.reduce((t, x) => t + (+x[k] || 0), 0); };
+  return html`<div class="on-red r-md" style=${{ marginTop: 12, padding: '8px 10px' }}><div style=${{ display: 'grid', gridTemplateColumns: `28px repeat(${q.length + 1}, minmax(0,1fr))`, gap: 4, textAlign: 'center', alignItems: 'center', fontSize: 12.5 }}>
+    <span></span>${q.map(x => html`<span key=${x.n} aria-label=${x.n.replace(/^Q(\d)$/, 'רבע $1').replace(/^OT(\d)$/, 'הארכה $1')}>${x.n}</span>`)}<span>סה״כ</span>
+    <span class="row center"><${Crest} n=${hm} s=${18}/></span>${q.map(x => html`<b key=${x.n} class="num">${x.h}</b>`)}<b class="num xb">${sum('h')}</b>
+    <span class="row center"><${Crest} n=${aw} s=${18}/></span>${q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}<b class="num xb">${sum('a')}</b>
+  </div></div>`;
+}
 /* התוצאה בלייב (בכרטיס האדום ובעמוד המשחק) */
 export function LiveScore({ L, g, big }) {
   const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME, cs = big ? 64 : 52;
@@ -24,11 +35,7 @@ export function LiveScore({ L, g, big }) {
       <div class="row center sc-big" style=${{ gap: 10, fontSize: big ? 50 : 44 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ opacity: .55, fontSize: '.6em' }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
       ${side(aw)}
     </div>
-    ${L.q && L.q.length ? html`<div class="on-red r-md" style=${{ marginTop: 12, padding: '8px 10px' }}><div style=${{ display: 'grid', gridTemplateColumns: `28px repeat(${L.q.length}, minmax(0,1fr))`, gap: 4, textAlign: 'center', alignItems: 'center', fontSize: 12.5 }}>
-      <span></span>${L.q.map(x => html`<span key=${x.n} aria-label=${x.n.replace(/^Q(\d)$/, 'רבע $1').replace(/^OT(\d)$/, 'הארכה $1')}>${x.n}</span>`)}
-      <span class="row center"><${Crest} n=${hm} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.h}</b>`)}
-      <span class="row center"><${Crest} n=${aw} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}
-    </div></div>` : null}
+    <${LiveQ} L=${L} hm=${hm} aw=${aw}/>
   </div>`;
 }
 /* פס תוצאה קומפקטי (בתוך סרגל הניווט / מתחת לכותרת) */

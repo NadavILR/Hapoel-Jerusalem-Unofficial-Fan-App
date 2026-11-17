@@ -2,7 +2,7 @@
 import { html, useState, useEffect, useRef, useLayoutEffect, memo, portal, cx } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { useApp, useNow, Crest, Seg, Empty, ExtLink, VideoPop, usePhoto, Photo } from '../ui/kit.js';
-import { LiveScore, Pts } from '../ui/score.js';
+import { LiveScore, Pts, LiveQ } from '../ui/score.js';
 import { ME, LINKS } from '../data/constants.js';
 import { DB, compLabel, won } from '../data/store.js';
 import { H, D, SEASON, fdLong, dtf } from '../core/env.js';
@@ -32,11 +32,7 @@ function HomeLive({ L, g, intro, now, open, share }) {
       <div class="row center num" style=${{ gap: 8, fontSize: 36, fontWeight: 600, lineHeight: 1.1 }}><${Pts} v=${L.hs} k=${L.app}/><span style=${{ fontSize: 24, opacity: .6 }}>–</span><${Pts} v=${L.as} k=${L.app}/></div>
       ${side(aw)}
     </div>
-    ${L.q && L.q.length ? html`<div class="lv-q"><div style=${{ display: 'grid', gridTemplateColumns: `28px repeat(${L.q.length}, minmax(0,1fr))`, gap: 4, textAlign: 'center', alignItems: 'center' }}>
-      <span></span>${L.q.map(x => html`<span key=${x.n} style=${{ opacity: .75 }}>${x.n}</span>`)}
-      <span class="row center"><${Crest} n=${hm} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.h}</b>`)}
-      <span class="row center"><${Crest} n=${aw} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}
-    </div></div>` : null}
+    <${LiveQ} L=${L} hm=${hm} aw=${aw}/>
     <${WithShare} share=${share}><button onClick=${open} class="gc-btn on-red press"><${Icon} n="cal" s=${16}/>לעמוד המשחק</button><//>
   </div>`;
 }

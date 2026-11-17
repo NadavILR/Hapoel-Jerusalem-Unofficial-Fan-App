@@ -58,7 +58,10 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .glass-red :focus-visible, .btn-red:focus-visible, .chip.on:focus-visible, .seg > button[aria-selected="true"]:focus-visible { outline-color: #fff; box-shadow: 0 0 0 4px var(--red); }
 ::selection { background: rgb(var(--red-rgb) / .22); }
 .press { transition: transform .18s var(--ease), background-color .15s var(--ease), color .15s var(--ease), opacity .15s; }
-.press:active { transform: scale(.96); transition-duration: .06s; }
+/* כפתור בתוך כרטיס לחיץ (פעמון התזכורת בלוח המשחקים): רק הכפתור נלחץ, לא הכרטיס כולו */
+.press:active:not(:has(.press:active)) { transform: scale(.96); transition-duration: .06s; }
+/* בלי השכבה הכחולה של הדפדפן בלחיצה – על כל רכיב לחיץ, גם כרטיס שהוא לא <button> */
+* { -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 
 /* ---------- זכוכית ---------- */
