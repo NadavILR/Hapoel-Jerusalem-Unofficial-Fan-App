@@ -229,7 +229,7 @@ function App() {
 
   /* ---------- סטורי: בחירת גרסה וחיווי הכנה ---------- */
   const [pick, setPick] = useState(null), [busy, setBusy] = useState(null);
-  const storyUI = { toast, pick: g => new Promise(done => setPick({ g, done })), busy: () => { setBusy(0); return { set: p => setBusy(p), done: () => setBusy(null) }; } };
+  const storyUI = { toast, pick: (g, kicker) => new Promise(done => setPick({ g, kicker, done })), busy: () => { setBusy(0); return { set: p => setBusy(p), done: () => setBusy(null) }; } };
 
   /* פס הלייב: בכל העמודים, חוץ מעמוד המשחק עצמו וממסך הבית (שם הכרטיס האדום כבר מציג את התוצאה) */
   const dockL = !upd && L && L.status === 'live' && !(game && game.id === L.app) && !(pg === 'home' && !game && !player) ? L : null, dockG = dockL ? DB.F.find(f => f.id === dockL.app) : null;
@@ -264,7 +264,7 @@ function App() {
         ${NAV.map(([k, l, ic]) => { const on = k === navOn; return html`<button key=${k} class=${cx('nav-b', on && 'on')} aria-current=${on && k !== 'more' ? 'page' : undefined} onClick=${() => go(k)}><span class="pill"><${Icon} n=${ic} s=${22} w=${on ? 2.3 : 2}/></span>${l}</button>`; })}</div></nav>
     ${drawer ? html`<${Drawer} onClose=${() => setDrawer(false)}/>` : null}
     ${settings ? html`<${Settings} onClose=${() => setSettings(false)}/>` : null}
-    ${pick ? html`<${StoryPick} g=${pick.g} done=${v => { pick.done(v); setPick(null); }}/>` : null}
+    ${pick ? html`<${StoryPick} g=${pick.g} kicker=${pick.kicker} done=${v => { pick.done(v); setPick(null); }}/>` : null}
     ${busy != null ? html`<div class="glass-3 r-full t-s b" style=${{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 'calc(var(--navh, 72px) + 16px)', zIndex: 60, padding: '10px 18px' }}>מכין סרטון לסטורי… ${Math.round(busy * 100)}%</div>` : null}
     ${upd ? html`<${UpdateGate} u=${upd}/>` : null}
   <//>`;
@@ -279,9 +279,9 @@ function MorePage({ go }) {
 }
 
 /* בחירת גרסת הסטורי של המשחק הבא, עם תצוגה מקדימה של שתי הגרסאות */
-function StoryPick({ g, done }) {
+function StoryPick({ g, kicker, done }) {
   const [im, setIm] = useState([null, null]);
-  useEffect(() => { let on = true; Promise.all([storyImage(g, null), storyImage(g, null, { noCd: true })]).then(([a, b]) => { if (on) setIm([a.toDataURL('image/jpeg', .7), b.toDataURL('image/jpeg', .7)]); }).catch(() => { }); return () => { on = false; }; }, []);
+  useEffect(() => { let on = true; Promise.all([storyImage(g, null, { kicker }), storyImage(g, null, { noCd: true, kicker })]).then(([a, b]) => { if (on) setIm([a.toDataURL('image/jpeg', .7), b.toDataURL('image/jpeg', .7)]); }).catch(() => { }); return () => { on = false; }; }, []);
   return html`<${Sheet} onClose=${() => done(null)} label="שיתוף לסטורי"><div class="stack-s" style=${{ paddingBottom: 6 }}>
     <h2 class="t-l" style=${{ margin: 0 }}>איזה סטורי לשתף?</h2><p class="t-s mu" style=${{ margin: 0 }}>בגרסה בלי הספירה לאחור נשאר מקום ריק – שם שמים את מדבקת הספירה לאחור של אינסטגרם</p>
     <div class="grid2">${[['עם ספירה לאחור', false], ['מקום למדבקה', true]].map(([l, v], i) => html`<button key=${l} onClick=${() => done({ noCd: v })} class="glass r-md press col" style=${{ padding: 8, gap: 8, alignItems: 'center' }}>${im[i] ? html`<img src=${im[i]} alt=${l} style=${{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', borderRadius: 10 }}/>` : html`<div class="sk" style=${{ width: '100%', aspectRatio: '9/16' }}></div>`}<span class="t-s b">${l}</span></button>`)}</div>

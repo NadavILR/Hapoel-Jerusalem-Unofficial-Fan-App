@@ -31,7 +31,8 @@ export async function storyCard(g, L, o = {}) {
   const T = (t, y, w, s, col = fg, al = 'center', xx = W / 2) => { x.font = F(w, s); x.fillStyle = col; x.textAlign = al; x.direction = 'rtl'; x.fillText(t, xx, y); };
   const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
   const hm = g.h ? ME : g.o, aw = g.h ? g.o : ME, [ih, ia] = await Promise.all([crestImg(hm), crestImg(aw)]);
-  const live = L && L.status === 'live', { x: cx0, y: cy, w: cw, h: ch, r: cr } = cardRect(live), IN = 80, L0 = cx0 + IN, R0 = cx0 + cw - IN;
+  /* משחק שהסתיים: אותו מבנה כמו משחק בלייב, עם "סיום" במקום "לייב" */
+  const fin = L && L.status === 'end', live = L && (L.status === 'live' || fin), { x: cx0, y: cy, w: cw, h: ch, r: cr } = cardRect(live), IN = 80, L0 = cx0 + IN, R0 = cx0 + cw - IN;
   /* זכוכית: הרקע מטושטש, שכבה שקופה, קו מתאר וברק עליון */
   if (o.bgSrc) blurInto(x, o.bgSrc, () => rr(cx0, cy, cw, ch, cr));
   x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 80; x.shadowOffsetY = 24; rr(cx0, cy, cw, ch, cr); x.fillStyle = dark ? 'rgba(40,40,40,.72)' : 'rgba(255,255,255,.76)'; x.fill(); x.restore();
@@ -40,9 +41,9 @@ export async function storyCard(g, L, o = {}) {
   const BAND = 230;
   x.save(); rr(cx0, cy, cw, ch, cr); x.clip(); x.fillStyle = RED; x.fillRect(cx0, cy, cw, BAND); x.restore();
   if (live) {
-    x.font = F('800', 50); const lw = x.measureText('לייב').width + 64; rr(L0, cy + 74, lw, 84, 42); x.fillStyle = '#fff'; x.fill(); T('לייב', cy + 134, '800', 50, RED, 'center', L0 + lw / 2);
+    const tag = fin ? 'סיום' : 'לייב'; x.font = F('800', 50); const lw = x.measureText(tag).width + 64; rr(L0, cy + 74, lw, 84, 42); x.fillStyle = '#fff'; x.fill(); T(tag, cy + 134, '800', 50, RED, 'center', L0 + lw / 2);
     T(ME, cy + 134, '800', 62, '#fff', 'right', R0);
-  } else { T('המשחק הבא', cy + 112, '800', 64, '#fff'); T(compLabel(g), cy + 176, '400', 38, 'rgba(255,255,255,.95)'); }
+  } else { T(o.kicker || 'המשחק הבא', cy + 112, '800', 64, '#fff'); T(compLabel(g), cy + 176, '400', 38, 'rgba(255,255,255,.95)'); }
   const top = cy + BAND + 70, cs = live ? 150 : 200, xr = R0 - cs, xl = L0;
   const crest = (im, X, n) => { if (im) { const k = Math.min(cs / im.width, cs / im.height), w = im.width * k, h = im.height * k; x.drawImage(im, X + (cs - w) / 2, top + (cs - h) / 2, w, h); } else { x.beginPath(); x.arc(X + cs / 2, top + cs / 2, cs / 2, 0, 7); x.fillStyle = 'rgba(128,128,128,.2)'; x.fill(); T(n[0], top + cs / 2 + 36, '800', 100, fg, 'center', X + cs / 2); } };
   crest(ih, xr, hm); crest(ia, xl, aw);
@@ -52,7 +53,7 @@ export async function storyCard(g, L, o = {}) {
   nm(hm, 'r', hm === ME); nm(aw, 'l', aw === ME);
   if (live) {
     T(String(L.hs), top + cs / 2 + 44, '800', 124, fg, 'center', W / 2 + 100); T(String(L.as), top + cs / 2 + 44, '800', 124, fg, 'center', W / 2 - 100); T('–', top + cs / 2 + 34, '400', 80, mu);
-    const st = (L.st || 'LIVE') + (L.clock ? ' · ' + L.clock : ''); x.font = F('800', 42); const sw = x.measureText(st).width + 80; rr(W / 2 - sw / 2, top + cs + 124, sw, 82, 41); x.fillStyle = RED; x.fill(); T(st, top + cs + 180, '800', 42, '#fff');
+    const won = fin && (g.h ? L.hs > L.as : L.as > L.hs), st = fin ? 'סיום · ' + (won ? 'ניצחון' : 'הפסד') : (L.st || 'LIVE') + (L.clock ? ' · ' + L.clock : ''); x.font = F('800', 42); const sw = x.measureText(st).width + 80; rr(W / 2 - sw / 2, top + cs + 124, sw, 82, 41); x.fillStyle = RED; x.fill(); T(st, top + cs + 180, '800', 42, '#fff');
     T(compLabel(g) + ' · ' + fdLong(g).split(' · ').slice(0, 2).join(' · '), top + cs + 280, '400', 34, mu);
     const qs = (L.q || []).filter(q => q && q.n).slice(0, 8), ty = top + cs + 330, row = 80;
     if (qs.length) {
@@ -101,7 +102,7 @@ export async function storyVideo(g, L, prog, opt = {}) {
   let err = null; const enc = new VideoEncoder({ output: (c, m) => mux.addVideoChunk(c, m), error: e => { err = e; } }); enc.configure(cfg);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = HH; const x = cv.getContext('2d');
   const bgc = document.createElement('canvas'); bgc.width = W; bgc.height = HH; const bx = bgc.getContext('2d');
-  const t0 = Date.now(), live = L && L.status === 'live'; let card = null, sec = -1;
+  const t0 = Date.now(), live = L && (L.status === 'live' || L.status === 'end'); let card = null, sec = -1;
   try {
     for (let i = 0; i < N; i++) {
       if (err) throw err;
@@ -109,7 +110,7 @@ export async function storyVideo(g, L, prog, opt = {}) {
       const { image: fr } = await dec.decode({ frameIndex: at(i * us) }), iw = fr.displayWidth, ih = fr.displayHeight, k = Math.max(W / iw, HH / ih);
       bx.drawImage(fr, (W - iw * k) / 2, (HH - ih * k) / 2, iw * k, ih * k); fr.close();
       const s = Math.floor(i / fps);
-      if (!card || (!live && !opt.noCd && s !== sec)) { sec = s; card = await storyCard(g, L, { now: t0 + s * 1000, noCd: opt.noCd }); }
+      if (!card || (!live && !opt.noCd && s !== sec)) { sec = s; card = await storyCard(g, L, { now: t0 + s * 1000, noCd: opt.noCd, kicker: opt.kicker }); }
       x.drawImage(bgc, 0, 0);
       /* הזכוכית: רק אזור הכרטיס מטושטש */
       const { x: X, y: Y, w, h, r } = cardRect(live);
@@ -125,16 +126,17 @@ export async function storyVideo(g, L, prog, opt = {}) {
 }
 const b64 = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(blob); });
 /* ui: { pick(g) → {noCd}|null, busy() → {set,done}, toast } */
-export async function shareStory(ui, g, L) {
+/* kicker – הכותרת של משחק שעוד לא התחיל ("המשחק הבא" / "המשחק שאחריו") */
+export async function shareStory(ui, g, L, kicker) {
   let bz = null;
   try {
-    const live = L && L.status === 'live'; let opt = {};
-    if (!live) { opt = await ui.pick(g); if (!opt) return; }
-    const txt = (live ? 'הפועל לייב! ' : 'המשחק הבא של הפועל ירושלים: ') + NT.match(g);
+    const fin = L && L.status === 'end', live = L && L.status === 'live'; let opt = {};
+    if (!live && !fin) { opt = await ui.pick(g, kicker); if (!opt) return; opt = { ...opt, kicker }; }
+    const txt = fin ? 'סיום המשחק: ' + NT.match(g) + ' ' + L.hs + '–' + L.as : (live ? 'הפועל לייב! ' : (kicker || 'המשחק הבא') + ' של הפועל ירושלים: ') + NT.match(g);
     let blob = null, mime = 'image/png', name = 'hapoel-story.png';
     bz = ui.busy(); try { blob = await storyVideo(g, L, bz.set, opt); } catch (e) { console.warn('story video', e); blob = null; }
     if (blob) { mime = 'video/mp4'; name = 'hapoel-story.mp4'; }
-    else { bz.done(); bz = null; ui.toast('מכין תמונה לשיתוף…'); const c = await storyImage(g, L, { noCd: opt.noCd }); blob = await new Promise(r => c.toBlob(r, 'image/png')); }
+    else { bz.done(); bz = null; ui.toast('מכין תמונה לשיתוף…'); const c = await storyImage(g, L, { noCd: opt.noCd, kicker: opt.kicker }); blob = await new Promise(r => c.toBlob(r, 'image/png')); }
     if (bz) { bz.done(); bz = null; }
     const P = plug('LiveActivity'); if (P && P.shareImage) { await P.shareImage({ data: await b64(blob), text: txt, mime, name }); return; }
     const file = new File([blob], name, { type: mime });

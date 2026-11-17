@@ -4,7 +4,7 @@ import { Icon } from '../ui/icons.js';
 import { useApp, useNow, Crest, Seg, Empty, ExtLink, VideoPop, usePhoto, Photo } from '../ui/kit.js';
 import { LiveScore, Pts, LiveQ } from '../ui/score.js';
 import { ME, LINKS } from '../data/constants.js';
-import { DB, compLabel, won } from '../data/store.js';
+import { DB, compLabel, won, gsOf } from '../data/store.js';
 import { H, D, SEASON, fdLong, dtf } from '../core/env.js';
 import { ytId, hlUrl, CLUB, loadLeaders, savedLeaders, LCAT } from '../data/media.js';
 import { status } from '../data/refresh.js';
@@ -38,7 +38,10 @@ function HomeLive({ L, g, intro, now, open, share }) {
 }
 /* כפתור שיתוף לסטורי, משמאל לכפתור הפעולה של הכרטיס */
 const ShareBtn = ({ on, cls = 'on-red' }) => html`<button onClick=${on} aria-label="שיתוף לסטורי" class=${'gc-btn press ' + cls} style=${{ width: 48, flexShrink: 0 }}><${Icon} n="share" s=${17}/></button>`;
-const WithShare = ({ share, children }) => html`<div class="row" style=${{ gap: 8, marginTop: 12 }}><div class="grow" style=${{ minWidth: 0 }}>${children}</div><${ShareBtn} on=${share}/></div>`;
+const WithShare = ({ share, children, cls, mt = 12 }) => html`<div class="row" style=${{ gap: 8, marginTop: mt }}><div class="grow" style=${{ minWidth: 0 }}>${children}</div><${ShareBtn} on=${share} cls=${cls}/></div>`;
+/* משחק שהסתיים, לסטורי: התוצאה והרבעים כמו בכרטיס הלייב */
+const finalOf = g => { const e = gsOf(g.id) || {}, q = Array.isArray(e.q) ? e.q : [], hi = p => g.h ? p[0] : p[1], ai = p => g.h ? p[1] : p[0];
+  return { status: 'end', jh: !!g.h, hs: g.h ? g.r[0] : g.r[1], as: g.h ? g.r[1] : g.r[0], q: q.map((p, i) => ({ n: i < 4 ? 'Q' + (i + 1) : 'OT' + (i - 3), h: hi(p), a: ai(p) })) }; };
 /* כרטיס משחק במסך הבית – המידות והמרווחים כמו בגרסה 1.161 */
 function GameCard({ kind, g, now, L }) {
   const A = useApp(), [vid, setVid] = useState(false), red = kind === 'next', hm = g.h ? ME : g.o, aw = g.h ? g.o : ME, res = kind === 'prev' && g.r, w = res && won(g);
@@ -46,7 +49,7 @@ function GameCard({ kind, g, now, L }) {
   useEffect(() => { if (L && !was.current) { setIntro(true); const t = setTimeout(() => setIntro(false), 900); was.current = true; return () => clearTimeout(t); } was.current = !!L; }, [!!L]);
   const nm = n => html`<div class="gc-name" style=${{ fontWeight: n === ME ? 800 : 400 }}>${n}</div>`;
   const kicker = kind === 'prev' || kind === 'pend' ? 'המשחק הקודם' : kind === 'after' ? 'המשחק שאחריו' : 'המשחק הבא';
-  const btn = red ? 'gc-btn on-red' : 'gc-btn cd-box', sub = red ? '' : 'mu', share = () => shareStory(A.storyUI, g, L);
+  const btn = red ? 'gc-btn on-red' : 'gc-btn cd-box', sub = red ? '' : 'mu', share = () => res ? shareStory(A.storyUI, g, finalOf(g)) : shareStory(A.storyUI, g, L, kind === 'after' ? 'המשחק שאחריו' : 'המשחק הבא');
   return html`<article class=${cx('gc col', red ? 'glass-red' : 'glass')}>
     ${L ? html`<${HomeLive} L=${L} g=${g} intro=${intro} now=${now} open=${() => A.openGame(g)} share=${share}/>`
     : html`<div class="col grow">
@@ -61,8 +64,8 @@ function GameCard({ kind, g, now, L }) {
       : kind === 'pend' ? html`<div class="col center grow" style=${{ alignItems: 'center', padding: '8px 0' }}><span style=${{ fontSize: 24, fontWeight: 800 }}>ממתין לתוצאה</span><span class="t-s mu" style=${{ marginTop: 4 }}>התוצאה תופיע כאן כשתתעדכן מהמקור הרשמי</span></div>`
       : red && g.t <= now ? html`<div class="on-red" style=${{ borderRadius: 12, padding: '16px 12px', textAlign: 'center', marginTop: 'auto' }}><div style=${{ fontSize: 20, fontWeight: 800 }}>המשחק התחיל</div><div class="t-s" style=${{ marginTop: 4 }}>התוצאה בלייב תופיע כאן ברגע שתתקבל</div></div>`
       : html`<div style=${{ marginTop: 'auto' }}><${Countdown} t=${g.t} now=${now} red=${red}/></div>
-          ${(() => { const rb = html`<button onClick=${() => A.togRem(g)} class=${cx('gc-btn press', A.rem[g.id] ? (red ? 'btn-white' : 'btn-red') : btn)} style=${red ? null : { marginTop: 12 }}><${Icon} n=${A.rem[g.id] ? 'bellOn' : 'bell'} s=${16}/>${A.rem[g.id] ? 'תזכורת פעילה – לחצו לביטול' : 'הגדר תזכורת למשחק'}</button>`; return red ? html`<${WithShare} share=${share}>${rb}<//>` : rb; })()}`}
-      ${(() => { const gb = html`<button onClick=${() => A.openGame(g)} class=${cx(btn, 'press')} style=${red && g.t <= now && !res && kind !== 'pend' ? null : { marginTop: 8 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>`; return red && g.t <= now && !res && kind !== 'pend' ? html`<${WithShare} share=${share}>${gb}<//>` : gb; })()}
+          ${(() => { const rb = html`<button onClick=${() => A.togRem(g)} class=${cx('gc-btn press', A.rem[g.id] ? (red ? 'btn-white' : 'btn-red') : btn)} ><${Icon} n=${A.rem[g.id] ? 'bellOn' : 'bell'} s=${16}/>${A.rem[g.id] ? 'תזכורת פעילה – לחצו לביטול' : 'הגדר תזכורת למשחק'}</button>`; return html`<${WithShare} share=${share} cls=${red ? 'on-red' : 'cd-box'}>${rb}<//>`; })()}`}
+      ${(() => { const wsh = (red && g.t <= now && !res && kind !== 'pend') || res, gb = html`<button onClick=${() => A.openGame(g)} class=${cx(btn, 'press')} style=${wsh ? null : { marginTop: 8 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>`; return wsh ? html`<${WithShare} share=${share} cls=${red ? 'on-red' : 'cd-box'} mt=${res ? 8 : 12}>${gb}<//>` : gb; })()}
     </div>`}
     ${vid ? html`<${VideoPop} id=${ytId(g)} title=${'תקציר: ' + (g.h ? ME + ' – ' + g.o : g.o + ' – ' + ME)} onClose=${() => setVid(false)}/>` : null}
   </article>`;
