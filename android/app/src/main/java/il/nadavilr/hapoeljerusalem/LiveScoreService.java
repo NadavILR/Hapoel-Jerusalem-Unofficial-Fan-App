@@ -394,6 +394,7 @@ public class LiveScoreService extends Service {
     }
 
     private int maxQuarter;
+    private boolean sawBreak;
 
     private void alerts(LiveGame x) {
         if (x == null || !alertsOn()) return;
@@ -413,6 +414,11 @@ public class LiveScoreService extends Service {
         // game is over and the final notification says it
         boolean announce = ended > 0 && (ended < 4 || x.hs == x.as || q > ended);
         if (announce && LiveScheduler.alertOnce(this, tipOff, "q" + ended)) GameAlerts.quarter(this, x, ended, tipOff);
+        // The start of a quarter / an overtime (2nd and on – the 1st is the tip-off notification): only when the previous
+        // quarter (or the break after it) was seen in this game, and never earlier than (N-1)×10 minutes from tip-off
+        if (q >= 2 && !brk && q > lastQuarter && (lastQuarter > 0 || sawBreak) && System.currentTimeMillis() >= tipOff + (q - 1) * 10L * MIN
+            && LiveScheduler.alertOnce(this, tipOff, "s" + q)) GameAlerts.quarterStart(this, x, q, tipOff);
+        if (brk) sawBreak = true;
         if (q > 0 && !brk) {
             lastQuarter = q;
             maxQuarter = Math.max(maxQuarter, q);
@@ -429,7 +435,7 @@ public class LiveScoreService extends Service {
         NotificationManager nm = c.getSystemService(NotificationManager.class);
         if (nm == null || nm.getNotificationChannel(GAME_CHANNEL) != null) return;
         NotificationChannel ch = new NotificationChannel(GAME_CHANNEL, "עדכוני משחק", NotificationManager.IMPORTANCE_DEFAULT);
-        ch.setDescription("שריקת הפתיחה, סיום כל רבע וסיום המשחק");
+        ch.setDescription("שריקת הפתיחה, התחלה וסיום של כל רבע, וסיום המשחק");
         nm.createNotificationChannel(ch);
     }
 

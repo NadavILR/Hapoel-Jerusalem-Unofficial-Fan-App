@@ -35,7 +35,7 @@ export default function Settings({ onClose }) {
       ${!on && A.perm === 'denied' && NATIVE ? html`<div class="pad-x" style=${{ paddingBottom: 14 }}><button onClick=${() => { const P = plug('LiveActivity'); P && P.openNotifSettings ? P.openNotifSettings().catch(() => { }) : A.toast('אפשר לאשר התראות בהגדרות המכשיר › אפליקציות'); }} class="btn btn-red press" style=${{ width: '100%' }}>לפתיחת הגדרות ההתראות במכשיר</button></div>` : null}
       ${on ? html`<${Fragment}>
         <${Toggle} on=${pf.hour} set=${v => sp('hour', +v)} label="תזכורת שעה לפני שריקת הפתיחה"/>
-        <${Toggle} on=${pf.quarter} set=${v => sp('quarter', +v)} label="עדכוני תוצאה בסיום כל רבע ובסיום המשחק"/>
+        <${Toggle} on=${pf.quarter} set=${v => sp('quarter', +v)} label="עדכוני תוצאה בהתחלה ובסיום של כל רבע ובסיום המשחק"/>
         ${NATIVE ? html`<${Fragment}>
           <${Toggle} on=${pf.live !== 0} set=${v => sp('live', v ? 1 : 0)} label="כרטיס התוצאה בלייב" sub="במגש ההתראות ובמסך הנעילה"/>
           ${pf.live !== 0 ? html`<div class="pad-x" style=${{ paddingBottom: 12 }}><div class="t-s md" style=${{ marginBottom: 6 }}>איך להציג את התוצאה בלייב</div><${NbPick} pf=${pf} setPf=${A.setPf}/><div class="t-xs mu" style=${{ marginTop: 6 }}>${nbMode(pf) === 'c' ? 'כרטיס התוצאה של האפליקציה, עם סמלי הקבוצות.' : 'ב-Now Bar ובשורת הסטטוס (אנדרואיד 16 ומעלה, כש"עדכונים חיים" מופעלים לאפליקציה). במכשיר אחר – כרטיס התוצאה של האפליקציה.'}</div></div>

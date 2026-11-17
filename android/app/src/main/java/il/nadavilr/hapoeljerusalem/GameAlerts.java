@@ -19,7 +19,7 @@ import androidx.core.app.NotificationManagerCompat;
  */
 final class GameAlerts {
 
-    static final int START = 63420, QUARTER = 63421, FINAL = 63430;
+    static final int START = 63420, QUARTER = 63421, FINAL = 63430, QSTART = 63440;
     private static final String RLM = "‏";
 
     private GameAlerts() {
@@ -32,6 +32,16 @@ final class GameAlerts {
             case 3: return "סיום רבע שלישי";
             case 4: return "סיום רבע רביעי";
             default: return "סיום הארכה " + (q - 4);
+        }
+    }
+
+    /** The start of a quarter / an overtime (the 1st quarter is the tip-off notification). */
+    static String quarterStartTitle(int q) {
+        switch (q) {
+            case 2: return "התחלת רבע שני";
+            case 3: return "התחלת רבע שלישי";
+            case 4: return "התחלת רבע רביעי";
+            default: return "התחלת הארכה " + (q - 4);
         }
     }
 
@@ -60,6 +70,10 @@ final class GameAlerts {
 
     static void quarter(Context c, LiveGame x, int q, long tipOff) {
         post(c, QUARTER + q, quarterTitle(q), null, score(x), tipOff);
+    }
+
+    static void quarterStart(Context c, LiveGame x, int q, long tipOff) {
+        post(c, QSTART + q, quarterStartTitle(q), null, score(x), tipOff);
     }
 
     static void fin(Context c, LiveGame x, boolean overtime, long tipOff) {
