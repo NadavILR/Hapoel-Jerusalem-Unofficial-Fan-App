@@ -66,8 +66,15 @@ function GameCard({ kind, g, now, L }) {
     ${vid ? html`<${VideoPop} id=${ytId(g)} title=${'תקציר: ' + (g.h ? ME + ' – ' + g.o : g.o + ' – ' + ME)} onClose=${() => setVid(false)}/>` : null}
   </article>`;
 }
-function Carousel({ items, start }) {
+/* הכרטיס שמוצג בקרוסלה: נשמר כשעוברים לעמוד משחק, כדי ש"חזרה" תחזיר לאותו כרטיס. רענון מחזיר לכרטיס הראשי */
+const CAR = { k: null, ld: false, n: 0 };
+/* רענון במשיכה: חזרה לכרטיס הראשי (המשחק הבא / בלייב) */
+export const carHome = () => { CAR.k = null; CAR.n++; };
+function Carousel({ items, start, kinds = [], home = start, reset = 0 }) {
   const r = useRef(null), [i, setI] = useState(start), iR = useRef(start); iR.current = i;
+  useEffect(() => { CAR.k = kinds[i] || null; }, [i]);
+  const first = useRef(true);
+  useEffect(() => { if (first.current) { first.current = false; return; } to(home, 1); }, [reset]);
   const mid = e => { const b = e.getBoundingClientRect(); return b.left + b.width / 2; };
   const to = (k, smooth) => { const el = r.current, c = el && el.children[k]; if (c) el.scrollBy({ left: mid(c) - mid(el), behavior: smooth ? 'smooth' : 'auto' }); };
   useLayoutEffect(() => { to(start); }, []);
@@ -109,8 +116,10 @@ export default function Home() {
   if (!nx && !ls) return html`<${Empty} title=${'עונת ' + SEASON} sub="משחקי העונה עוד לא נטענו לאפליקציה."><${ExtLink} href=${LINKS.club}>לאתר הרשמי של הקבוצה<//><//>`;
   const pv = pd && (!ls || pd.t > ls.t) ? ['pend', pd] : ls && ['prev', ls];
   const cards = [pv, nx && ['next', nx], up[1] && ['after', up[1]]].filter(Boolean);
+  /* הכרטיס הראשי: המשחק הבא / בלייב. "חזרה" מעמוד משחק – לכרטיס שהיה מוצג; תחילת רענון – חזרה לכרטיס הראשי */
+  const kinds = cards.map(c => c[0]), main = Math.max(0, kinds.indexOf('next')), back = A.returning() && CAR.k ? kinds.indexOf(CAR.k) : -1;
   return html`<div class="stack stg">
-    <${Carousel} key=${nx ? nx.id : 'x'} start=${pv && nx ? 1 : 0} items=${cards.map(([k, g]) => html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k === 'next' ? L : null}/>`)}/>
+    <${Carousel} key=${nx ? nx.id : 'x'} start=${back >= 0 ? back : main} home=${main} kinds=${kinds} reset=${CAR.n} items=${cards.map(([k, g]) => html`<${GameCard} key=${k} kind=${k} g=${g} now=${now} L=${k === 'next' ? L : null}/>`)}/>
     ${me || em ? html`<div class=${me && em ? 'grid2' : ''}>
       ${me ? html`<button onClick=${() => A.go('stand', 'league')} class="glass r-lg pad-s press" style=${{ textAlign: 'center' }}><div class="t-xs mu">ליגת ווינר סל</div><div class="t-xs mu num">${me.w} נצ׳ · ${me.l} הפ׳ · ${me.p} נק׳</div><div class="t-xl num" style=${{ marginTop: 2 }}>מקום ${rk + 1}</div></button>` : null}
       ${em ? html`<button onClick=${() => A.go('stand', 'euro')} class="glass r-lg pad-s press" style=${{ textAlign: 'center' }}><div class="t-xs mu">יורוקאפ · ${eg[0]}</div><div class="t-xs mu num">${em[1]} נצ׳ · ${em[2]} הפ׳</div><div class="t-xl num" style=${{ marginTop: 2 }}>מקום ${er + 1}</div></button>` : null}</div>` : null}
