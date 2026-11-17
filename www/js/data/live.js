@@ -207,7 +207,7 @@ export async function pollLive(n, prev) {
   return L;
 }
 /* המשחק בלייב נשמר במכשיר (עד 3 שעות), כדי שהכרטיס יופיע מיד כשפותחים את האפליקציה באמצע משחק */
-export const savedLive = () => { const x = LS.get('hpj-live-L', null); return x && x.L && x.L.app && x.L.status !== 'end' && Date.now() - x.ts < 3 * H ? x.L : null; };
+export const savedLive = () => { const x = LS.get('hpj-live-L', null), g = x && x.L && DB.F.find(f => f.id === x.L.app); return x && x.L && x.L.app && x.L.status !== 'end' && Date.now() - x.ts < 3 * H && !(g && g.r) ? x.L : null; };
 let saveAt = 0, saveSig = '';
 export function saveLive(L, n) {
   if (L.status === 'end' || (L.status === 'pre' && Date.now() < n.t)) { if (saveAt || LS.get('hpj-live-L', null)) LS.set('hpj-live-L', null); saveAt = 0; return; }

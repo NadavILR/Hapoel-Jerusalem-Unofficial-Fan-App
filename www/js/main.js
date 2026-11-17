@@ -125,6 +125,11 @@ function App() {
       let wait = 60000;
       try {
         const n = DB.F.filter(f => !f.r).sort((a, b) => a.t - b.t)[0];
+        /* תוצאה בלייב שכבר לא שייכת למשחק שעוקבים אחריו – המשחק קיבל תוצאה ממקור אחר (למשל מהאתר של המועדון) לפני שהלייב
+           ראה את הסיום, או שלא התקבל עדכון חצי שעה: מנקים אותה, כדי שהמשחק לא יוצג "בלייב" אחרי שנגמר, ועמוד המשחק יטען את
+           המשחק המלא (כל הרבעים) מהמקור הרשמי */
+        const cur = liveR.current;
+        if (cur && cur.status === 'live') { const g = DB.F.find(f => f.id === cur.app); if (!g || g.r || !n || n.id !== g.id || Date.now() - (cur.at || 0) > 30 * MIN) { liveR.current = null; setLive(null); LS.set('hpj-live-L', null); } }
         if (n && Date.now() >= n.t - 10 * MIN && Date.now() < n.t + 5 * H && visible()) {
           wait = 20000; const prev = liveR.current, L = await pollLive(n, prev && prev.app === n.id ? prev : null).catch(() => null);
           if (L && !stop) {
