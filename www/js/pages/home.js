@@ -38,7 +38,6 @@ function HomeLive({ L, g, intro, now, open }) {
       <span class="row center"><${Crest} n=${aw} s=${18}/></span>${L.q.map(x => html`<b key=${x.n} class="num">${x.a}</b>`)}
     </div></div>` : null}
     <button onClick=${open} class="gc-btn on-red press" style=${{ marginTop: 12 }}><${Icon} n="cal" s=${16}/>לעמוד המשחק</button>
-    <div style=${{ fontSize: 11, textAlign: 'center', marginTop: 8 }}>תוצאה בלייב · ${fresh(L, now)}</div>
   </div>`;
 }
 /* כרטיס משחק במסך הבית – המידות והמרווחים כמו בגרסה 1.161 */

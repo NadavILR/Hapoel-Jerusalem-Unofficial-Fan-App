@@ -2,7 +2,6 @@
 import { html, useState, useEffect, useRef, cx, portal } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { useApp, useNow, Crest, Seg, Back, Src } from '../ui/kit.js';
-import { fresh } from './home.js';
 import { LiveScore, MiniScore, Quarters, TeamStats, BoxScore, PlayByPlay, srcName } from '../ui/score.js';
 import { ME, LINKS } from '../data/constants.js';
 import { DB, compLabel, gsOf } from '../data/store.js';
@@ -64,7 +63,6 @@ export default function Game({ g: g0 }) {
           <div class="col" style=${{ alignItems: 'center', gap: 6, width: 110 }}><${Crest} n=${aw} s=${68}/><div class=${cx('t-s', wn === 1 ? 'xb' : 'md')}>${aw}</div></div></div>
           <div class="t-xs row center" style=${{ marginTop: 12, gap: 4 }}><${Icon} n="pin" s=${13}/>${g.v || (g.h ? 'משחק בית' : 'משחק חוץ')}</div>`}
       </div>
-      ${live ? html`<div class="t-xs mu" style=${{ textAlign: 'center' }}>עודכן ${fresh(live, now)}</div>` : null}
       ${gs ? html`<${Seg} items=${tabs} val=${tab} set=${setTab} label="פרטי המשחק"/>
         <div key=${tab} class="stack fade-in">${tab === 'b' && plays ? html`<${PlayByPlay} pbp=${plays} g=${g}/>`
           : tab === 'g' ? html`<${Quarters} g=${gg} gs=${gs}/>${g.r && !live ? html`<${Highlight} g=${g}/>` : null}`
