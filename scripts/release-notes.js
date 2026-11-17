@@ -26,7 +26,12 @@ if (arg === '--list') {
   for (const v of Object.keys(sections)) console.log(tagOf(v) + '\t' + v);
 } else {
   const v = arg || fs.readFileSync(path.join(__dirname, '..', 'VERSION'), 'utf8').trim();
-  const body = (sections[v] || []).join('\n').trim();
+  /* "@app: …" in a version's section: the app's update screen shows only that line, and GitHub shows the full list.
+     The app reads the "- " lines of the release text, so the full list is written with "* " (the same list on GitHub)
+     and the app's line sits in an HTML comment (hidden on GitHub) – this works in versions already installed too */
+  const lines = sections[v] || [], appLine = lines.map(l => /^@app:\s*(.+)$/.exec(l)).find(Boolean);
+  const body = (appLine ? lines.filter(l => !/^@app:/.test(l)).map(l => l.replace(/^(\s*)- /, '$1* ')).join('\n').trim() + '\n\n<!--\n- ' + appLine[1].trim() + '\n-->'
+    : lines.join('\n')).trim();
   if (!body) { console.error('No notes for ' + v + ' in CHANGELOG.md'); process.exit(1); }
   console.log('## מה חדש בגרסה ' + v + '\n\n' + body + '\n\n---\n' +
     'להתקנה: מורידים מהטלפון את `hapoel-jerusalem-v' + v + '.apk` ופותחים אותו (מתקינים מעל הגרסה הקיימת). ' +
