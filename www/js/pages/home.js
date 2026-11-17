@@ -32,8 +32,9 @@ function HomeLive({ L, g, intro, now, open, share }) {
   </div>`;
 }
 /* כפתור שיתוף לסטורי, משמאל לכפתור הפעולה של הכרטיס */
-const ShareBtn = ({ on, cls = 'on-red' }) => html`<button onClick=${on} aria-label="שיתוף לסטורי" class=${'gc-btn press ' + cls} style=${{ width: 48, flexShrink: 0 }}><${Icon} n="share" s=${17}/></button>`;
-const WithShare = ({ share, children, cls, mt = 12 }) => html`<div class="row" style=${{ gap: 8, marginTop: mt }}><div class="grow" style=${{ minWidth: 0 }}>${children}</div><${ShareBtn} on=${share} cls=${cls}/></div>`;
+const ShareBtn = ({ on, cls = 'on-red' }) => html`<button onClick=${on} aria-label="שיתוף לסטורי" class=${'gc-btn press ' + cls} style=${{ width: 52, flexShrink: 0, padding: 0, alignSelf: 'stretch' }}><${Icon} n="share" s=${18}/></button>`;
+/* כפתור הפעולה וכפתור השיתוף משמאלו: אותו גובה בדיוק (השיתוף נמתח לגובה של הכפתור שלידו), ורווח של 8px – כמו הרווח בין הכפתורים שמתחת */
+const WithShare = ({ share, children, cls, mt = 12 }) => html`<div style=${{ display: 'flex', alignItems: 'stretch', gap: 8, marginTop: mt }}><div class="grow" style=${{ minWidth: 0, display: 'flex' }}>${children}</div><${ShareBtn} on=${share} cls=${cls}/></div>`;
 /* משחק שהסתיים, לסטורי: התוצאה והרבעים כמו בכרטיס הלייב */
 const finalOf = g => { const e = gsOf(g.id) || {}, q = Array.isArray(e.q) ? e.q : [], hi = p => g.h ? p[0] : p[1], ai = p => g.h ? p[1] : p[0];
   return { status: 'end', jh: !!g.h, hs: g.h ? g.r[0] : g.r[1], as: g.h ? g.r[1] : g.r[0], q: q.map((p, i) => ({ n: i < 4 ? 'Q' + (i + 1) : 'OT' + (i - 3), h: hi(p), a: ai(p) })) }; };
