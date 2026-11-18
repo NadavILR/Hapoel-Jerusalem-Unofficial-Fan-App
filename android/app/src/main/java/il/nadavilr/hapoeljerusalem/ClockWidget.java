@@ -176,7 +176,9 @@ public class ClockWidget extends AppWidgetProvider {
         if (Build.VERSION.SDK_INT < 31 || o == null) return;
         float w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
         if (w < 100 || h < 60) return;
-        float k = Math.min(1.6f, Math.min(w / BW, h / BH));
+        // k: text and widths (the smaller of width and height against the base); kh: what can grow with the height –
+        // the clock, the crest, the row heights and the countdown – so a narrower widget (4 columns) keeps its height full
+        float k = Math.min(1.6f, Math.min(w / BW, h / BH)), kh = Math.min(1.6f, h / BH);
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
         float px = c.getResources().getDisplayMetrics().density;
         int pad = Math.round(12 * k * px);
@@ -184,24 +186,25 @@ public class ClockWidget extends AppWidgetProvider {
         float club = 122 * k;
         v.setViewLayoutWidth(R.id.k_club, club, DP);
         v.setViewPadding(R.id.k_club, pad, pad, pad, pad);
-        v.setViewLayoutWidth(R.id.k_crest, 48 * k, DP);
-        v.setViewLayoutHeight(R.id.k_crest, 48 * k, DP);
+        float crest = Math.min(48 * kh, club - 24 * k);
+        v.setViewLayoutWidth(R.id.k_crest, crest, DP);
+        v.setViewLayoutHeight(R.id.k_crest, crest, DP);
         v.setTextViewTextSize(R.id.k_name, DP, 11.5f * k);
         v.setViewLayoutMargin(R.id.k_name, RemoteViews.MARGIN_TOP, 2 * k, DP);
         int[][] r = {{R.id.k_r1, R.id.k_i1, R.id.k_l1, R.id.k_n1}, {R.id.k_r2, R.id.k_i2, R.id.k_l2, R.id.k_n2}, {R.id.k_r3, R.id.k_i3, R.id.k_l3, R.id.k_n3},
             {R.id.k_r4, R.id.k_i4, R.id.k_l4, R.id.k_n4}, {R.id.k_r5, R.id.k_i5, R.id.k_l5, R.id.k_n5}};
         for (int[] x : r) {
-            v.setViewLayoutHeight(x[0], 18 * k, DP);
+            v.setViewLayoutHeight(x[0], 18 * kh, DP);
             v.setViewLayoutWidth(x[1], 18 * k, DP);
-            v.setViewLayoutHeight(x[1], 16 * k, DP);
+            v.setViewLayoutHeight(x[1], 16 * Math.min(kh, k * 1.15f), DP);
             v.setTextViewTextSize(x[2], DP, 10 * k);
             v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_START, 4 * k, DP);
             v.setTextViewTextSize(x[3], DP, 11.5f * k);
         }
         // the main panel
         v.setViewPadding(R.id.k_main, pad, pad, pad, pad);
-        v.setTextViewTextSize(R.id.k_time, DP, 52 * k);
         float mainW = w - club - 24 * k, dateText = 10.5f * k, sepW = 13 * k;
+        v.setTextViewTextSize(R.id.k_time, DP, Math.min(52 * kh, mainW / 2.75f));
         float dw = paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb) + sepW) + sepW;
         if (dw > mainW) dateText *= mainW / dw * 0.98f; // never past the padding
         for (int id : new int[] {R.id.k_day, R.id.k_greg, R.id.k_heb}) v.setTextViewTextSize(id, DP, dateText);
@@ -212,7 +215,7 @@ public class ClockWidget extends AppWidgetProvider {
         }
         v.setViewPadding(R.id.k_dates, 0, 0, 0, Math.round(6 * k * px)); // optical centring between the clock and the card
         // the next-game card
-        v.setViewPadding(R.id.k_card, Math.round(9 * k * px), Math.round(7 * k * px), Math.round(9 * k * px), Math.round(7 * k * px));
+        v.setViewPadding(R.id.k_card, Math.round(9 * k * px), Math.round(7 * kh * px), Math.round(9 * k * px), Math.round(7 * kh * px));
         v.setViewLayoutWidth(R.id.k_crests, 34 * k, DP);
         v.setViewLayoutHeight(R.id.k_crests, 20 * k, DP);
         for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 20 * k, DP); v.setViewLayoutHeight(id, 20 * k, DP); }
@@ -221,16 +224,17 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.k_op, DP, 12 * k);
         for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9 * k);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * k);
-        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * k, DP);
+        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * kh, DP);
+        float boxW = (mainW - 18 * k - 18 * k) / 4, num = Math.min(19 * kh, (boxW - 6 * k) / 1.25f);
         int[][] b = {{R.id.k_b1, R.id.k_dd, R.id.k_b1l}, {R.id.k_b2, R.id.k_hh, R.id.k_b2l}, {R.id.k_b3, R.id.k_mm, R.id.k_b3l}, {R.id.k_b4, R.id.k_ss, R.id.k_b4l}};
         for (int i = 0; i < b.length; i++) {
-            v.setViewPadding(b[i][0], 0, Math.round(4 * k * px), 0, Math.round(5 * k * px));
+            v.setViewPadding(b[i][0], 0, Math.round(4 * kh * px), 0, Math.round(5 * kh * px));
             if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 6 * k, DP);
-            v.setTextViewTextSize(b[i][1], DP, 19 * k);
+            v.setTextViewTextSize(b[i][1], DP, num);
             v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
             v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
         }
-        float two = (float) Math.ceil(paint(c, 19 * k, true).measureText("00")) + 1f;
+        float two = (float) Math.ceil(paint(c, num, true).measureText("00")) + 1f;
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }

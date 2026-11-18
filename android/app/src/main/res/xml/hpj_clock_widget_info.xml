@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The clock widget: five columns × two rows, transparent -->
+<!-- The clock widget: five columns × two rows by default, and it can be narrowed to four columns (or widened); the
+     design scales to whatever size it is given (ClockWidget.fit) -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="320dp"
+    android:minWidth="250dp"
     android:minHeight="110dp"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="110dp"
     android:targetCellWidth="5"
     android:targetCellHeight="2"
-    android:resizeMode="none"
+    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_clock"
     android:previewLayout="@layout/widget_clock"
