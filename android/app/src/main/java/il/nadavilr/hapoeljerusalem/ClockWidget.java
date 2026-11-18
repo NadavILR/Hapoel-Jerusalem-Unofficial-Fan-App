@@ -40,6 +40,12 @@ public class ClockWidget extends AppWidgetProvider {
         }).start();
     }
 
+    /** The widget was resized, or the launcher measured it (e.g. after a screen-resolution change): fit it again. */
+    @Override
+    public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, android.os.Bundle o) {
+        onUpdate(c, m, new int[] {id});
+    }
+
     /** From any thread (the app's sync). */
     static void refresh(Context c) {
         final Context app = c.getApplicationContext();
@@ -53,8 +59,11 @@ public class ClockWidget extends AppWidgetProvider {
             if (ids == null || ids.length == 0) return;
             long now = System.currentTimeMillis();
             JSONObject g = next(c, now);
-            RemoteViews v = build(c, now, g);
-            for (int id : ids) m.updateAppWidget(id, v);
+            for (int id : ids) {
+                RemoteViews v = build(c, now, g);
+                fit(c, v, m.getAppWidgetOptions(id));
+                m.updateAppWidget(id, v);
+            }
             schedule(c, now, g);
         } catch (Exception ignored) {
         }
@@ -127,6 +136,96 @@ public class ClockWidget extends AppWidgetProvider {
             v.setViewLayoutWidth(R.id.c_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
         }
         return v;
+    }
+
+    // ---------- fitting the design to the widget's real size (Android 12+) ----------
+
+    /** The design's base size, in dp (the mock-up the layout follows). */
+    private static final float BW = 388f, BH = 184f;
+
+    /**
+     * Scales every size, text and gap to the widget's real size on the device. The launcher reports it in dp, so the
+     * screen-resolution setting does not change the result. One factor k for everything (k = the smaller of width and
+     * height against the base), and the height left over goes to the clock row: a bigger clock and crest, never
+     * stretched pills. Older Androids keep the base sizes.
+     */
+    private static void fit(Context c, RemoteViews v, android.os.Bundle o) {
+        if (Build.VERSION.SDK_INT < 31 || o == null) return;
+        float w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+        if (w < 100 || h < 60) return;
+        float k = Math.max(0.7f, Math.min(1.6f, Math.min(w / BW, h / BH)));
+        final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
+        // the vertical spacing may grow a little more with a tall widget, so the extra height is spread evenly over the
+        // gaps and rows (not left in one place); the horizontal spacing follows the width
+        float ky = Math.max(k, Math.min(h / BH, k * 1.25f));
+        float pad = 10 * ky, gap = 10 * ky, tro = 22 * ky, band = 56 * ky, hp = 10 * k;
+        float px = c.getResources().getDisplayMetrics().density;
+        int p = Math.round(hp * px), pv = Math.round(pad * px);
+        v.setViewPadding(R.id.c_root, p, pv, p, pv);
+        // the clock row: whatever height is left
+        float row1 = Math.max(40 * k, h - 2 * pad - 2 * gap - tro - band);
+        float crest = Math.min(row1, 64 * k * 1.4f), datesW = 116 * k, mid = 10 * k;
+        float chipGap = 3 * k, chip = Math.max(20 * k, Math.min(26 * k, (row1 - 2 * chipGap) / 3));
+        float clockW = w - 2 * hp - crest - datesW - 2 * mid;
+        float clock = Math.max(28 * k, Math.min(row1 * 0.9f, clockW / 2.75f));
+        v.setViewLayoutWidth(R.id.c_crest, crest, DP);
+        v.setViewLayoutHeight(R.id.c_crest, crest, DP);
+        v.setTextViewTextSize(R.id.c_time, DP, clock);
+        v.setViewLayoutMargin(R.id.c_time, RemoteViews.MARGIN_START, mid, DP);
+        v.setViewLayoutMargin(R.id.c_time, RemoteViews.MARGIN_END, mid, DP);
+        v.setViewPadding(R.id.c_time, 0, 0, 0, Math.round(clock * 0.07f * px)); // optical centring
+        v.setViewLayoutWidth(R.id.c_dates, datesW, DP);
+        float chipText = 11 * k * Math.min(1.2f, chip / (20 * k));
+        int[] chips = {R.id.c_day, R.id.c_greg, R.id.c_heb};
+        for (int i = 0; i < 3; i++) {
+            v.setViewLayoutHeight(chips[i], chip, DP);
+            v.setTextViewTextSize(chips[i], DP, chipText);
+            if (i > 0) v.setViewLayoutMargin(chips[i], RemoteViews.MARGIN_TOP, chipGap, DP);
+        }
+        // the titles
+        v.setViewLayoutHeight(R.id.c_tro, tro, DP);
+        v.setViewLayoutMargin(R.id.c_tro, RemoteViews.MARGIN_TOP, gap, DP);
+        int[][] t = {{R.id.c_t1, R.id.c_t1i, R.id.c_t1n, R.id.c_t1l}, {R.id.c_t2, R.id.c_t2i, R.id.c_t2n, R.id.c_t2l}, {R.id.c_t3, R.id.c_t3i, R.id.c_t3n, R.id.c_t3l},
+            {R.id.c_t4, R.id.c_t4i, R.id.c_t4n, R.id.c_t4l}, {R.id.c_t5, R.id.c_t5i, R.id.c_t5n, R.id.c_t5l}};
+        int tp = Math.round(6 * k * px);
+        for (int[] x : t) {
+            v.setViewLayoutHeight(x[0], tro, DP);
+            v.setViewPadding(x[0], tp, 0, tp, 0);
+            v.setViewLayoutWidth(x[1], 10 * k, DP);
+            v.setViewLayoutHeight(x[1], 10 * k, DP);
+            v.setTextViewTextSize(x[2], DP, 11 * k);
+            v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_START, 3 * k, DP);
+            v.setTextViewTextSize(x[3], DP, 9.5f * k);
+            v.setViewLayoutMargin(x[3], RemoteViews.MARGIN_START, 3 * k, DP);
+        }
+        // the next-game band
+        v.setViewLayoutHeight(R.id.c_band, band, DP);
+        v.setViewLayoutMargin(R.id.c_band, RemoteViews.MARGIN_TOP, gap, DP);
+        v.setViewPadding(R.id.c_band, p, 0, p, 0);
+        v.setViewLayoutWidth(R.id.c_crests, 52 * k, DP);
+        v.setViewLayoutHeight(R.id.c_crests, 30 * k, DP);
+        for (int id : new int[] {R.id.c_me, R.id.c_opp}) { v.setViewLayoutWidth(id, 30 * k, DP); v.setViewLayoutHeight(id, 30 * k, DP); }
+        v.setViewLayoutMargin(R.id.c_info, RemoteViews.MARGIN_START, 10 * k, DP);
+        v.setTextViewTextSize(R.id.c_lb, DP, 9.5f * k);
+        v.setTextViewTextSize(R.id.c_op, DP, 13.5f * k);
+        v.setTextViewTextSize(R.id.c_wh, DP, 10 * k);
+        v.setViewLayoutMargin(R.id.c_count, RemoteViews.MARGIN_START, 10 * k, DP);
+        int[][] b = {{R.id.c_b1, R.id.c_dd, R.id.c_b1l}, {R.id.c_b2, R.id.c_hh, R.id.c_b2l}, {R.id.c_b3, R.id.c_mm, R.id.c_b3l}, {R.id.c_b4, R.id.c_ss, R.id.c_b4l}};
+        for (int i = 0; i < b.length; i++) {
+            v.setViewLayoutWidth(b[i][0], 38 * k, DP);
+            v.setViewLayoutHeight(b[i][0], 38 * k, DP);
+            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 4 * k, DP);
+            v.setTextViewTextSize(b[i][1], DP, 16 * k);
+            v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
+        }
+        // minutes and seconds: each clip shows exactly two digits at the new size
+        android.graphics.Paint pt = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        pt.setTextSize(16 * k * px);
+        pt.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        pt.setFontFeatureSettings("tnum");
+        float two = (float) Math.ceil(pt.measureText("00")) + 1f;
+        v.setViewLayoutWidth(R.id.c_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
+        v.setViewLayoutWidth(R.id.c_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }
 
     /** The next game from the app's list: the first that has not started, or one that started less than 3 hours ago. */
