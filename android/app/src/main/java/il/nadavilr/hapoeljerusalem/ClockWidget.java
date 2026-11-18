@@ -205,7 +205,9 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewPadding(R.id.k_main, pad, pad, pad, pad);
         float mainW = w - club - 24 * k, dateText = 10.5f * k, sepW = 13 * k;
         v.setTextViewTextSize(R.id.k_time, DP, Math.min(52 * kh, mainW / 2.75f));
-        float dw = paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb) + sepW) + sepW;
+        // measured in pixels → back to dp (the widths here are in dp), or the row would shrink by the screen density
+        float dw = (paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
+            + sepW * (heb.isEmpty() ? 1 : 2);
         if (dw > mainW) dateText *= mainW / dw * 0.98f; // never past the padding
         for (int id : new int[] {R.id.k_day, R.id.k_greg, R.id.k_heb}) v.setTextViewTextSize(id, DP, dateText);
         for (int id : new int[] {R.id.k_s1, R.id.k_s2}) {
