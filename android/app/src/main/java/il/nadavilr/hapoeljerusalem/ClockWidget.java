@@ -223,7 +223,7 @@ public class ClockWidget extends AppWidgetProvider {
         for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 20 * k, DP); v.setViewLayoutHeight(id, 20 * k, DP); }
         v.setViewLayoutMargin(R.id.k_who, RemoteViews.MARGIN_START, 6 * k, DP);
         v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * k, DP);
-        v.setTextViewTextSize(R.id.k_op, DP, 12 * k);
+        v.setTextViewTextSize(R.id.k_op, DP, 9 * k); // the same size as the competition and the date / time, in bold
         for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9 * k);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * k);
         v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * kh, DP);
