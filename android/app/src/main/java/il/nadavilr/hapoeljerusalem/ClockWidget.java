@@ -19,7 +19,7 @@ import org.json.JSONObject;
 
 /**
  * Clock widget (5×2, transparent): the club crest, a big clock (the system's TextClock – it ticks on its own), the day,
- * the date and the Hebrew date, the club's titles, and a countdown to the next game (a Chronometer counting down the
+ * the date (changes at midnight) and the Hebrew date (changes at sunset in Jerusalem, as the Hebrew calendar does), the club's titles, and a countdown to the next game (a Chronometer counting down the
  * hours, minutes and seconds; the days beside it). Refreshed at midnight (the dates), when a day of the countdown runs
  * out, at tip-off, and whenever the app syncs its game list.
  */
@@ -62,7 +62,7 @@ public class ClockWidget extends AppWidgetProvider {
         cal.setTimeInMillis(now);
         String date = "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1] + " · "
             + String.format(Locale.ROOT, "%02d/%02d/%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR));
-        String heb = hebrewDate(now);
+        String heb = hebrewDate(now >= sunset(now) ? now + DAY : now); // the Hebrew day begins at sunset
         v.setTextViewText(R.id.c_date, "‏" + date + (heb.isEmpty() ? "" : " · " + heb));
         v.setTextViewText(R.id.c_titles, "‏" + TITLES);
         if (g == null) {
@@ -137,6 +137,35 @@ public class ClockWidget extends AppWidgetProvider {
         }
     }
 
+    // ---------- sunset in Jerusalem (the Hebrew date changes then) ----------
+
+    private static final double LAT = 31.7683, LON = 35.2137, ZENITH = 90.833;
+
+    /** Sunset (epoch ms) on the Israel calendar day of {@code t}, by the standard almanac formula (about a minute off). */
+    static long sunset(long t) {
+        Calendar day = Calendar.getInstance(IL);
+        day.setTimeInMillis(t);
+        int n = day.get(Calendar.DAY_OF_YEAR);
+        double lngHour = LON / 15, tt = n + ((18 - lngHour) / 24);
+        double m = 0.9856 * tt - 3.289;
+        double l = norm(m + 1.916 * sin(m) + 0.020 * sin(2 * m) + 282.634);
+        double ra = norm(Math.toDegrees(Math.atan(0.91764 * Math.tan(Math.toRadians(l)))));
+        ra = (ra + (Math.floor(l / 90) * 90 - Math.floor(ra / 90) * 90)) / 15;
+        double sinDec = 0.39782 * sin(l), cosDec = Math.cos(Math.asin(sinDec));
+        double cosH = (cos(ZENITH) - sinDec * sin(LAT)) / (cosDec * cos(LAT));
+        if (cosH < -1 || cosH > 1) return Long.MAX_VALUE;
+        double h = Math.toDegrees(Math.acos(cosH)) / 15;
+        double ut = ((h + ra - 0.06571 * tt - 6.622 - lngHour) % 24 + 24) % 24;
+        Calendar u = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        u.clear();
+        u.set(day.get(Calendar.YEAR), day.get(Calendar.MONTH), day.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
+        return u.getTimeInMillis() + Math.round(ut * HOUR);
+    }
+
+    private static double sin(double deg) { return Math.sin(Math.toRadians(deg)); }
+    private static double cos(double deg) { return Math.cos(Math.toRadians(deg)); }
+    private static double norm(double deg) { return ((deg % 360) + 360) % 360; }
+
     /** A number in Hebrew letters, with a geresh (one letter) or gershayim (before the last letter); 15 → ט"ו, 16 → ט"ז. */
     static String gematria(int n) {
         StringBuilder s = new StringBuilder();
@@ -165,7 +194,8 @@ public class ClockWidget extends AppWidgetProvider {
         mid.set(Calendar.MINUTE, 0);
         mid.set(Calendar.SECOND, 5);
         mid.set(Calendar.MILLISECOND, 0);
-        long at = Math.min(mid.getTimeInMillis(), now + 30 * MIN);
+        long at = Math.min(mid.getTimeInMillis(), now + 30 * MIN), ss = sunset(now);
+        if (ss > now) at = Math.min(at, ss + 5_000L); // the Hebrew date changes at sunset
         if (g != null) {
             long left = g.optLong("t") - now;
             if (left > 0) {
