@@ -4,5 +4,6 @@
     <string name="title_activity_main">הפועל ירושלים</string>
     <string name="package_name">il.nadavilr.hapoeljerusalem</string>
     <string name="custom_url_scheme">il.nadavilr.hapoeljerusalem</string>
+    <string name="clock_widget_desc">שעון גדול עם סמל הקבוצה והתארים, היום, התאריך והתאריך העברי, וספירה לאחור למשחק הבא</string>
     <string name="widget_desc">המשחק הבא של הפועל ירושלים עם ספירה לאחור, והתוצאה בלייב בזמן משחק</string>
 </resources>

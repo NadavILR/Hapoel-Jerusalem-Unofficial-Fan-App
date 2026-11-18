@@ -66,6 +66,7 @@ public class NextGameWidget extends AppWidgetProvider {
     static void refresh(Context c) {
         final Context app = c.getApplicationContext();
         new Thread(() -> update(app)).start();
+        ClockWidget.refresh(app); // the clock widget shows the next game too
     }
 
     // ---------- the live game (from LiveScoreService) ----------
