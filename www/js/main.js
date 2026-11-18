@@ -115,6 +115,10 @@ function App() {
   const notify = useCallback((t, c, k, m) => nfR.current(t, c, k, m), []);
   /* תזכורות בדפדפן (באנדרואיד – מתוזמנות במערכת) */
   useEffect(() => { if (LN()) return; const chk = () => { const now = Date.now(), fired = LS.get('hpj-fired', {}); let ch = 0; for (const f of DB.F) { if (!rem[f.id] || f.r || fired[f.id] || f.tbd) continue; if (now >= f.t - H && now < f.t) { fired[f.id] = 1; ch = 1; const m = NT.hour(f); notify(NT.line(m), f.c, 'hour', m); } } if (ch) LS.set('hpj-fired', fired); }; chk(); const i = setInterval(chk, 3e4); return () => clearInterval(i); }, [rem, DB.F, pf]);
+  /* תזכורות שהוגדרו: מתוזמנות מחדש בכל עדכון של לוח המשחקים – אם שעת המשחק השתנתה, או שנקבעה סופית אחרי שהתזכורת הוגדרה
+     (כש"לא סופי" התזכורת לא תוזמנה בכלל). אותו מזהה – התזכורת הקודמת מוחלפת */
+  /* כשהתזכורות כבויות בהגדרות ("תזכורת שעה לפני") – התזכורות שכבר תוזמנו מבוטלות, ומתוזמנות שוב כשמדליקים */
+  useEffect(() => { if (!LN() || pf.on === 0) return; DB.F.forEach(f => { if (!rem[f.id] || f.r) return; if (f.tbd || !pf.hour) cancelReminder(f); else scheduleReminder(f); }); }, [DB.F, rem, pf.hour, pf.on]);
   const togRem = f => { const on = !rem[f.id]; if (on && pf.hour && pf.on !== 0) scheduleReminder(f); else cancelReminder(f); setRem(r => ({ ...r, [f.id]: on })); toast(on ? 'תזכורת שעה לפני המשחק הוגדרה' : 'התזכורת בוטלה'); };
 
   /* ---------- לייב: מ-10 דקות לפני שריקת הפתיחה ועד הסיום ---------- */
