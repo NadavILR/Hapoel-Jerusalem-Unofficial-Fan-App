@@ -59,9 +59,14 @@ public class ClockWidget extends AppWidgetProvider {
             if (ids == null || ids.length == 0) return;
             long now = System.currentTimeMillis();
             JSONObject g = next(c, now);
+            Calendar cal = Calendar.getInstance(IL);
+            cal.setTimeInMillis(now);
+            String day = "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1];
+            String greg = String.format(Locale.ROOT, "%d.%d.%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR));
+            String heb = hebrewDate(now >= sunset(now) ? now + DAY : now);
             for (int id : ids) {
                 RemoteViews v = build(c, now, g);
-                fit(c, v, m.getAppWidgetOptions(id));
+                fit(c, v, m.getAppWidgetOptions(id), day, greg, heb);
                 m.updateAppWidget(id, v);
             }
             schedule(c, now, g);
@@ -71,170 +76,163 @@ public class ClockWidget extends AppWidgetProvider {
 
     private static final String[] COMP = {"league", "ליגת ווינר", "euro", "יורוקאפ", "wcup", "גביע ווינר", "cup", "גביע המדינה", "super", "סופרקאפ", "prep", "משחק הכנה"};
 
-    /** The competition, short ("ליגת ווינר, מחזור 7" → "ליגת ווינר"): from the app's label, else from its code. */
+    /**
+     * EuroCup titles won. The ULEB Cup (2004) is the EuroCup's former name: while this is 0 the row shows the ULEB Cup
+     * (its trophy, "גביע יול"ב", 1); from the first EuroCup title on it shows the EuroCup trophy, "יורוקאפ", and 1 + this.
+     */
+    static final int EUROCUP_WINS = 0;
+
+    /** The competition and round, short: "ליגת ווינר, מחזור 7" → "ליגת ווינר · מחזור 7"; a group is left out. */
     private static String comp(JSONObject g) {
         String l = g.optString("l", "").trim();
-        if (!l.isEmpty()) return l.split("[,–]| - ")[0].trim();
+        if (!l.isEmpty()) {
+            String[] p = l.split("\\s*(,|–| - )\\s*");
+            String c0 = p[0].trim(), last = p.length > 1 ? p[p.length - 1].trim() : "";
+            return last.isEmpty() || last.equals(c0) ? c0 : c0 + " · " + last;
+        }
         String c = g.optString("c", "");
         for (int i = 0; i < COMP.length; i += 2) if (COMP[i].equals(c)) return COMP[i + 1];
         return "";
     }
 
     private static RemoteViews build(Context c, long now, JSONObject g) {
-        String rlm = "\u200F";
+        String rlm = "‏";
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_clock);
+        // the titles – the ULEB Cup row becomes the EuroCup row from the first EuroCup title
+        if (EUROCUP_WINS > 0) {
+            v.setImageViewResource(R.id.k_i4, R.drawable.cw_t_eurocup);
+            v.setTextViewText(R.id.k_l4, "יורוקאפ");
+            v.setTextViewText(R.id.k_n4, String.valueOf(1 + EUROCUP_WINS));
+        }
         Calendar cal = Calendar.getInstance(IL);
         cal.setTimeInMillis(now);
-        v.setTextViewText(R.id.c_day, rlm + "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1]);
-        v.setTextViewText(R.id.c_greg, String.format(Locale.ROOT, "%d.%d.%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR)));
+        v.setTextViewText(R.id.k_day, rlm + "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1]);
+        v.setTextViewText(R.id.k_greg, String.format(Locale.ROOT, "%d.%d.%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR)));
         String heb = hebrewDate(now >= sunset(now) ? now + DAY : now); // the Hebrew day begins at sunset
-        v.setTextViewText(R.id.c_heb, rlm + heb);
-        v.setViewVisibility(R.id.c_heb, heb.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+        v.setTextViewText(R.id.k_heb, rlm + heb);
+        v.setViewVisibility(R.id.k_heb, heb.isEmpty() ? View.GONE : View.VISIBLE);
+        v.setViewVisibility(R.id.k_s2, heb.isEmpty() ? View.GONE : View.VISIBLE);
         if (g == null) {
-            v.setTextViewText(R.id.c_lb, rlm + "המשחק הבא");
-            v.setTextViewText(R.id.c_op, rlm + "אין משחקים קרובים");
-            v.setTextViewText(R.id.c_wh, "");
-            v.setViewVisibility(R.id.c_crests, View.GONE);
-            v.setViewVisibility(R.id.c_count, View.GONE);
-            v.setOnClickPendingIntent(R.id.c_root, LiveGame.open(c, 0));
+            v.setTextViewText(R.id.k_op, rlm + "אין משחקים קרובים");
+            v.setTextViewText(R.id.k_comp, "");
+            v.setViewVisibility(R.id.k_crests, View.GONE);
+            v.setViewVisibility(R.id.k_when, View.GONE);
+            v.setViewVisibility(R.id.k_count, View.GONE);
+            v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, 0));
             return v;
         }
         long t = g.optLong("t"), left = t - now;
         Calendar gc = Calendar.getInstance(IL);
         gc.setTimeInMillis(t);
-        String cn = comp(g);
-        v.setTextViewText(R.id.c_lb, rlm + "המשחק הבא" + (cn.isEmpty() ? "" : " · " + cn));
-        v.setTextViewText(R.id.c_op, rlm + g.optString("o", ""));
-        v.setViewVisibility(R.id.c_crests, View.VISIBLE);
+        v.setTextViewText(R.id.k_op, rlm + g.optString("o", ""));
+        v.setTextViewText(R.id.k_comp, rlm + comp(g));
         Bitmap oc = NextGameWidget.crest(c, g.optString("img", ""));
-        if (oc != null) v.setImageViewBitmap(R.id.c_opp, oc); else v.setImageViewResource(R.id.c_opp, android.R.color.transparent);
-        String when = "יום " + DAY_LETTER[gc.get(Calendar.DAY_OF_WEEK) - 1] + " "
-            + String.format(Locale.ROOT, "%d.%d · %02d:%02d", gc.get(Calendar.DAY_OF_MONTH), gc.get(Calendar.MONTH) + 1, gc.get(Calendar.HOUR_OF_DAY), gc.get(Calendar.MINUTE));
-        v.setOnClickPendingIntent(R.id.c_root, LiveGame.open(c, t));
+        if (oc != null) v.setImageViewBitmap(R.id.k_opp, oc); else v.setImageViewResource(R.id.k_opp, android.R.color.transparent);
+        v.setTextViewText(R.id.k_wd, rlm + "יום " + DAY_LETTER[gc.get(Calendar.DAY_OF_WEEK) - 1] + " · "
+            + String.format(Locale.ROOT, "%d.%d", gc.get(Calendar.DAY_OF_MONTH), gc.get(Calendar.MONTH) + 1));
+        v.setTextViewText(R.id.k_wt, String.format(Locale.ROOT, "%02d:%02d", gc.get(Calendar.HOUR_OF_DAY), gc.get(Calendar.MINUTE)));
+        v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, t));
         if (left <= 0) {
-            v.setTextViewText(R.id.c_wh, rlm + "המשחק התחיל · לחצו לתוצאה");
-            v.setViewVisibility(R.id.c_count, View.GONE);
+            v.setViewVisibility(R.id.k_count, View.GONE);
+            v.setTextViewText(R.id.k_status, rlm + "המשחק התחיל · לחצו לתוצאה");
+            v.setViewVisibility(R.id.k_status, View.VISIBLE);
             return v;
         }
-        v.setTextViewText(R.id.c_wh, rlm + when);
-        v.setViewVisibility(R.id.c_count, View.VISIBLE);
         // days and hours set here (refreshed when the hour turns); minutes and seconds: one "MM:SS" countdown in both
         // boxes, each clipped to its own two digits – the same as the next-game widget
         long days = left / DAY, hours = (left % DAY) / HOUR, rest = left % HOUR;
-        v.setTextViewText(R.id.c_dd, String.format(Locale.US, "%02d", days));
-        v.setTextViewText(R.id.c_hh, String.format(Locale.US, "%02d", hours));
+        v.setTextViewText(R.id.k_dd, String.format(Locale.US, "%02d", days));
+        v.setTextViewText(R.id.k_hh, String.format(Locale.US, "%02d", hours));
         long base = SystemClock.elapsedRealtime() + rest;
-        v.setChronometer(R.id.c_mm, base, null, true);
-        v.setChronometer(R.id.c_ss, base, null, true);
+        v.setChronometer(R.id.k_mm, base, null, true);
+        v.setChronometer(R.id.k_ss, base, null, true);
         if (Build.VERSION.SDK_INT >= 24) {
-            v.setChronometerCountDown(R.id.c_mm, true);
-            v.setChronometerCountDown(R.id.c_ss, true);
-        }
-        if (Build.VERSION.SDK_INT >= 31) {
-            float w = NextGameWidget.twoDigits(c, 16);
-            v.setViewLayoutWidth(R.id.c_mm_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
-            v.setViewLayoutWidth(R.id.c_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
+            v.setChronometerCountDown(R.id.k_mm, true);
+            v.setChronometerCountDown(R.id.k_ss, true);
         }
         return v;
     }
 
     // ---------- fitting the design to the widget's real size (Android 12+) ----------
 
-    /** The design's base size, in dp (the mock-up the layout follows). */
-    private static final float BW = 388f, BH = 184f;
+    /** The design's base size, in dp: the widget as measured on a Galaxy S24 Ultra. */
+    private static final float BW = 362f, BH = 195f;
+
+    private static android.graphics.Paint paint(Context c, float dp, boolean bold) {
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
+        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular)); }
+        catch (Exception e) { p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL)); }
+        p.setFontFeatureSettings("tnum");
+        return p;
+    }
 
     /**
-     * Scales every size, text and gap to the widget's real size on the device. The launcher reports it in dp, so the
-     * screen-resolution setting does not change the result. One factor k for everything (k = the smaller of width and
-     * height against the base), and the height left over goes to the clock row: a bigger clock and crest, never
-     * stretched pills. Older Androids keep the base sizes.
+     * Scales every size, text and gap to the widget's real size (the launcher reports it in dp, so the screen-resolution
+     * setting does not change the result): one factor k = the smaller of width and height against the base. The date row
+     * shrinks further if its text would not fit inside the padding.
      */
-    private static void fit(Context c, RemoteViews v, android.os.Bundle o) {
+    private static void fit(Context c, RemoteViews v, android.os.Bundle o, String day, String greg, String heb) {
         if (Build.VERSION.SDK_INT < 31 || o == null) return;
         float w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
         if (w < 100 || h < 60) return;
         float k = Math.min(1.6f, Math.min(w / BW, h / BH));
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
-        // the vertical spacing may grow a little more with a tall widget, so the extra height is spread evenly over the
-        // gaps and rows (not left in one place); the horizontal spacing follows the width
-        float ky = Math.max(k, Math.min(h / BH, k * 1.25f));
-        float pad = 10 * ky, gap = 10 * ky, tro = 22 * ky, band = 56 * ky, hp = 10 * k;
         float px = c.getResources().getDisplayMetrics().density;
-        int p = Math.round(hp * px), pv = Math.round(pad * px);
-        v.setViewPadding(R.id.c_root, p, pv, p, pv);
-        // the clock row: whatever height is left
-        float row1 = Math.max(0, h - 2 * pad - 2 * gap - tro - band);
-        float mid = 10 * k, chipGap = 3 * k, chip = Math.max(20 * k, Math.min(26 * k, (row1 - 2 * chipGap) / 3));
-        // taller pills get proportionally bigger text, and the column widens with it – the longest Hebrew date still fits
-        float cs = Math.min(1.2f, chip / (20 * k)), datesW = 116 * k * cs, crest = Math.min(row1, 64 * k * 1.4f);
-        float clockW = w - 2 * hp - crest - datesW - 2 * mid;
-        // the clock: a text line is ~1.36× the font size (+0.07 optical padding), so it never gets clipped by its row
-        float clock = Math.min(row1 / 1.45f, clockW / 2.75f);
-        v.setViewLayoutWidth(R.id.c_crest, crest, DP);
-        v.setViewLayoutHeight(R.id.c_crest, crest, DP);
-        v.setTextViewTextSize(R.id.c_time, DP, clock);
-        v.setViewLayoutMargin(R.id.c_time, RemoteViews.MARGIN_START, mid, DP);
-        v.setViewLayoutMargin(R.id.c_time, RemoteViews.MARGIN_END, mid, DP);
-        v.setViewPadding(R.id.c_time, 0, 0, 0, Math.round(clock * 0.07f * px)); // optical centring
-        v.setViewLayoutWidth(R.id.c_dates, datesW, DP);
-        float chipText = 11 * k * cs;
-        int[] chips = {R.id.c_day, R.id.c_greg, R.id.c_heb};
-        for (int i = 0; i < 3; i++) {
-            v.setViewLayoutHeight(chips[i], chip, DP);
-            v.setTextViewTextSize(chips[i], DP, chipText);
-            v.setViewPadding(chips[i], 0, 0, 0, Math.round(k * px));
-            if (i > 0) v.setViewLayoutMargin(chips[i], RemoteViews.MARGIN_TOP, chipGap, DP);
+        int pad = Math.round(12 * k * px);
+        // the club panel
+        float club = 122 * k;
+        v.setViewLayoutWidth(R.id.k_club, club, DP);
+        v.setViewPadding(R.id.k_club, pad, pad, pad, pad);
+        v.setViewLayoutWidth(R.id.k_crest, 48 * k, DP);
+        v.setViewLayoutHeight(R.id.k_crest, 48 * k, DP);
+        v.setTextViewTextSize(R.id.k_name, DP, 11.5f * k);
+        v.setViewLayoutMargin(R.id.k_name, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        int[][] r = {{R.id.k_r1, R.id.k_i1, R.id.k_l1, R.id.k_n1}, {R.id.k_r2, R.id.k_i2, R.id.k_l2, R.id.k_n2}, {R.id.k_r3, R.id.k_i3, R.id.k_l3, R.id.k_n3},
+            {R.id.k_r4, R.id.k_i4, R.id.k_l4, R.id.k_n4}, {R.id.k_r5, R.id.k_i5, R.id.k_l5, R.id.k_n5}};
+        for (int[] x : r) {
+            v.setViewLayoutHeight(x[0], 18 * k, DP);
+            v.setViewLayoutWidth(x[1], 18 * k, DP);
+            v.setViewLayoutHeight(x[1], 16 * k, DP);
+            v.setTextViewTextSize(x[2], DP, 10 * k);
+            v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_START, 4 * k, DP);
+            v.setTextViewTextSize(x[3], DP, 11.5f * k);
         }
-        // the titles
-        v.setViewLayoutHeight(R.id.c_tro, tro, DP);
-        v.setViewLayoutMargin(R.id.c_tro, RemoteViews.MARGIN_TOP, gap, DP);
-        int[][] t = {{R.id.c_t1, R.id.c_t1i, R.id.c_t1n, R.id.c_t1l}, {R.id.c_t2, R.id.c_t2i, R.id.c_t2n, R.id.c_t2l}, {R.id.c_t3, R.id.c_t3i, R.id.c_t3n, R.id.c_t3l},
-            {R.id.c_t4, R.id.c_t4i, R.id.c_t4n, R.id.c_t4l}, {R.id.c_t5, R.id.c_t5i, R.id.c_t5n, R.id.c_t5l}};
-        int tp = Math.round(6 * k * px);
-        for (int[] x : t) {
-            v.setViewLayoutHeight(x[0], tro, DP);
-            v.setViewPadding(x[0], tp, 0, tp, 0);
-            v.setViewLayoutWidth(x[1], 10 * k, DP);
-            v.setViewLayoutHeight(x[1], 10 * k, DP);
-            v.setViewLayoutMargin(x[1], RemoteViews.MARGIN_TOP, k, DP);
-            v.setTextViewTextSize(x[2], DP, 11 * k);
-            v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_START, 3 * k, DP);
-            v.setTextViewTextSize(x[3], DP, 9.5f * k);
-            v.setViewLayoutMargin(x[3], RemoteViews.MARGIN_START, 3 * k, DP);
-            v.setViewLayoutMargin(x[3], RemoteViews.MARGIN_TOP, k, DP);
+        // the main panel
+        v.setViewPadding(R.id.k_main, pad, pad, pad, pad);
+        v.setTextViewTextSize(R.id.k_time, DP, 52 * k);
+        float mainW = w - club - 24 * k, dateText = 10.5f * k, sepW = 13 * k;
+        float dw = paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb) + sepW) + sepW;
+        if (dw > mainW) dateText *= mainW / dw * 0.98f; // never past the padding
+        for (int id : new int[] {R.id.k_day, R.id.k_greg, R.id.k_heb}) v.setTextViewTextSize(id, DP, dateText);
+        for (int id : new int[] {R.id.k_s1, R.id.k_s2}) {
+            v.setViewLayoutHeight(id, 10 * k, DP);
+            v.setViewLayoutMargin(id, RemoteViews.MARGIN_START, 6 * k * Math.min(1, dateText / (10.5f * k)), DP);
+            v.setViewLayoutMargin(id, RemoteViews.MARGIN_END, 6 * k * Math.min(1, dateText / (10.5f * k)), DP);
         }
-        // the next-game band
-        v.setViewLayoutHeight(R.id.c_band, band, DP);
-        v.setViewLayoutMargin(R.id.c_band, RemoteViews.MARGIN_TOP, gap, DP);
-        v.setViewPadding(R.id.c_band, p, 0, p, 0);
-        v.setViewLayoutWidth(R.id.c_crests, 52 * k, DP);
-        v.setViewLayoutHeight(R.id.c_crests, 30 * k, DP);
-        for (int id : new int[] {R.id.c_me, R.id.c_opp}) { v.setViewLayoutWidth(id, 30 * k, DP); v.setViewLayoutHeight(id, 30 * k, DP); }
-        v.setViewLayoutMargin(R.id.c_info, RemoteViews.MARGIN_START, 10 * k, DP);
-        v.setTextViewTextSize(R.id.c_lb, DP, 9.5f * k);
-        v.setTextViewTextSize(R.id.c_op, DP, 13.5f * k);
-        v.setTextViewTextSize(R.id.c_wh, DP, 10 * k);
-        v.setViewLayoutMargin(R.id.c_op, RemoteViews.MARGIN_TOP, 2 * k, DP);
-        v.setViewLayoutMargin(R.id.c_wh, RemoteViews.MARGIN_TOP, 2 * k, DP);
-        v.setViewLayoutMargin(R.id.c_count, RemoteViews.MARGIN_START, 10 * k, DP);
-        int[][] b = {{R.id.c_b1, R.id.c_dd, R.id.c_b1l}, {R.id.c_b2, R.id.c_hh, R.id.c_b2l}, {R.id.c_b3, R.id.c_mm, R.id.c_b3l}, {R.id.c_b4, R.id.c_ss, R.id.c_b4l}};
+        v.setViewPadding(R.id.k_dates, 0, 0, 0, Math.round(6 * k * px)); // optical centring between the clock and the card
+        // the next-game card
+        v.setViewPadding(R.id.k_card, Math.round(9 * k * px), Math.round(7 * k * px), Math.round(9 * k * px), Math.round(7 * k * px));
+        v.setViewLayoutWidth(R.id.k_crests, 34 * k, DP);
+        v.setViewLayoutHeight(R.id.k_crests, 20 * k, DP);
+        for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 20 * k, DP); v.setViewLayoutHeight(id, 20 * k, DP); }
+        v.setViewLayoutMargin(R.id.k_who, RemoteViews.MARGIN_START, 6 * k, DP);
+        v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * k, DP);
+        v.setTextViewTextSize(R.id.k_op, DP, 12 * k);
+        for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9 * k);
+        v.setTextViewTextSize(R.id.k_status, DP, 11 * k);
+        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * k, DP);
+        int[][] b = {{R.id.k_b1, R.id.k_dd, R.id.k_b1l}, {R.id.k_b2, R.id.k_hh, R.id.k_b2l}, {R.id.k_b3, R.id.k_mm, R.id.k_b3l}, {R.id.k_b4, R.id.k_ss, R.id.k_b4l}};
         for (int i = 0; i < b.length; i++) {
-            v.setViewLayoutWidth(b[i][0], 38 * k, DP);
-            v.setViewLayoutHeight(b[i][0], 38 * k, DP);
-            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 4 * k, DP);
-            v.setTextViewTextSize(b[i][1], DP, 16 * k);
+            v.setViewPadding(b[i][0], 0, Math.round(4 * k * px), 0, Math.round(5 * k * px));
+            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 6 * k, DP);
+            v.setTextViewTextSize(b[i][1], DP, 19 * k);
             v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
-            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, 2 * k, DP);
-            v.setViewPadding(b[i][0], 0, 0, 0, Math.round(k * px));
+            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
         }
-        // minutes and seconds: each clip shows exactly two digits at the new size
-        android.graphics.Paint pt = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-        pt.setTextSize(16 * k * px);
-        pt.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
-        pt.setFontFeatureSettings("tnum");
-        float two = (float) Math.ceil(pt.measureText("00")) + 1f;
-        v.setViewLayoutWidth(R.id.c_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
-        v.setViewLayoutWidth(R.id.c_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
+        float two = (float) Math.ceil(paint(c, 19 * k, true).measureText("00")) + 1f;
+        v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
+        v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }
 
     /** The next game from the app's list: the first that has not started, or one that started less than 3 hours ago. */
