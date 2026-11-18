@@ -341,7 +341,7 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     /** The width of two digits in the countdown's font (22dp bold, tabular digits), so a clip shows just "MM" / "SS". */
-    private static float twoDigits(Context c, int sp) {
+    static float twoDigits(Context c, int sp) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(sp * c.getResources().getDisplayMetrics().density);
         p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
@@ -363,7 +363,7 @@ public class NextGameWidget extends AppWidgetProvider {
         return new Bitmap[] {h, a};
     }
 
-    private static Bitmap crest(Context c, String url) {
+    static Bitmap crest(Context c, String url) {
         if (url == null || url.isEmpty()) return null;
         File f = new File(c.getFilesDir(), "wcrest_" + Integer.toHexString(url.hashCode()) + ".png");
         try {

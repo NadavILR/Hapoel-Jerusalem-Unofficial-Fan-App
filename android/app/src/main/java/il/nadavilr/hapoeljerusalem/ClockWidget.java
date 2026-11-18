@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.SystemClock;
 import android.view.View;
@@ -27,13 +28,16 @@ public class ClockWidget extends AppWidgetProvider {
 
     private static final long MIN = 60_000L, HOUR = 60 * MIN, DAY = 24 * HOUR;
     private static final TimeZone IL = TimeZone.getTimeZone("Asia/Jerusalem");
-    private static final String TITLES = "אלופת המדינה (2) · גביע המדינה (8) · גביע ווינר (7) · גביע יול\"ב (1) · סופרקאפ (1)";
     private static final String[] DAYS = {"ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"};
     private static final String[] DAY_LETTER = {"א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"};
 
     @Override
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
-        update(c);
+        final PendingResult pr = goAsync();
+        final Context app = c.getApplicationContext();
+        new Thread(() -> {
+            try { update(app); } finally { pr.finish(); }
+        }).start();
     }
 
     /** From any thread (the app's sync). */
@@ -56,18 +60,32 @@ public class ClockWidget extends AppWidgetProvider {
         }
     }
 
+    private static final String[] COMP = {"league", "ליגת ווינר", "euro", "יורוקאפ", "wcup", "גביע ווינר", "cup", "גביע המדינה", "super", "סופרקאפ", "prep", "משחק הכנה"};
+
+    /** The competition, short ("ליגת ווינר, מחזור 7" → "ליגת ווינר"): from the app's label, else from its code. */
+    private static String comp(JSONObject g) {
+        String l = g.optString("l", "").trim();
+        if (!l.isEmpty()) return l.split("[,–]| - ")[0].trim();
+        String c = g.optString("c", "");
+        for (int i = 0; i < COMP.length; i += 2) if (COMP[i].equals(c)) return COMP[i + 1];
+        return "";
+    }
+
     private static RemoteViews build(Context c, long now, JSONObject g) {
+        String rlm = "\u200F";
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_clock);
-        Calendar cal = Calendar.getInstance(IL, new Locale("he", "IL"));
+        Calendar cal = Calendar.getInstance(IL);
         cal.setTimeInMillis(now);
-        String date = "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1] + " · "
-            + String.format(Locale.ROOT, "%02d/%02d/%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR));
+        v.setTextViewText(R.id.c_day, rlm + "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1]);
+        v.setTextViewText(R.id.c_greg, String.format(Locale.ROOT, "%d.%d.%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR)));
         String heb = hebrewDate(now >= sunset(now) ? now + DAY : now); // the Hebrew day begins at sunset
-        v.setTextViewText(R.id.c_date, "‏" + date + (heb.isEmpty() ? "" : " · " + heb));
-        v.setTextViewText(R.id.c_titles, "‏" + TITLES);
+        v.setTextViewText(R.id.c_heb, rlm + heb);
+        v.setViewVisibility(R.id.c_heb, heb.isEmpty() ? View.INVISIBLE : View.VISIBLE);
         if (g == null) {
-            v.setTextViewText(R.id.c_next, "‏אין משחקים קרובים");
-            v.setViewVisibility(R.id.c_days, View.GONE);
+            v.setTextViewText(R.id.c_lb, rlm + "המשחק הבא");
+            v.setTextViewText(R.id.c_op, rlm + "אין משחקים קרובים");
+            v.setTextViewText(R.id.c_wh, "");
+            v.setViewVisibility(R.id.c_crests, View.GONE);
             v.setViewVisibility(R.id.c_count, View.GONE);
             v.setOnClickPendingIntent(R.id.c_root, LiveGame.open(c, 0));
             return v;
@@ -75,31 +93,39 @@ public class ClockWidget extends AppWidgetProvider {
         long t = g.optLong("t"), left = t - now;
         Calendar gc = Calendar.getInstance(IL);
         gc.setTimeInMillis(t);
+        String cn = comp(g);
+        v.setTextViewText(R.id.c_lb, rlm + "המשחק הבא" + (cn.isEmpty() ? "" : " · " + cn));
+        v.setTextViewText(R.id.c_op, rlm + g.optString("o", ""));
+        v.setViewVisibility(R.id.c_crests, View.VISIBLE);
+        Bitmap oc = NextGameWidget.crest(c, g.optString("img", ""));
+        if (oc != null) v.setImageViewBitmap(R.id.c_opp, oc); else v.setImageViewResource(R.id.c_opp, android.R.color.transparent);
         String when = "יום " + DAY_LETTER[gc.get(Calendar.DAY_OF_WEEK) - 1] + " "
-            + String.format(Locale.ROOT, "%d/%d", gc.get(Calendar.DAY_OF_MONTH), gc.get(Calendar.MONTH) + 1)
-            + (g.optInt("tbd", 0) == 1 ? "" : String.format(Locale.ROOT, " · %02d:%02d", gc.get(Calendar.HOUR_OF_DAY), gc.get(Calendar.MINUTE)));
-        String opp = g.optString("o", "");
-        v.setTextViewText(R.id.c_next, "‏" + (opp.isEmpty() ? "" : opp + " · ") + when);
-        if (left <= 0) {
-            v.setTextViewText(R.id.c_days, "המשחק התחיל");
-            v.setViewVisibility(R.id.c_days, View.VISIBLE);
-            v.setViewVisibility(R.id.c_count, View.GONE);
-        } else {
-            long days = left / DAY, rest = left % DAY;
-            v.setTextViewText(R.id.c_days, days > 0 ? (days == 1 ? "עוד יום" : "עוד " + days + " ימים") : "היום");
-            v.setViewVisibility(R.id.c_days, View.VISIBLE);
-            if (Build.VERSION.SDK_INT >= 24) {
-                // The hours, minutes and seconds left beyond the whole days, counting down on their own
-                v.setChronometer(R.id.c_count, SystemClock.elapsedRealtime() + rest, null, true);
-                v.setChronometerCountDown(R.id.c_count, true);
-                v.setViewVisibility(R.id.c_count, View.VISIBLE);
-            } else {
-                v.setViewVisibility(R.id.c_count, View.GONE);
-                long h = rest / HOUR;
-                v.setTextViewText(R.id.c_days, (days > 0 ? "עוד " + days + " ימים ו-" : "עוד ") + h + " שעות");
-            }
-        }
+            + String.format(Locale.ROOT, "%d.%d · %02d:%02d", gc.get(Calendar.DAY_OF_MONTH), gc.get(Calendar.MONTH) + 1, gc.get(Calendar.HOUR_OF_DAY), gc.get(Calendar.MINUTE));
         v.setOnClickPendingIntent(R.id.c_root, LiveGame.open(c, t));
+        if (left <= 0) {
+            v.setTextViewText(R.id.c_wh, rlm + "המשחק התחיל · לחצו לתוצאה");
+            v.setViewVisibility(R.id.c_count, View.GONE);
+            return v;
+        }
+        v.setTextViewText(R.id.c_wh, rlm + when);
+        v.setViewVisibility(R.id.c_count, View.VISIBLE);
+        // days and hours set here (refreshed when the hour turns); minutes and seconds: one "MM:SS" countdown in both
+        // boxes, each clipped to its own two digits – the same as the next-game widget
+        long days = left / DAY, hours = (left % DAY) / HOUR, rest = left % HOUR;
+        v.setTextViewText(R.id.c_dd, String.format(Locale.US, "%02d", days));
+        v.setTextViewText(R.id.c_hh, String.format(Locale.US, "%02d", hours));
+        long base = SystemClock.elapsedRealtime() + rest;
+        v.setChronometer(R.id.c_mm, base, null, true);
+        v.setChronometer(R.id.c_ss, base, null, true);
+        if (Build.VERSION.SDK_INT >= 24) {
+            v.setChronometerCountDown(R.id.c_mm, true);
+            v.setChronometerCountDown(R.id.c_ss, true);
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            float w = NextGameWidget.twoDigits(c, 16);
+            v.setViewLayoutWidth(R.id.c_mm_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
+            v.setViewLayoutWidth(R.id.c_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
+        }
         return v;
     }
 
@@ -199,8 +225,8 @@ public class ClockWidget extends AppWidgetProvider {
         if (g != null) {
             long left = g.optLong("t") - now;
             if (left > 0) {
-                long rest = left % DAY;
-                at = Math.min(at, now + (rest > 0 ? rest : DAY) + 1_000L);
+                long rest = left % HOUR;
+                at = Math.min(at, now + (rest > 0 ? rest : HOUR) + 1_000L); // the hours (and days) go down
             } else at = Math.min(at, g.optLong("t") + 3 * HOUR + 60_000L);
         }
         Intent i = new Intent(c, ClockWidget.class).setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
