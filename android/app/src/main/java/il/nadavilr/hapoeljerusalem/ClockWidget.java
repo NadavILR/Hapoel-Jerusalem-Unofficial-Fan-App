@@ -131,7 +131,7 @@ public class ClockWidget extends AppWidgetProvider {
             int d = h.get(android.icu.util.Calendar.DAY_OF_MONTH), mo = h.get(android.icu.util.Calendar.MONTH), y = h.get(android.icu.util.Calendar.YEAR);
             boolean leap = ((7 * y + 1) % 19) < 7;
             String month = mo == 6 && leap ? "אדר ב'" : HMONTHS[mo];
-            return gematria(d) + " ב" + month + " " + gematria(y % 1000);
+            return gematria(d) + " ב" + month + " " + gematria(y / 1000).replace("'", "") + "'" + gematria(y % 1000); // the full year: ה'תשפ"ז = 5787
         } catch (Throwable e) {
             return "";
         }
