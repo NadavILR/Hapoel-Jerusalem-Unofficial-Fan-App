@@ -153,7 +153,7 @@ public class ClockWidget extends AppWidgetProvider {
         if (Build.VERSION.SDK_INT < 31 || o == null) return;
         float w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
         if (w < 100 || h < 60) return;
-        float k = Math.max(0.7f, Math.min(1.6f, Math.min(w / BW, h / BH)));
+        float k = Math.min(1.6f, Math.min(w / BW, h / BH));
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
         // the vertical spacing may grow a little more with a tall widget, so the extra height is spread evenly over the
         // gaps and rows (not left in one place); the horizontal spacing follows the width
@@ -163,11 +163,13 @@ public class ClockWidget extends AppWidgetProvider {
         int p = Math.round(hp * px), pv = Math.round(pad * px);
         v.setViewPadding(R.id.c_root, p, pv, p, pv);
         // the clock row: whatever height is left
-        float row1 = Math.max(40 * k, h - 2 * pad - 2 * gap - tro - band);
-        float crest = Math.min(row1, 64 * k * 1.4f), datesW = 116 * k, mid = 10 * k;
-        float chipGap = 3 * k, chip = Math.max(20 * k, Math.min(26 * k, (row1 - 2 * chipGap) / 3));
+        float row1 = Math.max(0, h - 2 * pad - 2 * gap - tro - band);
+        float mid = 10 * k, chipGap = 3 * k, chip = Math.max(20 * k, Math.min(26 * k, (row1 - 2 * chipGap) / 3));
+        // taller pills get proportionally bigger text, and the column widens with it – the longest Hebrew date still fits
+        float cs = Math.min(1.2f, chip / (20 * k)), datesW = 116 * k * cs, crest = Math.min(row1, 64 * k * 1.4f);
         float clockW = w - 2 * hp - crest - datesW - 2 * mid;
-        float clock = Math.max(28 * k, Math.min(row1 * 0.9f, clockW / 2.75f));
+        // the clock: a text line is ~1.36× the font size (+0.07 optical padding), so it never gets clipped by its row
+        float clock = Math.min(row1 / 1.45f, clockW / 2.75f);
         v.setViewLayoutWidth(R.id.c_crest, crest, DP);
         v.setViewLayoutHeight(R.id.c_crest, crest, DP);
         v.setTextViewTextSize(R.id.c_time, DP, clock);
@@ -175,11 +177,12 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewLayoutMargin(R.id.c_time, RemoteViews.MARGIN_END, mid, DP);
         v.setViewPadding(R.id.c_time, 0, 0, 0, Math.round(clock * 0.07f * px)); // optical centring
         v.setViewLayoutWidth(R.id.c_dates, datesW, DP);
-        float chipText = 11 * k * Math.min(1.2f, chip / (20 * k));
+        float chipText = 11 * k * cs;
         int[] chips = {R.id.c_day, R.id.c_greg, R.id.c_heb};
         for (int i = 0; i < 3; i++) {
             v.setViewLayoutHeight(chips[i], chip, DP);
             v.setTextViewTextSize(chips[i], DP, chipText);
+            v.setViewPadding(chips[i], 0, 0, 0, Math.round(k * px));
             if (i > 0) v.setViewLayoutMargin(chips[i], RemoteViews.MARGIN_TOP, chipGap, DP);
         }
         // the titles
@@ -193,10 +196,12 @@ public class ClockWidget extends AppWidgetProvider {
             v.setViewPadding(x[0], tp, 0, tp, 0);
             v.setViewLayoutWidth(x[1], 10 * k, DP);
             v.setViewLayoutHeight(x[1], 10 * k, DP);
+            v.setViewLayoutMargin(x[1], RemoteViews.MARGIN_TOP, k, DP);
             v.setTextViewTextSize(x[2], DP, 11 * k);
             v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_START, 3 * k, DP);
             v.setTextViewTextSize(x[3], DP, 9.5f * k);
             v.setViewLayoutMargin(x[3], RemoteViews.MARGIN_START, 3 * k, DP);
+            v.setViewLayoutMargin(x[3], RemoteViews.MARGIN_TOP, k, DP);
         }
         // the next-game band
         v.setViewLayoutHeight(R.id.c_band, band, DP);
@@ -209,6 +214,8 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.c_lb, DP, 9.5f * k);
         v.setTextViewTextSize(R.id.c_op, DP, 13.5f * k);
         v.setTextViewTextSize(R.id.c_wh, DP, 10 * k);
+        v.setViewLayoutMargin(R.id.c_op, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        v.setViewLayoutMargin(R.id.c_wh, RemoteViews.MARGIN_TOP, 2 * k, DP);
         v.setViewLayoutMargin(R.id.c_count, RemoteViews.MARGIN_START, 10 * k, DP);
         int[][] b = {{R.id.c_b1, R.id.c_dd, R.id.c_b1l}, {R.id.c_b2, R.id.c_hh, R.id.c_b2l}, {R.id.c_b3, R.id.c_mm, R.id.c_b3l}, {R.id.c_b4, R.id.c_ss, R.id.c_b4l}};
         for (int i = 0; i < b.length; i++) {
@@ -217,6 +224,8 @@ public class ClockWidget extends AppWidgetProvider {
             if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 4 * k, DP);
             v.setTextViewTextSize(b[i][1], DP, 16 * k);
             v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
+            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, 2 * k, DP);
+            v.setViewPadding(b[i][0], 0, 0, 0, Math.round(k * px));
         }
         // minutes and seconds: each clip shows exactly two digits at the new size
         android.graphics.Paint pt = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
