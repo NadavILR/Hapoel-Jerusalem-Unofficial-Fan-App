@@ -344,7 +344,9 @@ public class NextGameWidget extends AppWidgetProvider {
     static float twoDigits(Context c, int sp) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(sp * c.getResources().getDisplayMetrics().density);
-        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        // the widget's own font (Noto Sans Hebrew Bold), so the clip is exactly two of its digits
+        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, R.font.noto_sans_hebrew_bold)); }
+        catch (Exception e) { p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)); }
         if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
         return (float) Math.ceil(p.measureText("00")) + 1f;
     }
