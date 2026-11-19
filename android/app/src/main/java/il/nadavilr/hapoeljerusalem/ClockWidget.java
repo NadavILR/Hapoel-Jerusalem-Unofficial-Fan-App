@@ -204,7 +204,11 @@ public class ClockWidget extends AppWidgetProvider {
         // the main panel
         v.setViewPadding(R.id.k_main, pad, pad, pad, pad);
         float mainW = w - club - 24 * k, dateText = 10.5f * k, sepW = 13 * k;
-        v.setTextViewTextSize(R.id.k_time, DP, Math.min(52 * kh, mainW / 2.75f));
+        // HH:mm big and :ss at 0.42 of it – together about 3.85× the big size wide, so they always fit the panel
+        float clock = Math.min(52 * kh, mainW / 3.85f);
+        v.setTextViewTextSize(R.id.k_time, DP, clock);
+        v.setTextViewTextSize(R.id.k_sec, DP, clock * 0.42f);
+        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, 2 * k, DP);
         // measured in pixels → back to dp (the widths here are in dp), or the row would shrink by the screen density
         float dw = (paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
             + sepW * (heb.isEmpty() ? 1 : 2);
