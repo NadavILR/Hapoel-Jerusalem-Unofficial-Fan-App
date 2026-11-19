@@ -288,36 +288,44 @@ public class NextGameWidget extends AppWidgetProvider {
     private static RemoteViews row(Context c, Model d, Bitmap[] cr, boolean land) {
         String rlm = "\u200F";
         boolean live = d != null && d.live;
-        RemoteViews v = new RemoteViews(c.getPackageName(), live ? (land ? R.layout.widget_row_live_land : R.layout.widget_row_live) : (land ? R.layout.widget_row_land : R.layout.widget_row));
+        // the same design lying down and standing (the layouts fit both)
+        RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
         if (d == null) {
+            v.setTextViewText(R.id.w_op, rlm + "אין משחקים קרובים");
             v.setTextViewText(R.id.w_comp, "");
-            v.setTextViewText(R.id.w_when, "אין משחקים קרובים");
+            v.setTextViewText(R.id.w_when, "");
+            v.setViewVisibility(R.id.w_crests, View.GONE);
             v.setViewVisibility(R.id.w_count, View.GONE);
             v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, 0));
             return v;
         }
-        /* no crest for the opponent: an empty space, never Hapoel's crest on both sides */
-        if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]); else v.setImageViewResource(R.id.w_home_crest, android.R.color.transparent);
-        if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]); else v.setImageViewResource(R.id.w_away_crest, android.R.color.transparent);
-        v.setContentDescription(R.id.w_home_crest, d.home);
-        v.setContentDescription(R.id.w_away_crest, d.away);
-        v.setTextViewText(R.id.w_comp, rlm + (d.comp.isEmpty() ? d.home + " – " + d.away : d.comp));
+        String comp = ClockWidget.shortComp(d.comp);
         v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
         if (live) {
+            /* no crest for the opponent: an empty space, never Hapoel's crest on both sides */
+            if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]); else v.setImageViewResource(R.id.w_home_crest, android.R.color.transparent);
+            if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]); else v.setImageViewResource(R.id.w_away_crest, android.R.color.transparent);
+            v.setContentDescription(R.id.w_home_crest, d.home);
+            v.setContentDescription(R.id.w_away_crest, d.away);
             v.setTextViewText(R.id.w_hs, String.valueOf(d.hs));
             v.setTextViewText(R.id.w_as, String.valueOf(d.as));
-            // the box: the quarter above the clock; at a break ("סיום Q1", "מחצית") the status itself
-            boolean clock = !d.clock.isEmpty();
-            v.setTextViewText(R.id.w_qlabel, rlm + d.status);
-            v.setViewVisibility(R.id.w_qlabel, clock && !d.status.isEmpty() ? View.VISIBLE : View.GONE);
-            v.setTextViewText(R.id.w_clock, clock ? d.clock : rlm + (d.status.isEmpty() ? "בלייב" : d.status));
+            // the quarter and the game clock; at a break ("סיום רבע 1", "מחצית") the status itself
+            String st = d.status.isEmpty() ? "בלייב" : d.status;
+            v.setTextViewText(R.id.w_clock, rlm + st + (d.clock.isEmpty() ? "" : " · \u2066" + d.clock + "\u2069"));
+            v.setTextViewText(R.id.w_comp, rlm + (comp.isEmpty() ? d.home + " – " + d.away : comp));
             return v;
         }
+        String opp = d.meHome ? d.away : d.home;
+        Bitmap oc = d.meHome ? cr[1] : cr[0];
+        if (oc != null) v.setImageViewBitmap(R.id.w_opp, oc); else v.setImageViewResource(R.id.w_opp, android.R.color.transparent);
+        v.setTextViewText(R.id.w_op, rlm + opp);
+        v.setTextViewText(R.id.w_comp, rlm + comp);
+        v.setViewVisibility(R.id.w_comp, comp.isEmpty() ? View.GONE : View.VISIBLE);
         v.setTextViewText(R.id.w_when, rlm + when(d.t));
         if (d.started) {
             // Tip-off has passed and the live score card has no score (yet)
             v.setViewVisibility(R.id.w_count, View.GONE);
-            v.setTextViewText(R.id.w_status, rlm + "המשחק התחיל · לחצו לתוצאה");
+            v.setTextViewText(R.id.w_status, rlm + "המשחק התחיל\nלחצו לתוצאה");
             v.setViewVisibility(R.id.w_status, View.VISIBLE);
             return v;
         }
@@ -333,7 +341,7 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setChronometerCountDown(R.id.w_chrono2, true);
         }
         if (Build.VERSION.SDK_INT >= 31) {
-            float w = twoDigits(c, land ? 16 : 22);
+            float w = twoDigits(c, 16);
             v.setViewLayoutWidth(R.id.w_mm_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
             v.setViewLayoutWidth(R.id.w_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
         }
@@ -352,7 +360,7 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     private static String when(long t) {
-        SimpleDateFormat f = new SimpleDateFormat("EEEE · d.M · HH:mm", new Locale("he"));
+        SimpleDateFormat f = new SimpleDateFormat("EEE d.M · HH:mm", new Locale("he"));
         f.setTimeZone(TimeZone.getTimeZone("Asia/Jerusalem"));
         return f.format(new Date(t));
     }

@@ -84,15 +84,20 @@ public class ClockWidget extends AppWidgetProvider {
 
     /** The competition and round, short: "ליגת ווינר, מחזור 7" → "ליגת ווינר · מחזור 7"; a group is left out. */
     private static String comp(JSONObject g) {
-        String l = g.optString("l", "").trim();
-        if (!l.isEmpty()) {
-            String[] p = l.split("\\s*(,|–| - )\\s*");
-            String c0 = p[0].trim(), last = p.length > 1 ? p[p.length - 1].trim() : "";
-            return last.isEmpty() || last.equals(c0) ? c0 : c0 + " · " + last;
-        }
+        String l = shortComp(g.optString("l", ""));
+        if (!l.isEmpty()) return l;
         String c = g.optString("c", "");
         for (int i = 0; i < COMP.length; i += 2) if (COMP[i].equals(c)) return COMP[i + 1];
         return "";
+    }
+
+    /** "ליגת ווינר, מחזור 7" → "ליגת ווינר · מחזור 7"; "יורוקאפ – בית א', מחזור 10" → "יורוקאפ · מחזור 10". */
+    static String shortComp(String l) {
+        l = l == null ? "" : l.trim();
+        if (l.isEmpty()) return "";
+        String[] p = l.split("\\s*(,|–| - )\\s*");
+        String c0 = p[0].trim(), last = p.length > 1 ? p[p.length - 1].trim() : "";
+        return last.isEmpty() || last.equals(c0) ? c0 : c0 + " · " + last;
     }
 
     private static RemoteViews build(Context c, long now, JSONObject g) {
