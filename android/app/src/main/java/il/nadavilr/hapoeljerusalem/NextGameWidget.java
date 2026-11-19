@@ -393,7 +393,7 @@ public class NextGameWidget extends AppWidgetProvider {
             long left = d.t - now;
             if (left > 0) {
                 long rest = left % HOUR;
-                at = Math.min(at, now + (rest > 0 ? rest : HOUR) + 1_000L); // the hours (and days) go down
+                at = Math.min(at, now + (rest > 0 ? rest : HOUR) + 300L); // the hours (and days) go down – right at the turn
                 at = Math.min(at, d.t + 1_000L);
             }
         }
@@ -405,7 +405,12 @@ public class NextGameWidget extends AppWidgetProvider {
         }
         PendingIntent pi = PendingIntent.getBroadcast(c, 7301, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         try {
-            if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC, at, pi);
+            // exact: the minutes and seconds count down by themselves and run past zero ("−00:17") if the redraw at the
+            // turn of the hour comes late – an inexact alarm can be minutes late while the phone sleeps
+            boolean exact = Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms();
+            if (exact && Build.VERSION.SDK_INT >= 23) am.setExactAndAllowWhileIdle(AlarmManager.RTC, at, pi);
+            else if (exact) am.setExact(AlarmManager.RTC, at, pi);
+            else if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC, at, pi);
             else am.set(AlarmManager.RTC, at, pi);
         } catch (Exception ignored) {
         }
