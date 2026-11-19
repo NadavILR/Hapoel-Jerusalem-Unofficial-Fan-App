@@ -110,6 +110,32 @@ public class NextGameWidget extends AppWidgetProvider {
     private static final float[][] SIZES = {{40f, 110f}, {100f, 110f}, {100f, 160f}, {100f, 230f}, {230f, 120f},
         {100f, 40f}, {170f, 40f}, {40f, 160f}, {40f, 250f}};
 
+    private static long drawnMinute = -1, nextT;
+    private static boolean countdown;
+
+    /** A widget with a countdown on it needs WidgetTick (its seconds). */
+    static boolean ticking(Context c) {
+        return countdown && has(c);
+    }
+
+    /** WidgetTick: a new minute – redraw; otherwise put the countdown's seconds on the right second. */
+    static synchronized void tick(Context c) {
+        if (!has(c)) return;
+        long now = System.currentTimeMillis();
+        if (now / MIN != drawnMinute) { update(c); return; }
+        if (!countdown || nextT <= now) return;
+        try {
+            AppWidgetManager m = AppWidgetManager.getInstance(c);
+            int[] ids = m.getAppWidgetIds(new ComponentName(c, NextGameWidget.class));
+            int ss = 59 - (int) (((nextT - now) / 1000) % 60);
+            RemoteViews port = new RemoteViews(c.getPackageName(), R.layout.widget_row), land = new RemoteViews(c.getPackageName(), R.layout.widget_row_land);
+            port.setDisplayedChild(R.id.w_ss, ss);
+            land.setDisplayedChild(R.id.w_ss, ss);
+            m.partiallyUpdateAppWidget(ids, new RemoteViews(land, port));
+        } catch (Exception ignored) {
+        }
+    }
+
     static synchronized void update(Context c) {
         AppWidgetManager m = AppWidgetManager.getInstance(c);
         int[] ids;
@@ -123,17 +149,18 @@ public class NextGameWidget extends AppWidgetProvider {
         Bitmap[] crests = d != null ? crests(c, d) : new Bitmap[2];
         for (int id : ids) {
             try {
-                // One size only: one row, five columns (hpj_widget_info.xml). Lying down (landscape) the row is wide
-                // and low, so it gets its own layout; Android picks the one for the current orientation
+                // one row, five columns by default; lying down (landscape) it gets its own size – Android picks the views
+                // for the current orientation. Every text is drawn in Noto Sans Hebrew at the widget's real size
                 Bundle o = m.getAppWidgetOptions(id);
-                RemoteViews land = row(c, d, crests, true), port = row(c, d, crests, false);
-                fitRow(c, land, o, true, d != null && d.live);
-                fitRow(c, port, o, false, d != null && d.live);
-                m.updateAppWidget(id, new RemoteViews(land, port));
+                m.updateAppWidget(id, new RemoteViews(row(c, d, crests, true, o), row(c, d, crests, false, o)));
             } catch (Exception ignored) {
             }
         }
+        drawnMinute = System.currentTimeMillis() / MIN;
+        countdown = d != null && !d.live && !d.started;
+        nextT = d != null ? d.t : 0;
         schedule(c, d);
+        WidgetTick.schedule(c);
     }
 
     /** Before Android 12: the layout by the widget's size (portrait width, tallest height). */
@@ -287,137 +314,125 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     /** One row and the wide strip – the user's design: the countdown in four boxes, or the live score. */
-    private static RemoteViews row(Context c, Model d, Bitmap[] cr) { return row(c, d, cr, false); }
+    private static RemoteViews row(Context c, Model d, Bitmap[] cr) { return row(c, d, cr, false, null); }
 
-    private static RemoteViews row(Context c, Model d, Bitmap[] cr, boolean land) {
-        String rlm = "\u200F";
-        boolean live = d != null && d.live;
-        // the same design lying down and standing (the layouts fit both)
-        RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
-        if (d == null) {
-            v.setTextViewText(R.id.w_op, rlm + "אין משחקים קרובים");
-            v.setTextViewText(R.id.w_comp, "");
-            v.setTextViewText(R.id.w_when, "");
-            v.setViewVisibility(R.id.w_crests, View.GONE);
-            v.setViewVisibility(R.id.w_count, View.GONE);
-            v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, 0));
-            return v;
+    /** The row's design base size (dp): five columns × one row on a Galaxy S24 Ultra. */
+    private static final float RW = 362f, RH = 88f;
+    private static final int WHITE = 0xFFFFFFFF, MUTED = 0xBFFFFFFF, LABEL = 0xB3FFFFFF;
+
+    /** One row (standing or lying down), drawn at the widget's real size. */
+    private static RemoteViews row(Context c, Model d, Bitmap[] cr, boolean land, Bundle o) {
+        final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
+        String rlm = "‏";
+        boolean live = d != null && d.live, resize = Build.VERSION.SDK_INT >= 31;
+        float[] sz = resize ? ClockWidget.size(o, RW, RH, land) : new float[] {RW, RH};
+        float w = sz[0], h = sz[1];
+        // k: sizes, text and widths; kh: what may grow with the height (the crests, the countdown boxes, the score)
+        float k = resize ? Math.min(1.6f, Math.min(w / RW, h / RH)) : 1f, kh = resize ? Math.min(1.6f, Math.min(h / RH, k * 1.3f)) : 1f;
+        float px = c.getResources().getDisplayMetrics().density;
+        RemoteViews v = new RemoteViews(c.getPackageName(), live ? (land ? R.layout.widget_row_live_land : R.layout.widget_row_live) : (land ? R.layout.widget_row_land : R.layout.widget_row));
+        float club = 54 * k, pad = 10 * k, mainW = w - club - 2 * pad;
+        if (resize) {
+            v.setViewLayoutWidth(R.id.w_club, club, DP);
+            float ci = Math.min(38 * kh, club - 10 * k);
+            v.setViewLayoutWidth(R.id.w_clubimg, ci, DP);
+            v.setViewLayoutHeight(R.id.w_clubimg, ci, DP);
+            int p = Math.round(pad * px);
+            v.setViewPadding(R.id.w_main, p, 0, p, 0);
         }
-        String comp = ClockWidget.shortComp(d.comp);
-        v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
+        float small = 9 * k;
         if (live) {
+            v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
             /* no crest for the opponent: an empty space, never Hapoel's crest on both sides */
             if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]); else v.setImageViewResource(R.id.w_home_crest, android.R.color.transparent);
             if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]); else v.setImageViewResource(R.id.w_away_crest, android.R.color.transparent);
             v.setContentDescription(R.id.w_home_crest, d.home);
             v.setContentDescription(R.id.w_away_crest, d.away);
-            v.setTextViewText(R.id.w_hs, String.valueOf(d.hs));
-            v.setTextViewText(R.id.w_as, String.valueOf(d.as));
+            float crest = 26 * kh, score = 24 * Math.min(kh, k * 1.15f);
+            if (resize) {
+                for (int id : new int[] {R.id.w_home_crest, R.id.w_away_crest}) { v.setViewLayoutWidth(id, crest, DP); v.setViewLayoutHeight(id, crest, DP); }
+                v.setViewLayoutMargin(R.id.w_away_crest, RemoteViews.MARGIN_START, 6 * k, DP);
+                v.setViewLayoutMargin(R.id.w_hs, RemoteViews.MARGIN_START, 6 * k, DP);
+                v.setViewLayoutMargin(R.id.w_dash, RemoteViews.MARGIN_START, 6 * k, DP);
+                v.setViewLayoutMargin(R.id.w_dash, RemoteViews.MARGIN_END, 6 * k, DP);
+                v.setViewPadding(R.id.w_tag, Math.round(8 * k * px), Math.round(2 * k * px), Math.round(8 * k * px), Math.round(2 * k * px));
+                v.setViewLayoutMargin(R.id.w_clock, RemoteViews.MARGIN_START, 6 * k, DP);
+                v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 4 * k, DP);
+            }
+            String hs = String.valueOf(d.hs), as = String.valueOf(d.as);
+            NotoText.set(c, v, R.id.w_hs, hs, score, true, WHITE, 0);
+            NotoText.set(c, v, R.id.w_dash, "–", 18 * k, false, 0x66FFFFFF, 0);
+            NotoText.set(c, v, R.id.w_as, as, score, true, WHITE, 0);
+            float scoreW = 2 * crest + 24 * k + NotoText.widthDp(c, hs, score, true) + NotoText.widthDp(c, as, score, true) + NotoText.widthDp(c, "–", 18 * k, false);
+            float textW = mainW - 8 * k - scoreW;
+            NotoText.set(c, v, R.id.w_tagtxt, "● לייב", 9.5f * k, true, WHITE, 0);
             // the quarter and the game clock; at a break ("סיום רבע 1", "מחצית") the status itself
             String st = d.status.isEmpty() ? "בלייב" : d.status;
-            v.setTextViewText(R.id.w_clock, rlm + st + (d.clock.isEmpty() ? "" : " · \u2066" + d.clock + "\u2069"));
-            v.setTextViewText(R.id.w_comp, rlm + (comp.isEmpty() ? d.home + " – " + d.away : comp));
+            String clk = rlm + st + (d.clock.isEmpty() ? "" : " · ⁦" + d.clock + "⁩");
+            NotoText.set(c, v, R.id.w_clock, clk, 11.5f * k, true, WHITE, textW - NotoText.widthDp(c, "● לייב", 9.5f * k, true) - 22 * k);
+            String comp = ClockWidget.shortComp(d.comp);
+            NotoText.set(c, v, R.id.w_comp, rlm + (comp.isEmpty() ? d.home + " – " + d.away : comp), small, false, MUTED, textW);
             return v;
         }
+        if (resize) {
+            v.setViewLayoutWidth(R.id.w_crests, 30 * k, DP);
+            v.setViewLayoutHeight(R.id.w_crests, 18 * k, DP);
+            for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 18 * k, DP); v.setViewLayoutHeight(id, 18 * k, DP); }
+            v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_START, 6 * k, DP);
+            v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 3 * k, DP);
+            v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, 2 * k, DP);
+            v.setViewLayoutMargin(R.id.w_count, RemoteViews.MARGIN_START, 8 * k, DP);
+        }
+        // the countdown boxes: a little taller with a taller widget, never wider than the row allows
+        float bw = 35 * k, num = Math.min(16 * kh, (bw - 6 * k) / 1.25f), countW = 4 * bw + 12 * k;
+        float textW = mainW - 8 * k - countW;
+        if (d == null) {
+            v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, 0));
+            NotoText.set(c, v, R.id.w_op, rlm + "אין משחקים קרובים", 11.5f * k, true, WHITE, mainW);
+            v.setViewVisibility(R.id.w_crests, View.GONE);
+            v.setViewVisibility(R.id.w_comp, View.GONE);
+            v.setViewVisibility(R.id.w_when, View.GONE);
+            v.setViewVisibility(R.id.w_count, View.GONE);
+            return v;
+        }
+        v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
         String opp = d.meHome ? d.away : d.home;
         Bitmap oc = d.meHome ? cr[1] : cr[0];
         if (oc != null) v.setImageViewBitmap(R.id.w_opp, oc); else v.setImageViewResource(R.id.w_opp, android.R.color.transparent);
-        v.setTextViewText(R.id.w_op, rlm + opp);
-        v.setTextViewText(R.id.w_comp, rlm + comp);
+        String comp = ClockWidget.shortComp(d.comp);
+        if (d.started) textW = mainW - 8 * k - (NotoText.widthDp(c, "לחצו לתוצאה", 10.5f * k, true) + 20 * k);
+        NotoText.set(c, v, R.id.w_op, rlm + opp, 11.5f * k, true, WHITE, textW - 36 * k);
+        NotoText.set(c, v, R.id.w_comp, rlm + comp, small, false, MUTED, textW);
         v.setViewVisibility(R.id.w_comp, comp.isEmpty() ? View.GONE : View.VISIBLE);
-        v.setTextViewText(R.id.w_when, rlm + when(d.t));
+        NotoText.set(c, v, R.id.w_when, rlm + when(d.t), small, false, MUTED, textW);
         if (d.started) {
             // Tip-off has passed and the live score card has no score (yet)
             v.setViewVisibility(R.id.w_count, View.GONE);
-            v.setTextViewText(R.id.w_status, rlm + "המשחק התחיל\nלחצו לתוצאה");
-            v.setViewVisibility(R.id.w_status, View.VISIBLE);
+            v.setViewVisibility(R.id.w_statusbox, View.VISIBLE);
+            NotoText.set(c, v, R.id.w_status1, "המשחק התחיל", 10.5f * k, true, WHITE, 0);
+            NotoText.set(c, v, R.id.w_status2, "לחצו לתוצאה", 9 * k, false, MUTED, 0);
             return v;
         }
-        long left = Math.max(0, d.t - System.currentTimeMillis()), days = left / DAY, hours = (left % DAY) / HOUR, rest = left % HOUR;
-        v.setTextViewText(R.id.w_days, String.format(Locale.US, "%02d", days));
-        v.setTextViewText(R.id.w_hours, String.format(Locale.US, "%02d", hours));
-        // minutes and seconds: the same "MM:SS" countdown in both boxes, each clipped to its own two digits
-        long base = SystemClock.elapsedRealtime() + rest;
-        v.setChronometer(R.id.w_chrono, base, null, true);
-        v.setChronometer(R.id.w_chrono2, base, null, true);
-        if (Build.VERSION.SDK_INT >= 24) {
-            v.setChronometerCountDown(R.id.w_chrono, true);
-            v.setChronometerCountDown(R.id.w_chrono2, true);
-        }
-        if (Build.VERSION.SDK_INT >= 31) {
-            float w = twoDigits(c, 16);
-            v.setViewLayoutWidth(R.id.w_mm_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
-            v.setViewLayoutWidth(R.id.w_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
-        }
-        return v;
-    }
-
-    /** The row's design base size (dp): five columns × one row on a Galaxy S24 Ultra. */
-    private static final float RW = 362f, RH = 88f;
-
-    /**
-     * Scales the row to the widget's real size (Android 12+; the launcher reports it in dp, so the screen-resolution
-     * setting does not matter): k – sizes, text and widths (the smaller of width and height against the base); kh – what
-     * may grow with the height (the crests, the countdown boxes, the score). Lying down: the landscape size.
-     */
-    private static void fitRow(Context c, RemoteViews v, Bundle o, boolean land, boolean live) {
-        if (Build.VERSION.SDK_INT < 31 || o == null) return;
-        float w = o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-        float h = o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT : AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-        if (w < 100 || h < 30) return;
-        float k = Math.min(1.6f, Math.min(w / RW, h / RH)), kh = Math.min(1.6f, Math.min(h / RH, k * 1.3f));
-        final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
-        float px = c.getResources().getDisplayMetrics().density;
-        v.setViewLayoutWidth(R.id.w_club, 54 * k, DP);
-        float ci = Math.min(38 * kh, 54 * k - 10 * k);
-        v.setViewLayoutWidth(R.id.w_clubimg, ci, DP);
-        v.setViewLayoutHeight(R.id.w_clubimg, ci, DP);
-        int pad = Math.round(10 * k * px);
-        v.setViewPadding(R.id.w_main, pad, 0, pad, 0);
-        v.setTextViewTextSize(R.id.w_comp, DP, 9 * k);
-        if (live) {
-            v.setTextViewTextSize(R.id.w_tag, DP, 9.5f * k);
-            v.setViewPadding(R.id.w_tag, Math.round(8 * k * px), Math.round(k * px), Math.round(8 * k * px), Math.round(2 * k * px));
-            v.setTextViewTextSize(R.id.w_clock, DP, 11.5f * k);
-            v.setViewLayoutMargin(R.id.w_clock, RemoteViews.MARGIN_START, 6 * k, DP);
-            v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 4 * k, DP);
-            for (int id : new int[] {R.id.w_home_crest, R.id.w_away_crest}) { v.setViewLayoutWidth(id, 26 * kh, DP); v.setViewLayoutHeight(id, 26 * kh, DP); }
-            v.setViewLayoutMargin(R.id.w_away_crest, RemoteViews.MARGIN_START, 6 * k, DP);
-            v.setViewLayoutMargin(R.id.w_hs, RemoteViews.MARGIN_START, 6 * k, DP);
-            for (int id : new int[] {R.id.w_hs, R.id.w_as}) v.setTextViewTextSize(id, DP, 24 * Math.min(kh, k * 1.15f));
-            v.setTextViewTextSize(R.id.w_dash, DP, 18 * k);
-            v.setViewLayoutMargin(R.id.w_dash, RemoteViews.MARGIN_START, 6 * k, DP);
-            v.setViewLayoutMargin(R.id.w_dash, RemoteViews.MARGIN_END, 6 * k, DP);
-            return;
-        }
-        v.setViewLayoutWidth(R.id.w_crests, 30 * k, DP);
-        v.setViewLayoutHeight(R.id.w_crests, 18 * k, DP);
-        for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 18 * k, DP); v.setViewLayoutHeight(id, 18 * k, DP); }
-        v.setTextViewTextSize(R.id.w_op, DP, 11.5f * k);
-        v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_START, 6 * k, DP);
-        v.setTextViewTextSize(R.id.w_when, DP, 9 * k);
-        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 3 * k, DP);
-        v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, 2 * k, DP);
-        v.setTextViewTextSize(R.id.w_status, DP, 10.5f * k);
-        v.setViewLayoutMargin(R.id.w_count, RemoteViews.MARGIN_START, 8 * k, DP);
-        // the countdown boxes: a little taller with a taller widget, never wider than the row allows
-        float bw = 35 * k, num = Math.min(16 * kh, (bw - 6 * k) / 1.25f);
-        int[][] b = {{R.id.w_days_box, R.id.w_days, R.id.w_bl1}, {R.id.w_b2, R.id.w_hours, R.id.w_bl2}, {R.id.w_b3, R.id.w_chrono, R.id.w_bl3}, {R.id.w_b4, R.id.w_chrono2, R.id.w_bl4}};
+        long left = Math.max(0, d.t - System.currentTimeMillis()), secs = left / 1000;
+        long[] val = {secs / 86400, (secs % 86400) / 3600, (secs % 3600) / 60};
+        String[] lab = {"ימים", "שעות", "דקות", "שניות"};
+        int[][] b = {{R.id.w_days_box, R.id.w_days, R.id.w_bl1}, {R.id.w_b2, R.id.w_hours, R.id.w_bl2}, {R.id.w_b3, R.id.w_mins, R.id.w_bl3}, {R.id.w_b4, 0, R.id.w_bl4}};
         for (int i = 0; i < b.length; i++) {
-            v.setViewLayoutWidth(b[i][0], bw, DP);
-            v.setViewPadding(b[i][0], 0, Math.round(4 * kh * px), 0, Math.round(5 * kh * px));
-            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 4 * k, DP);
-            v.setTextViewTextSize(b[i][1], DP, num);
-            v.setTextViewTextSize(b[i][2], DP, 8 * k);
-            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
+            if (resize) {
+                v.setViewLayoutWidth(b[i][0], bw, DP);
+                v.setViewPadding(b[i][0], 0, Math.round(4 * kh * px), 0, Math.round(5 * kh * px));
+                if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 4 * k, DP);
+                v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
+            }
+            if (b[i][1] != 0) NotoText.set(c, v, b[i][1], String.format(Locale.ROOT, "%02d", val[i]), num, true, WHITE, 0);
+            NotoText.set(c, v, b[i][2], lab[i], 8 * k, false, LABEL, 0);
         }
-        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-        p.setTextSize(num * px);
-        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, R.font.noto_sans_hebrew_bold)); } catch (Exception e) { }
-        p.setFontFeatureSettings("tnum");
-        float two = (float) Math.ceil(p.measureText("00")) + 1f;
-        v.setViewLayoutWidth(R.id.w_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
-        v.setViewLayoutWidth(R.id.w_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
+        if (resize) {
+            v.setViewLayoutWidth(R.id.w_ss, num * 1.164f, DP);
+            v.setViewLayoutHeight(R.id.w_ss, num * 1.36f, DP);
+        }
+        v.setDisplayedChild(R.id.w_ss, 59 - (int) (secs % 60));
+        return v;
     }
 
     /** The width of two digits in the countdown's font (22dp bold, tabular digits), so a clip shows just "MM" / "SS". */
