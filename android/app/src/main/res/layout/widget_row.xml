@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Next-game widget (5×1), in the clock widget's style: dark glass, the club's red panel with the crest on the right;
      both crests, the opponent, the competition and round, the day / date / time, and the countdown in four boxes -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:background="@drawable/cw2_bg" android:layoutDirection="rtl">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:background="@drawable/cw3_bg" android:clipToOutline="true" android:layoutDirection="rtl">
   <FrameLayout android:id="@+id/w_club" android:layout_width="54dp" android:layout_height="match_parent" android:background="@drawable/cw_club_bg">
     <ImageView android:id="@+id/w_clubimg" android:layout_width="38dp" android:layout_height="38dp" android:layout_gravity="center" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
   </FrameLayout>

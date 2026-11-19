@@ -3,7 +3,7 @@
      name, and the titles with the silhouettes of the real trophies. Left, on dark glass: the clock; the day, date and
      Hebrew date centred between the clock and the card; the next game – both crests, the opponent, the competition and
      round, the day/date and the time, and the countdown in four boxes as in the app. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/k_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:background="@drawable/cw2_bg" android:layoutDirection="rtl">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/k_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:background="@drawable/cw2_bg" android:clipToOutline="true" android:layoutDirection="rtl">
   <LinearLayout android:id="@+id/k_club" android:layout_width="122dp" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_horizontal" android:background="@drawable/cw_club_bg" android:padding="12dp">
     <ImageView android:id="@+id/k_crest" android:layout_width="48dp" android:layout_height="48dp" android:scaleType="fitCenter" android:src="@drawable/hpj_crest" android:importantForAccessibility="no" />
     <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="#FFFFFF" android:textSize="11.5dp" android:textStyle="bold" android:maxLines="1" android:text="הפועל ירושלים" />
