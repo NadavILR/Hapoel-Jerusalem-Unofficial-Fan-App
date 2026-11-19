@@ -99,7 +99,7 @@ html.dark .glass-red { background: linear-gradient(150deg, rgb(var(--red-rgb) / 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 @media (min-width: 900px) { .grid-md2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; } .grid-md2 > * + * { margin-top: 0; } }
-.pad { padding: 16px; } .pad-s { padding: 12px; } .pad-x { padding-left: 16px; padding-right: 16px; }
+.pad { padding: 14px; } .pad-s { padding: 10px; } .pad-x { padding-left: 14px; padding-right: 14px; }
 .gap-s { gap: 6px; } .gap-l { gap: 16px; }
 .shrink0 { flex-shrink: 0; }
 .trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -164,7 +164,7 @@ html.dark .glass-red { background: linear-gradient(150deg, rgb(var(--red-rgb) / 
 .tg[disabled] { opacity: .45; }
 
 /* ---------- רשימות ---------- */
-.li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-width: 0; }
+.li { display: flex; align-items: center; gap: 12px; padding: 9px 14px; min-width: 0; }
 .li + .li { border-top: 1px solid var(--line); }
 .li-t { font-weight: 700; }
 .li-s { font-size: 12.5px; color: var(--mu); }
@@ -235,10 +235,10 @@ html.dark .toast { background: #fff; color: var(--ink); }
 
 /* ---------- טבלאות ---------- */
 .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.tbl th { font-size: 11.5px; font-weight: 700; color: var(--mu); padding: 8px 4px; text-align: center; white-space: nowrap; }
-.tbl td { padding: 9px 4px; text-align: center; border-top: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbl th { font-size: 11.5px; font-weight: 700; color: var(--mu); padding: 6px 4px; text-align: center; white-space: nowrap; }
+.tbl td { padding: 7px 4px; text-align: center; border-top: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tbl .tn { text-align: right; white-space: nowrap; }
-.tbl th:last-child, .tbl td:last-child { padding-left: 16px; }
+.tbl th:last-child, .tbl td:last-child { padding-left: 14px; }
 .tbl th:first-child, .tbl td:first-child { padding-right: 12px; }
 .tbl .mark + .pos, .tbl th.mark + th { padding-right: 8px; }
 .tbl tr.me td { background: rgb(var(--red-rgb) / .09); color: var(--red-tx); font-weight: 800; }
@@ -292,9 +292,9 @@ html.dark .crest-l { background: #fff; color: var(--ink); }
 .cd .l { font-size: 11px; direction: rtl; }
 .cd-box { background: var(--faint); border: 1px solid var(--line); }
 /* כרטיס המשחק במסך הבית (מידות כמו ב-1.161) */
-.gc { position: relative; min-height: 100%; padding: 16px; border-radius: 16px; }
+.gc { position: relative; min-height: 100%; padding: 14px; border-radius: 16px; }
 .gc-name { font-size: 24px; line-height: 1.25; }
-.gc-btn { display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; border-radius: 12px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.gc-btn { display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; padding: 10px 0; border-radius: 12px; font-size: 14px; font-weight: 700; white-space: nowrap; }
 /* כפתור התזכורת: אותו גובה כשהיא פעילה (אדום/לבן, בלי מסגרת) וכשלא (עם מסגרת) – כדי שהכרטיס לא ישנה גודל */
 .gc-btn.btn-red, .gc-btn.btn-white { border: 1px solid transparent; }
 .tick { display: inline-block; animation: fade .15s var(--ease) both; }
@@ -330,7 +330,7 @@ html.dark .dt-a { background: #fff; color: var(--ink); }
 /* מהלך המשחק */
 /* בסוף הגלילה בתוך מהלך המשחק, ההחלקה ממשיכה לגלול את העמוד עצמו (למעלה או למטה) */
 .pbp-win { max-height: 62vh; overflow-y: auto; overscroll-behavior-y: auto; }
-.pbp-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 13.5px; }
+.pbp-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 14px; border-top: 1px solid var(--line); font-size: 13.5px; }
 .pbp-row.big { font-weight: 700; }
 .pbp-row .clk { width: 44px; flex-shrink: 0; color: var(--mu); font-variant-numeric: tabular-nums; direction: ltr; text-align: right; }
 .pbp-row.j .who { color: var(--red-tx); }
@@ -454,4 +454,4 @@ html.dark .tbl tr.me td.mk-p, html.dark .tbl td.mk-p { background: #A78BFA; }
 /* עמוד "עוד": 2×2 כפתורים גדולים שממלאים את הגובה שבין הכותרת לסרגל הניווט */
 /* הרשת נעוצה בין הכותרת לסרגל הניווט – תמיד 12px מכל צד, בכל גודל מסך, והכפתורים מתמתחים לפי המקום */
 .more-grid { z-index: 5; position: fixed; top: calc(var(--hdh, 64px) + 12px); bottom: calc(var(--navh, 72px) + 12px); left: 14px; right: 14px; max-width: 692px; margin-inline: auto; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; }
-.more-b { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: var(--r-lg); padding: 16px 10px; text-align: center; }
+.more-b { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: var(--r-lg); padding: 13px 10px; text-align: center; }

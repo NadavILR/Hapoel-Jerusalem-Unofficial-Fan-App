@@ -32,7 +32,7 @@ export default function Schedule() {
           ${f.r ? html`<div class="col shrink0" style=${{ alignItems: 'center', gap: 2 }}><div class="row num" style=${{ gap: 4, fontSize: 17 }}><span class=${f.h ? 'xb' : 'md'}>${f.h ? f.r[0] : f.r[1]}</span><span class="mu">–</span><span class=${f.h ? 'md' : 'xb'}>${f.h ? f.r[1] : f.r[0]}</span></div><span class=${cx('t-xs b', w ? 'res-w' : 'res-l')}>${w ? 'ניצחון' : 'הפסד'}</span></div>`
           : pend ? html`<div class="t-xs mu shrink0" style=${{ textAlign: 'center', lineHeight: 1.25 }}>ממתין<br/>לתוצאה</div>`
           : html`<button onClick=${e => { e.stopPropagation(); A.togRem(f); }} aria-label=${A.rem[f.id] ? 'ביטול תזכורת' : 'תזכורת למשחק'} aria-pressed=${String(!!A.rem[f.id])} class=${cx('icon-btn sm press', A.rem[f.id] ? 'btn-red' : 'btn-ghost')}><${Icon} n=${A.rem[f.id] ? 'bellOn' : 'bell'} s=${17}/></button>`}
-        </div><//>`; }) : html`<div class="mu t-s" style=${{ textAlign: 'center', padding: 40 }}>אין משחקים להצגה ${fl === 'all' ? '' : 'ב' + (CN[fl] || COMPS[fl])}</div>`}</div>
+        </div><//>`; }) : html`<div class="mu t-s" style=${{ textAlign: 'center', padding: 24 }}>אין משחקים להצגה ${fl === 'all' ? '' : 'ב' + (CN[fl] || COMPS[fl])}</div>`}</div>
     <div style=${{ marginTop: 14 }}><${Src}>לוח המשחקים, התאריכים, השעות והמיקומים: האתר הרשמי של הפועל ירושלים · שמות הקבוצות, הסמלים, המפעלים והשלבים: 365Scores<//></div>`}
   </div>`;
 }

@@ -15,7 +15,7 @@ const frLoad = () => { if (FR.skip > 0) FR.skip--; else FR.n++; };
 function Fallback({ k }) {
   const u = EXT[k], nx = k === 'tix' ? DB.F.filter(f => !f.r && f.h).sort((a, b) => a.t - b.t).slice(0, 6) : [];
   return html`<div class="stack">
-    <div class="glass-red r-lg pad" style=${{ textAlign: 'center', padding: 24 }}><div class="t-xl">${INFO[k][0]}</div><div class="t-s" style=${{ opacity: .85, margin: '4px 0 16px' }}>${ME}</div>
+    <div class="glass-red r-lg pad" style=${{ textAlign: 'center', padding: 18 }}><div class="t-xl">${INFO[k][0]}</div><div class="t-s" style=${{ opacity: .85, margin: '4px 0 16px' }}>${ME}</div>
       <a href=${u} target="_blank" rel="noopener noreferrer" class="btn btn-white press" style=${{ width: '100%' }}>${INFO[k][1]}<${Icon} n="ext" s=${15}/></a></div>
     <div class="t-xs mu glass-2 r-md" style=${{ padding: '8px 12px' }}>${k === 'tix' ? 'האתר הרשמי לא מאפשר הצגה בתוך אפליקציות אחרות, ולכן הוא נפתח בלשונית נפרדת. אחרי הפעולה אפשר לחזור לכאן.' : 'התצוגה הנוכחית חוסמת אתרים חיצוניים בתוך האפליקציה, ולכן האתר נפתח בלשונית נפרדת.'}</div>
     ${nx.length ? html`<section class="glass r-lg" style=${{ overflow: 'hidden' }}><div class="sec-t pad-x" style=${{ paddingTop: 14, paddingBottom: 4 }}>משחקי הבית הקרובים</div>${nx.map(f => html`<a key=${f.id} href=${u} target="_blank" rel="noopener noreferrer" class="li press"><${Crest} n=${f.o} s=${34}/><div class="grow"><div class="b trunc">${ME} – ${f.o}</div><div class="t-xs mu trunc">${fdShort(f)} · ${compLabel(f)}</div></div><span class="link t-xs nowrap">לכרטיסים</span></a>`)}</section>` : null}

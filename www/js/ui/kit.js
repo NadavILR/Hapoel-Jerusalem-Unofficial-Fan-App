@@ -51,8 +51,8 @@ export const Toggle = ({ on, set, label, sub, disabled }) => html`<button role="
   <span class="tg" aria-checked=${String(!!on)} disabled=${disabled}></span></button>`;
 export const Skel = ({ n = 5, h = 56 }) => html`<div class="stack-s" aria-busy="true" aria-label="טוען">${Array.from({ length: n }, (_, i) => html`<div key=${i} class="sk" style=${{ height: h }}></div>`)}</div>`;
 export const Section = ({ title, aside, children, cls = '' }) => html`<section class=${cx('glass r-lg', cls)}>
-  ${title ? html`<div class="row between pad-x" style=${{ paddingTop: 14, paddingBottom: 6 }}><h2 class="sec-t" style=${{ margin: 0 }}>${title}</h2>${aside || null}</div>` : null}${children}</section>`;
-export const Empty = ({ title, sub, children }) => html`<div class="glass r-lg pad col center" style=${{ alignItems: 'center', gap: 8, padding: '28px 20px' }}>
+  ${title ? html`<div class="row between pad-x" style=${{ paddingTop: 12, paddingBottom: 4 }}><h2 class="sec-t" style=${{ margin: 0 }}>${title}</h2>${aside || null}</div>` : null}${children}</section>`;
+export const Empty = ({ title, sub, children }) => html`<div class="glass r-lg pad col center" style=${{ alignItems: 'center', gap: 8, padding: '22px 18px' }}>
   <div class="ic-soft"><${Icon} n="ball" s=${20}/></div><div class="t-m">${title}</div>${sub ? html`<div class="t-s mu">${sub}</div>` : null}${children || null}</div>`;
 export const ExtLink = ({ href, children, cls = 'link t-s' }) => html`<a href=${href} target="_blank" rel="noopener noreferrer" class=${cls}>${children}<${Icon} n="ext" s=${13}/></a>`;
 /* שורת המקור בתחתית כל עמוד */
