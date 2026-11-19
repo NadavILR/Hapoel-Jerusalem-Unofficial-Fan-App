@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- "11" in Noto Sans Hebrew Bold (tabular), for the widgets' seconds -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="27.94dp" android:height="32.64dp" android:viewportWidth="1164" android:viewportHeight="1360">
-    <path android:fillColor="#FFFFFFFF" android:pathData="M425.0 1068H272.0V662Q272.0 648 272.0 623.0Q272.0 598 272.5 569.5Q273.0 541 274.0 519Q261.0 532 250.5 543.0Q240.0 554 227.0 564L135.0 637L56.0 539L289.0 354H425.0Z M1007.0 1068H854.0V662Q854.0 648 854.0 623.0Q854.0 598 854.5 569.5Q855.0 541 856.0 519Q843.0 532 832.5 543.0Q822.0 554 809.0 564L717.0 637L638.0 539L871.0 354H1007.0Z" />
-</vector>

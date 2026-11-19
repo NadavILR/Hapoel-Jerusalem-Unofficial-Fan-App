@@ -43,8 +43,6 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/hpj_clock_widget_info" />
         </receiver>
-        <!-- The widgets' clock: re-syncs their seconds and redraws them at each minute (WidgetTick) -->
-        <receiver android:name=".WidgetTick" android:exported="false" />
         <!-- In-app updates: opens Android's install confirmation as soon as the download is installed (UpdaterPlugin) -->
         <receiver android:name=".InstallReceiver" android:exported="false" />
         <receiver android:name=".LiveAlarmReceiver" android:exported="false">
