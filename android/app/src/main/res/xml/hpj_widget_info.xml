@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The next game / live game widget: one size only – one row, five columns (not resizable) -->
+<!-- The next game / live game widget: one row, five columns by default; it can be resized, and the design fits itself to
+     the real size (NextGameWidget.fitRow) -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="320dp"
     android:minHeight="40dp"
     android:targetCellWidth="5"
     android:targetCellHeight="1"
-    android:resizeMode="none"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="40dp"
+    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_row"
     android:previewLayout="@layout/widget_row"

@@ -125,7 +125,11 @@ public class NextGameWidget extends AppWidgetProvider {
             try {
                 // One size only: one row, five columns (hpj_widget_info.xml). Lying down (landscape) the row is wide
                 // and low, so it gets its own layout; Android picks the one for the current orientation
-                m.updateAppWidget(id, new RemoteViews(row(c, d, crests, true), row(c, d, crests, false)));
+                Bundle o = m.getAppWidgetOptions(id);
+                RemoteViews land = row(c, d, crests, true), port = row(c, d, crests, false);
+                fitRow(c, land, o, true, d != null && d.live);
+                fitRow(c, port, o, false, d != null && d.live);
+                m.updateAppWidget(id, new RemoteViews(land, port));
             } catch (Exception ignored) {
             }
         }
@@ -346,6 +350,74 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setViewLayoutWidth(R.id.w_ss_clip, w, android.util.TypedValue.COMPLEX_UNIT_PX);
         }
         return v;
+    }
+
+    /** The row's design base size (dp): five columns × one row on a Galaxy S24 Ultra. */
+    private static final float RW = 362f, RH = 88f;
+
+    /**
+     * Scales the row to the widget's real size (Android 12+; the launcher reports it in dp, so the screen-resolution
+     * setting does not matter): k – sizes, text and widths (the smaller of width and height against the base); kh – what
+     * may grow with the height (the crests, the countdown boxes, the score). Lying down: the landscape size.
+     */
+    private static void fitRow(Context c, RemoteViews v, Bundle o, boolean land, boolean live) {
+        if (Build.VERSION.SDK_INT < 31 || o == null) return;
+        float w = o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+        float h = o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT : AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+        if (w < 100 || h < 30) return;
+        float k = Math.min(1.6f, Math.min(w / RW, h / RH)), kh = Math.min(1.6f, Math.min(h / RH, k * 1.3f));
+        final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
+        float px = c.getResources().getDisplayMetrics().density;
+        v.setViewLayoutWidth(R.id.w_club, 54 * k, DP);
+        float ci = Math.min(38 * kh, 54 * k - 10 * k);
+        v.setViewLayoutWidth(R.id.w_clubimg, ci, DP);
+        v.setViewLayoutHeight(R.id.w_clubimg, ci, DP);
+        int pad = Math.round(10 * k * px);
+        v.setViewPadding(R.id.w_main, pad, 0, pad, 0);
+        v.setTextViewTextSize(R.id.w_comp, DP, 9 * k);
+        if (live) {
+            v.setTextViewTextSize(R.id.w_tag, DP, 9.5f * k);
+            v.setViewPadding(R.id.w_tag, Math.round(8 * k * px), Math.round(k * px), Math.round(8 * k * px), Math.round(2 * k * px));
+            v.setTextViewTextSize(R.id.w_clock, DP, 11.5f * k);
+            v.setViewLayoutMargin(R.id.w_clock, RemoteViews.MARGIN_START, 6 * k, DP);
+            v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 4 * k, DP);
+            for (int id : new int[] {R.id.w_home_crest, R.id.w_away_crest}) { v.setViewLayoutWidth(id, 26 * kh, DP); v.setViewLayoutHeight(id, 26 * kh, DP); }
+            v.setViewLayoutMargin(R.id.w_away_crest, RemoteViews.MARGIN_START, 6 * k, DP);
+            v.setViewLayoutMargin(R.id.w_hs, RemoteViews.MARGIN_START, 6 * k, DP);
+            for (int id : new int[] {R.id.w_hs, R.id.w_as}) v.setTextViewTextSize(id, DP, 24 * Math.min(kh, k * 1.15f));
+            v.setTextViewTextSize(R.id.w_dash, DP, 18 * k);
+            v.setViewLayoutMargin(R.id.w_dash, RemoteViews.MARGIN_START, 6 * k, DP);
+            v.setViewLayoutMargin(R.id.w_dash, RemoteViews.MARGIN_END, 6 * k, DP);
+            return;
+        }
+        v.setViewLayoutWidth(R.id.w_crests, 30 * k, DP);
+        v.setViewLayoutHeight(R.id.w_crests, 18 * k, DP);
+        for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 18 * k, DP); v.setViewLayoutHeight(id, 18 * k, DP); }
+        v.setTextViewTextSize(R.id.w_op, DP, 11.5f * k);
+        v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_START, 6 * k, DP);
+        v.setTextViewTextSize(R.id.w_when, DP, 9 * k);
+        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 3 * k, DP);
+        v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        v.setTextViewTextSize(R.id.w_status, DP, 10.5f * k);
+        v.setViewLayoutMargin(R.id.w_count, RemoteViews.MARGIN_START, 8 * k, DP);
+        // the countdown boxes: a little taller with a taller widget, never wider than the row allows
+        float bw = 35 * k, num = Math.min(16 * kh, (bw - 6 * k) / 1.25f);
+        int[][] b = {{R.id.w_days_box, R.id.w_days, R.id.w_bl1}, {R.id.w_b2, R.id.w_hours, R.id.w_bl2}, {R.id.w_b3, R.id.w_chrono, R.id.w_bl3}, {R.id.w_b4, R.id.w_chrono2, R.id.w_bl4}};
+        for (int i = 0; i < b.length; i++) {
+            v.setViewLayoutWidth(b[i][0], bw, DP);
+            v.setViewPadding(b[i][0], 0, Math.round(4 * kh * px), 0, Math.round(5 * kh * px));
+            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 4 * k, DP);
+            v.setTextViewTextSize(b[i][1], DP, num);
+            v.setTextViewTextSize(b[i][2], DP, 8 * k);
+            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
+        }
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setTextSize(num * px);
+        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, R.font.noto_sans_hebrew_bold)); } catch (Exception e) { }
+        p.setFontFeatureSettings("tnum");
+        float two = (float) Math.ceil(p.measureText("00")) + 1f;
+        v.setViewLayoutWidth(R.id.w_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
+        v.setViewLayoutWidth(R.id.w_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }
 
     /** The width of two digits in the countdown's font (22dp bold, tabular digits), so a clip shows just "MM" / "SS". */
