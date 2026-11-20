@@ -81,11 +81,22 @@ public class NextGameWidget extends AppWidgetProvider {
         } catch (Exception ignored) {
         }
         if (has(c)) update(c);
+        ClockWidget.refresh(c); // the clock widget shows the live score too
     }
 
     static void clearLive(Context c) {
         prefs(c).edit().remove("live").apply();
-        if (has(c)) refresh(c);
+        if (has(c)) refresh(c); else ClockWidget.refresh(c);
+    }
+
+    /** The live snapshot while it is fresh (a game on now), or null – for the clock widget. */
+    static JSONObject liveNow(Context c) {
+        try {
+            JSONObject l = new JSONObject(prefs(c).getString("live", "{}"));
+            return l.has("t") && System.currentTimeMillis() - l.optLong("ts") < LIVE_FRESH ? l : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static SharedPreferences prefs(Context c) {

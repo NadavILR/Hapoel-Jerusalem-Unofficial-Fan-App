@@ -117,6 +117,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.k_heb, rlm + heb);
         v.setViewVisibility(R.id.k_heb, heb.isEmpty() ? View.GONE : View.VISIBLE);
         v.setViewVisibility(R.id.k_s2, heb.isEmpty() ? View.GONE : View.VISIBLE);
+        if (g == null && NextGameWidget.liveNow(c) != null) return live(c, v, NextGameWidget.liveNow(c), null);
         if (g == null) {
             v.setTextViewText(R.id.k_op, rlm + "אין משחקים קרובים");
             v.setTextViewText(R.id.k_comp, "");
@@ -126,6 +127,8 @@ public class ClockWidget extends AppWidgetProvider {
             v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, 0));
             return v;
         }
+        JSONObject live = NextGameWidget.liveNow(c);
+        if (live != null) return live(c, v, live, g);
         long t = g.optLong("t"), left = t - now;
         Calendar gc = Calendar.getInstance(IL);
         gc.setTimeInMillis(t);
@@ -245,9 +248,56 @@ public class ClockWidget extends AppWidgetProvider {
             v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
             v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
         }
+        // the live score: the same boxes and sizes as the countdown
+        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 5 * kh, DP);
+        for (int[] x : new int[][] {{R.id.k_hbox, R.id.k_hs, R.id.k_hn}, {R.id.k_abox, R.id.k_as, R.id.k_an}}) {
+            v.setViewPadding(x[0], Math.round(4 * k * px), Math.round(4 * kh * px), Math.round(4 * k * px), Math.round(5 * kh * px));
+            v.setTextViewTextSize(x[1], DP, num);
+            v.setTextViewTextSize(x[2], DP, 8.5f * k);
+            v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_TOP, k, DP);
+        }
+        for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.k_mid, e, 6 * k, DP);
+        v.setTextViewTextSize(R.id.k_tag, DP, 9 * k);
+        v.setViewPadding(R.id.k_tag, Math.round(8 * k * px), Math.round(k * px), Math.round(8 * k * px), Math.round(2 * k * px));
+        v.setTextViewTextSize(R.id.k_lc, DP, 9 * k);
+        v.setViewLayoutMargin(R.id.k_lc, RemoteViews.MARGIN_TOP, 3 * k, DP);
         float two = (float) Math.ceil(paint(c, num, true).measureText("00")) + 1f;
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
+    }
+
+    /**
+     * During the game (a fresh snapshot from the live score service): the card keeps its head – the crests, the opponent
+     * and the competition – and the countdown boxes give way to the score, the home team on the right, with the "לייב"
+     * tag and the quarter and game clock between them.
+     */
+    private static RemoteViews live(Context c, RemoteViews v, JSONObject l, JSONObject g) {
+        String rlm = "\u200F";
+        long t = l.optLong("t");
+        boolean meHome = l.optBoolean("meHome", true);
+        String home = l.optString("home"), away = l.optString("away"), opp = meHome ? away : home;
+        String oi = meHome ? l.optString("awayImg", "") : l.optString("homeImg", "");
+        if (oi.isEmpty()) oi = LiveScheduler.game(c, t).optString("img", "");
+        if (oi.isEmpty() && g != null) oi = g.optString("img", "");
+        Bitmap oc = NextGameWidget.crest(c, oi);
+        if (oc != null) v.setImageViewBitmap(R.id.k_opp, oc); else v.setImageViewResource(R.id.k_opp, android.R.color.transparent);
+        v.setViewVisibility(R.id.k_crests, View.VISIBLE);
+        v.setTextViewText(R.id.k_op, rlm + opp);
+        String comp = shortComp(l.optString("comp", ""));
+        if (comp.isEmpty() && g != null) comp = comp(g);
+        v.setTextViewText(R.id.k_comp, rlm + comp);
+        v.setViewVisibility(R.id.k_when, View.GONE);
+        v.setViewVisibility(R.id.k_count, View.GONE);
+        v.setViewVisibility(R.id.k_status, View.GONE);
+        v.setViewVisibility(R.id.k_score, View.VISIBLE);
+        v.setTextViewText(R.id.k_hs, String.valueOf(l.optInt("hs")));
+        v.setTextViewText(R.id.k_as, String.valueOf(l.optInt("as")));
+        v.setTextViewText(R.id.k_hn, rlm + (meHome ? "הפועל" : home));
+        v.setTextViewText(R.id.k_an, rlm + (meHome ? away : "הפועל"));
+        String st = l.optString("status", ""), clock = l.optString("clock", "");
+        v.setTextViewText(R.id.k_lc, rlm + (st.isEmpty() ? "בלייב" : st) + (clock.isEmpty() ? "" : "\n\u2066" + clock + "\u2069"));
+        v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, t));
+        return v;
     }
 
     /** The next game from the app's list: the first that has not started, or one that started less than 3 hours ago. */

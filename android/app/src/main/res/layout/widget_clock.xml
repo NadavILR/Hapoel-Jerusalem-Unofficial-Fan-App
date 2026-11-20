@@ -90,6 +90,21 @@
           <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_b4l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#B3FFFFFF" android:textSize="8.5dp" android:text="שניות" />
         </LinearLayout>
       </LinearLayout>
+      <!-- during the game: the score in two boxes (the home team on the right) with the "לייב" tag, quarter and clock between them -->
+      <LinearLayout android:id="@+id/k_score" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="horizontal" android:gravity="center_vertical" android:layoutDirection="rtl" android:visibility="gone">
+        <LinearLayout android:id="@+id/k_hbox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/cw2_box" android:paddingTop="4dp" android:paddingBottom="5dp" android:paddingStart="4dp" android:paddingEnd="4dp">
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_hs" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="19dp" android:textStyle="bold" android:fontFeatureSettings="tnum" android:text="0" />
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_hn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#B3FFFFFF" android:textSize="8.5dp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/k_mid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:orientation="vertical" android:gravity="center">
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/cw2_live" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="1dp" android:paddingBottom="2dp" android:textColor="#FFFFFF" android:textSize="9dp" android:textStyle="bold" android:text="● לייב" />
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_lc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:gravity="center" android:textColor="#FFFFFF" android:textSize="9dp" android:textStyle="bold" android:maxLines="2" android:fontFeatureSettings="tnum" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/k_abox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/cw2_box" android:paddingTop="4dp" android:paddingBottom="5dp" android:paddingStart="4dp" android:paddingEnd="4dp">
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_as" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="19dp" android:textStyle="bold" android:fontFeatureSettings="tnum" android:text="0" />
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_an" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#B3FFFFFF" android:textSize="8.5dp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+      </LinearLayout>
       <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center" android:textColor="#FFFFFF" android:textSize="11dp" android:textStyle="bold" android:visibility="gone" />
     </LinearLayout>
   </LinearLayout>
