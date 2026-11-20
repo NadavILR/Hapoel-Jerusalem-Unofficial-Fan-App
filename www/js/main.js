@@ -139,7 +139,8 @@ function App() {
           if (L && !stop) {
             if (L.status === 'live') wait = 3000; else if (L.status === 'pre' && Math.abs(Date.now() - n.t) < 10 * MIN) wait = 5000;
             liveR.current = L; setLive(L); saveLive(L, n);
-            if (L.status === 'live' && (!prev || prev.app !== n.id || prev.status !== 'live')) { const m = NT.start(n); notify(NT.line(m), n.c, 'quarter', m); }
+            /* "המשחק התחיל" – פעם אחת בכל משחק, ורק סביב שריקת הפתיחה (עד 45 דקות אחריה); פתיחת האפליקציה באמצע המשחק לא מודיעה שוב */
+            if (L.status === 'live' && (!prev || prev.app !== n.id || prev.status !== 'live') && Date.now() < n.t + 45 * MIN && firedOnce('hpj-start', n.id)) { const m = NT.start(n); notify(NT.line(m), n.c, 'quarter', m); }
             if (L.status === 'end') {
               if (firedOnce('hpj-final', n.id)) { const m = NT.fin(n, L.r, (L.q || []).length > 4); notify(NT.line(m), n.c, 'quarter', m); }
               if (L.gs) { const c = liveGsCache(); c[n.id] = { ...L.gs, src: L.src }; LS.set('hpj-livegs', c); }
