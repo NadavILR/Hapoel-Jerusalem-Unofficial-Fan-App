@@ -200,6 +200,28 @@ public class ClockWidget extends AppWidgetProvider {
     /** The design's base size, in dp: the widget as measured on a Galaxy S24 Ultra. */
     private static final float BW = 362f, BH = 195f;
 
+    /** The countdown card's head: the crests, or the title and the stage, or the day and the time – the tallest. */
+    private static float headH(Context c, float kc) {
+        return Math.max(22 * kc, Math.max(th(c, 12 * kc, true) + th(c, 9.5f * kc, false), 2 * th(c, 9.5f * kc, false)) + kc);
+    }
+
+    /** A countdown box: its padding, the number and the label. */
+    private static float boxH(Context c, float num, float kc, float khc) {
+        return 9 * khc + th(c, num, true) + kc + th(c, 8.5f * kc, false);
+    }
+
+    /** The whole countdown card (the live card is made exactly as tall) at the card scale q. */
+    private static float cardH(Context c, float mainW, float k, float kh, float q) {
+        float kc = k * q, khc = kh * q, boxW = (mainW - 36 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);
+        return 14 * khc + headH(c, kc) + 5 * khc + boxH(c, num, kc, khc) + 2;
+    }
+
+    /** The home and away names under the score – Hapoel by its full name. */
+    static String[] liveNames(JSONObject l) {
+        boolean meHome = l.optBoolean("meHome", true);
+        return new String[] {meHome ? LiveGame.TEAM : l.optString("home"), meHome ? l.optString("away") : LiveGame.TEAM};
+    }
+
     /** A text line's height in dp (no font padding, as in the layouts) at this size. */
     private static float th(Context c, float dp, boolean bold) {
         android.graphics.Paint.FontMetrics m = paint(c, dp, bold).getFontMetrics();
@@ -268,68 +290,84 @@ public class ClockWidget extends AppWidgetProvider {
             v.setViewLayoutMargin(id, RemoteViews.MARGIN_END, 6 * k * Math.min(1, dateText / (10.5f * k)), DP);
         }
         v.setViewPadding(R.id.k_dates, 0, 0, 0, Math.round(6 * k * px)); // optical centring between the clock and the card
-        // the next-game card
-        v.setViewPadding(R.id.k_card, Math.round(9 * k * px), Math.round(7 * kh * px), Math.round(9 * k * px), Math.round(7 * kh * px));
+        // the next-game card. Its sizes (kc, khc) are scaled down together, after the clock, when the clock, the dates
+        // and the card would not fit the widget's height – Noto Sans Hebrew lines are about 1.37× their size
+        float avail = h - 24 * k, datesH = th(c, dateText, true) + 6 * k + 2 * k;
+        float q = 1f, clockH = th(c, clock, true), minClock = Math.min(clock, 40 * k);
+        float cardH = cardH(c, mainW, k, kh, 1f);
+        if (clockH + datesH + cardH > avail) {
+            // the clock first, down to 40 (it stays the biggest thing on the widget)
+            float want = Math.max(th(c, minClock, true), avail - datesH - cardH);
+            clock *= want / clockH;
+            clockH = th(c, clock, true);
+            // then the card, all of it together
+            for (int i = 0; i < 12 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
+            v.setTextViewTextSize(R.id.k_time, DP, clock);
+            v.setTextViewTextSize(R.id.k_sec, DP, clock * 0.42f);
+        }
+        float kc = k * q, khc = kh * q;
+        v.setViewPadding(R.id.k_card, Math.round(9 * kc * px), Math.round(7 * khc * px), Math.round(9 * kc * px), Math.round(7 * khc * px));
         // the user's design: larger crests (22, overlapping to 38), the title 12 bold, the stage / day / time 9.5
-        v.setViewLayoutWidth(R.id.k_crests, 38 * k, DP);
-        v.setViewLayoutHeight(R.id.k_crests, 22 * k, DP);
-        for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 22 * k, DP); v.setViewLayoutHeight(id, 22 * k, DP); }
-        v.setViewLayoutMargin(R.id.k_who, RemoteViews.MARGIN_START, 6 * k, DP);
-        v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * k, DP);
-        v.setTextViewTextSize(R.id.k_op, DP, 12 * k);
-        for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * k);
-        v.setTextViewTextSize(R.id.k_status, DP, 11 * k);
-        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * kh, DP);
-        float boxW = (mainW - 18 * k - 18 * k) / 4, num = Math.min(19 * kh, (boxW - 6 * k) / 1.25f);
+        v.setViewLayoutWidth(R.id.k_crests, 38 * kc, DP);
+        v.setViewLayoutHeight(R.id.k_crests, 22 * kc, DP);
+        for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 22 * kc, DP); v.setViewLayoutHeight(id, 22 * kc, DP); }
+        v.setViewLayoutMargin(R.id.k_who, RemoteViews.MARGIN_START, 6 * kc, DP);
+        v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * kc, DP);
+        v.setTextViewTextSize(R.id.k_op, DP, 12 * kc);
+        for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * kc);
+        v.setTextViewTextSize(R.id.k_status, DP, 11 * kc);
+        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * khc, DP);
+        float boxW = (mainW - 18 * kc - 18 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);
         int[][] b = {{R.id.k_b1, R.id.k_dd, R.id.k_b1l}, {R.id.k_b2, R.id.k_hh, R.id.k_b2l}, {R.id.k_b3, R.id.k_mm, R.id.k_b3l}, {R.id.k_b4, R.id.k_ss, R.id.k_b4l}};
         for (int i = 0; i < b.length; i++) {
-            v.setViewPadding(b[i][0], 0, Math.round(4 * kh * px), 0, Math.round(5 * kh * px));
-            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 6 * k, DP);
+            v.setViewPadding(b[i][0], 0, Math.round(4 * khc * px), 0, Math.round(5 * khc * px));
+            if (i > 0) v.setViewLayoutMargin(b[i][0], RemoteViews.MARGIN_START, 6 * kc, DP);
             v.setTextViewTextSize(b[i][1], DP, num);
-            v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
-            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
+            v.setTextViewTextSize(b[i][2], DP, 8.5f * kc);
+            v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, kc, DP);
         }
-        // the live card (the user's design): crests 24, the competition 13 bold, the stage 10; the score boxes with
-        // a 20 score and a 9.5 name; the tag 10, the quarter 9.5 bold, the clock 15
-        for (int id : new int[] {R.id.k_lhc, R.id.k_lac}) { v.setViewLayoutWidth(id, 24 * k, DP); v.setViewLayoutHeight(id, 24 * k, DP); }
-        v.setViewLayoutMargin(R.id.k_lhc, RemoteViews.MARGIN_START, 10 * k, DP);
-        v.setViewLayoutMargin(R.id.k_lac, RemoteViews.MARGIN_END, 10 * k, DP);
-        v.setTextViewTextSize(R.id.k_lt, DP, 13 * k);
-        v.setTextViewTextSize(R.id.k_ls, DP, 10 * k);
-        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 4 * kh, DP);
-        for (int[] x : new int[][] {{R.id.k_hbox, R.id.k_hs, R.id.k_hn}, {R.id.k_abox, R.id.k_as, R.id.k_an}}) {
-            v.setViewPadding(x[0], Math.round(4 * k * px), Math.round(4 * kh * px), Math.round(4 * k * px), Math.round(5 * kh * px));
-            v.setTextViewTextSize(x[1], DP, Math.min(20 * kh, 20 * k * 1.15f));
-            v.setTextViewTextSize(x[2], DP, 9.5f * k);
-            v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_TOP, k, DP);
-        }
-        for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.k_mid, e, 6 * k, DP);
-        v.setTextViewTextSize(R.id.k_tag, DP, 10 * k);
-        v.setViewPadding(R.id.k_tag, Math.round(10 * k * px), Math.round(k * px), Math.round(10 * k * px), Math.round(2 * k * px));
-        v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * k);
-        v.setViewLayoutMargin(R.id.k_lq, RemoteViews.MARGIN_TOP, 2 * k, DP);
-        v.setTextViewTextSize(R.id.k_lc, DP, 15 * k);
-        // the live card is exactly as tall as the countdown card: its head as tall as the countdown's head, the score
-        // row as tall as the countdown boxes; text that would not fit is scaled down together
-        float headH = Math.max(22 * k, Math.max(th(c, 12 * k, true) + th(c, 9.5f * k, false), 2 * th(c, 9.5f * k, false)) + k);
-        float boxH = 9 * kh + th(c, num, true) + k + th(c, 8.5f * k, false);
-        float lhead = Math.max(24 * k, th(c, 13 * k, true) + k + th(c, 10 * k, false));
-        float mid = th(c, 10 * k, true) + 3 * k + 2 * k + th(c, 9.5f * k, true) + th(c, 15 * k, false);
-        float box = 9 * kh + th(c, 20 * k, true) + k + th(c, 9.5f * k, false);
-        float f = Math.min(1f, Math.min(headH / lhead, boxH / Math.max(mid, box)));
+        // the live card (the user's design) – exactly as tall as the countdown card: its head as tall as the
+        // countdown's head, the score row as tall as the countdown boxes; text that would not fit is scaled down together
+        float headH = headH(c, kc), boxH = boxH(c, num, kc, khc);
+        float lhead = Math.max(24 * kc, th(c, 13 * kc, true) - 3 * kc + th(c, 10 * kc, false));
+        float mid = th(c, 10 * kc, true) + 3 * kc + 2 * kc + th(c, 9.5f * kc, true) + th(c, 15 * kc, false);
+        float box = 9 * khc + th(c, 20 * kc, true) + kc + th(c, 9.5f * kc, false);
+        float f = Math.min(1f, Math.min(headH / lhead, boxH / Math.max(mid, box)) * 0.97f);
+        float kf = kc * f;
         v.setViewLayoutHeight(R.id.k_lhead, headH, DP);
         v.setViewLayoutHeight(R.id.k_score, boxH, DP);
-        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 5 * kh, DP);
-        for (int id : new int[] {R.id.k_lhc, R.id.k_lac}) { v.setViewLayoutWidth(id, Math.min(24 * k, headH), DP); v.setViewLayoutHeight(id, Math.min(24 * k, headH), DP); }
-        v.setTextViewTextSize(R.id.k_lt, DP, 13 * k * f);
-        v.setTextViewTextSize(R.id.k_ls, DP, 10 * k * f);
-        v.setViewLayoutMargin(R.id.k_ls, RemoteViews.MARGIN_TOP, -3 * k * f, DP); // the stage close under the competition
-        for (int id : new int[] {R.id.k_hs, R.id.k_as}) v.setTextViewTextSize(id, DP, 20 * k * f);
-        for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setTextViewTextSize(id, DP, 9.5f * k * f);
-        v.setTextViewTextSize(R.id.k_tag, DP, 10 * k * f);
-        v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * k * f);
-        v.setTextViewTextSize(R.id.k_lc, DP, 15 * k * f);
-        for (int id : new int[] {R.id.k_hbox, R.id.k_abox}) v.setViewPadding(id, Math.round(4 * k * px), 0, Math.round(4 * k * px), 0);
+        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 5 * khc, DP);
+        float lc = Math.min(24 * kc, headH);
+        for (int id : new int[] {R.id.k_lhc, R.id.k_lac}) { v.setViewLayoutWidth(id, lc, DP); v.setViewLayoutHeight(id, lc, DP); }
+        v.setViewLayoutMargin(R.id.k_lhc, RemoteViews.MARGIN_START, 10 * kc, DP);
+        v.setViewLayoutMargin(R.id.k_lac, RemoteViews.MARGIN_END, 10 * kc, DP);
+        v.setTextViewTextSize(R.id.k_lt, DP, 13 * kf);
+        v.setTextViewTextSize(R.id.k_ls, DP, 10 * kf);
+        v.setViewLayoutMargin(R.id.k_ls, RemoteViews.MARGIN_TOP, -3 * kf, DP); // the stage close under the competition
+        for (int id : new int[] {R.id.k_hs, R.id.k_as}) v.setTextViewTextSize(id, DP, 20 * kf);
+        for (int id : new int[] {R.id.k_hbox, R.id.k_abox}) v.setViewPadding(id, Math.round(4 * kc * px), 0, Math.round(4 * kc * px), 0);
+        for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, kf, DP);
+        for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.k_mid, e, 6 * kc, DP);
+        v.setTextViewTextSize(R.id.k_tag, DP, 10 * kf);
+        v.setViewPadding(R.id.k_tag, Math.round(10 * kf * px), Math.round(kf * px), Math.round(10 * kf * px), Math.round(2 * kf * px));
+        v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * kf);
+        v.setViewLayoutMargin(R.id.k_lq, RemoteViews.MARGIN_TOP, 2 * kf, DP);
+        v.setTextViewTextSize(R.id.k_lc, DP, 15 * kf);
+        // the team names under the score: each as large as its box allows (9.5 at most) – never cut
+        JSONObject live = NextGameWidget.liveNow(c);
+        if (live != null) {
+            String[] n = liveNames(live);
+            String st = live.optString("status", ""), ck = live.optString("clock", "");
+            float midW = Math.max(paint(c, 10 * kf, true).measureText("● לייב") / px + 20 * kf,
+                Math.max(paint(c, 9.5f * kf, true).measureText(st.isEmpty() ? "בלייב" : st), paint(c, 15 * kf, false).measureText(ck)) / px);
+            float inner = (mainW - 18 * kc - midW - 12 * kc) / 2 - 8 * kc - 2;
+            int[] ids = {R.id.k_hn, R.id.k_an};
+            for (int i = 0; i < 2; i++) {
+                float sz = 9.5f * kf, tw = paint(c, sz, false).measureText(n[i]) / px;
+                if (tw > inner) sz *= inner / tw;
+                v.setTextViewTextSize(ids[i], DP, sz);
+            }
+        } else for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setTextViewTextSize(id, DP, 9.5f * kf);
         float two = (float) Math.ceil(paint(c, num, true).measureText("00")) + 1f;
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);

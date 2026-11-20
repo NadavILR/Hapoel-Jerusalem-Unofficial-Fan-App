@@ -40,6 +40,11 @@ android {
             }
         }
     }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
     buildTypes {
         debug {
             if (System.getenv('HPJ_KEYSTORE')) signingConfig signingConfigs.hpj
@@ -69,6 +74,8 @@ dependencies {
     // Pull-to-refresh for the tickets / shop / member sites (TicketsPlugin)
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     testImplementation "junit:junit:$junitVersion"
+    // Renders the home-screen widgets in every state and size, and checks that no text is cut (WidgetRenderTest)
+    testImplementation "org.robolectric:robolectric:4.12.2"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

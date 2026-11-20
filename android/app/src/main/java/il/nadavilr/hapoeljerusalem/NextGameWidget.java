@@ -142,8 +142,8 @@ public class NextGameWidget extends AppWidgetProvider {
                 // and low, so it gets its own layout; Android picks the one for the current orientation
                 Bundle o = m.getAppWidgetOptions(id);
                 RemoteViews land = row(c, d, crests, true), port = row(c, d, crests, false);
-                fitRow(c, land, o, true, d != null && d.live);
-                fitRow(c, port, o, false, d != null && d.live);
+                fitRow(c, land, o, true, d);
+                fitRow(c, port, o, false, d);
                 m.updateAppWidget(id, new RemoteViews(land, port));
             } catch (Exception ignored) {
             }
@@ -382,6 +382,25 @@ public class NextGameWidget extends AppWidgetProvider {
         return v;
     }
 
+    /** A text line's height in dp at this size (no font padding, as in the layouts). */
+    private static float th(Context c, float dp, boolean bold) {
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        float px = c.getResources().getDisplayMetrics().density;
+        p.setTextSize(dp * px);
+        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular)); } catch (Exception e) { }
+        android.graphics.Paint.FontMetrics f = p.getFontMetrics();
+        return (f.descent - f.ascent) / px;
+    }
+
+    /** A text's width in dp at this size, in the widgets' font. */
+    private static float textW(Context c, String t, float dp, boolean bold) {
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        float px = c.getResources().getDisplayMetrics().density;
+        p.setTextSize(dp * px);
+        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular)); } catch (Exception e) { }
+        return p.measureText(t == null ? "" : t) / px;
+    }
+
     /** The row's design base size (dp): five columns × one row on a Galaxy S24 Ultra. */
     private static final float RW = 362f, RH = 88f;
 
@@ -390,7 +409,8 @@ public class NextGameWidget extends AppWidgetProvider {
      * setting does not matter): k – sizes, text and widths (the smaller of width and height against the base); kh – what
      * may grow with the height (the crests, the countdown boxes, the score). Lying down: the landscape size.
      */
-    private static void fitRow(Context c, RemoteViews v, Bundle o, boolean land, boolean live) {
+    private static void fitRow(Context c, RemoteViews v, Bundle o, boolean land, Model d) {
+        boolean live = d != null && d.live;
         if (Build.VERSION.SDK_INT < 31 || o == null) return;
         float w = o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
         float h = o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT : AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
@@ -418,14 +438,31 @@ public class NextGameWidget extends AppWidgetProvider {
                 v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_TOP, 2 * k, DP);
             }
             for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.w_mid, e, 6 * k, DP);
-            v.setTextViewTextSize(R.id.w_op, DP, 12 * k);
-            v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * k);
-            v.setTextViewTextSize(R.id.w_tag, DP, 9.5f * k);
-            v.setViewPadding(R.id.w_tag, Math.round(9 * k * px), Math.round(k * px), Math.round(9 * k * px), Math.round(2 * k * px));
-            v.setViewLayoutMargin(R.id.w_tag, RemoteViews.MARGIN_TOP, 3 * k, DP);
-            v.setTextViewTextSize(R.id.w_q, DP, 9.5f * k);
-            v.setViewLayoutMargin(R.id.w_q, RemoteViews.MARGIN_TOP, 2 * k, DP);
-            v.setTextViewTextSize(R.id.w_clock, DP, 14 * k);
+            // the middle column (competition, stage, tag, quarter, clock) keeps 5 dp from the top and the bottom: its
+            // text is scaled down together when the widget is low
+            float midH = th(c, 12 * k, true) + k + th(c, 9.5f * k, false) + 3 * k + th(c, 9.5f * k, true) + 3 * k + 2 * k + th(c, 9.5f * k, true) + th(c, 14 * k, false);
+            float m = Math.min(1f, (h - 10 * k) / midH), km = k * m;
+            v.setTextViewTextSize(R.id.w_op, DP, 12 * km);
+            v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * km);
+            v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, km, DP);
+            v.setTextViewTextSize(R.id.w_tag, DP, 9.5f * km);
+            v.setViewPadding(R.id.w_tag, Math.round(9 * km * px), Math.round(km * px), Math.round(9 * km * px), Math.round(2 * km * px));
+            v.setViewLayoutMargin(R.id.w_tag, RemoteViews.MARGIN_TOP, 3 * km, DP);
+            v.setTextViewTextSize(R.id.w_q, DP, 9.5f * km);
+            v.setViewLayoutMargin(R.id.w_q, RemoteViews.MARGIN_TOP, 2 * km, DP);
+            v.setTextViewTextSize(R.id.w_clock, DP, 14 * km);
+            // wide and low (lying down): the crests close to the score boxes, not at the far ends
+            float group = 2 * 74 * k + 12 * k + 70 * k + 2 * cr - 40 * k * 2, mainW = w - 54 * k;
+            if (mainW - 16 * k > group) { int side = Math.round((mainW - group) / 2 * px); v.setViewPadding(R.id.w_main, side, 0, side, 0); }
+            // the team names under the score: each as large as its box allows (9.5 at most) – never cut
+            float inner = 74 * k - 8 * k - 2;
+            String[] n = {d.meHome ? LiveGame.TEAM : d.home, d.meHome ? d.away : LiveGame.TEAM};
+            int[] ids = {R.id.w_hn, R.id.w_an};
+            for (int i = 0; i < 2; i++) {
+                float sz = 9.5f * k, tw = textW(c, n[i], sz, false);
+                if (tw > inner) sz *= inner / tw;
+                v.setTextViewTextSize(ids[i], DP, sz);
+            }
             return;
         }
         // the user's design: the crests (22, overlapping to 38) above the name (12.5 bold), the competition · stage
@@ -433,7 +470,14 @@ public class NextGameWidget extends AppWidgetProvider {
         v.setViewLayoutWidth(R.id.w_crests, 38 * k, DP);
         v.setViewLayoutHeight(R.id.w_crests, 22 * k, DP);
         for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 22 * k, DP); v.setViewLayoutHeight(id, 22 * k, DP); }
-        v.setTextViewTextSize(R.id.w_op, DP, 12.5f * k);
+        // the opponent's name as large as the column allows (12.5 at most) – never cut
+        float col = w - 54 * k - 20 * k - (4 * 35 * k + 3 * 4 * k + 8 * k) - 2, opSize = 12.5f * k;
+        if (d != null) {
+            String opp = d.meHome ? d.away : d.home;
+            float tw = textW(c, opp, opSize, true);
+            if (tw > col) opSize *= col / tw * 0.96f;
+        }
+        v.setTextViewTextSize(R.id.w_op, DP, opSize);
         v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_TOP, 2 * k, DP);
         v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * k);
         v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, k, DP);
