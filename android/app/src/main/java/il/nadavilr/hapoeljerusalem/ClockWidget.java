@@ -59,6 +59,7 @@ public class ClockWidget extends AppWidgetProvider {
             if (ids == null || ids.length == 0) return;
             long now = System.currentTimeMillis();
             JSONObject g = next(c, now);
+            JSONObject live = NextGameWidget.liveNow(c);
             Calendar cal = Calendar.getInstance(IL);
             cal.setTimeInMillis(now);
             String day = "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1];
@@ -67,6 +68,7 @@ public class ClockWidget extends AppWidgetProvider {
             for (int id : ids) {
                 RemoteViews v = build(c, now, g);
                 fit(c, v, m.getAppWidgetOptions(id), day, greg, heb);
+                if (live != null) fitLive(c, v, m.getAppWidgetOptions(id), live);
                 m.updateAppWidget(id, v);
             }
             schedule(c, now, g);
@@ -267,37 +269,89 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     /**
-     * During the game (a fresh snapshot from the live score service): the card keeps its head – the crests, the opponent
-     * and the competition – and the countdown boxes give way to the score, the home team on the right, with the "לייב"
-     * tag and the quarter and game clock between them.
+     * During the game (a fresh snapshot from the live score service): the card's title is the competition and below it
+     * the stage; the countdown boxes give way to the score – each team's crest above its score and its name below (the
+     * home team on the right) – with the "לייב" tag and the quarter and game clock between them.
      */
     private static RemoteViews live(Context c, RemoteViews v, JSONObject l, JSONObject g) {
         String rlm = "\u200F";
         long t = l.optLong("t");
         boolean meHome = l.optBoolean("meHome", true);
-        String home = l.optString("home"), away = l.optString("away"), opp = meHome ? away : home;
         String oi = meHome ? l.optString("awayImg", "") : l.optString("homeImg", "");
         if (oi.isEmpty()) oi = LiveScheduler.game(c, t).optString("img", "");
         if (oi.isEmpty() && g != null) oi = g.optString("img", "");
-        Bitmap oc = NextGameWidget.crest(c, oi);
-        if (oc != null) v.setImageViewBitmap(R.id.k_opp, oc); else v.setImageViewResource(R.id.k_opp, android.R.color.transparent);
-        v.setViewVisibility(R.id.k_crests, View.VISIBLE);
-        v.setTextViewText(R.id.k_op, rlm + opp);
-        String comp = shortComp(l.optString("comp", ""));
-        if (comp.isEmpty() && g != null) comp = comp(g);
-        v.setTextViewText(R.id.k_comp, rlm + comp);
+        Bitmap oc = NextGameWidget.crest(c, oi), me = LiveGame.hapoelCrest(c);
+        int[] crest = meHome ? new int[] {R.id.k_hc, R.id.k_ac} : new int[] {R.id.k_ac, R.id.k_hc};
+        if (me != null) v.setImageViewBitmap(crest[0], me); else v.setImageViewResource(crest[0], R.drawable.hpj_crest);
+        if (oc != null) v.setImageViewBitmap(crest[1], oc); else v.setImageViewResource(crest[1], android.R.color.transparent);
+        // the title: the competition; below it the stage ("ליגת ווינר, מחזור 7" → "ליגת ווינר" / "מחזור 7")
+        String[] cs = compStage(l.optString("comp", ""));
+        if (cs[0].isEmpty() && g != null) cs = compStage(g.optString("l", ""));
+        if (cs[0].isEmpty() && g != null) cs[0] = comp(g);
+        v.setViewVisibility(R.id.k_crests, View.GONE);
+        v.setTextViewText(R.id.k_op, rlm + cs[0]);
+        v.setTextViewText(R.id.k_comp, rlm + cs[1]);
+        v.setViewVisibility(R.id.k_comp, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
         v.setViewVisibility(R.id.k_when, View.GONE);
         v.setViewVisibility(R.id.k_count, View.GONE);
         v.setViewVisibility(R.id.k_status, View.GONE);
         v.setViewVisibility(R.id.k_score, View.VISIBLE);
         v.setTextViewText(R.id.k_hs, String.valueOf(l.optInt("hs")));
         v.setTextViewText(R.id.k_as, String.valueOf(l.optInt("as")));
-        v.setTextViewText(R.id.k_hn, rlm + (meHome ? "הפועל" : home));
-        v.setTextViewText(R.id.k_an, rlm + (meHome ? away : "הפועל"));
+        String[] n = liveNames(l);
+        v.setTextViewText(R.id.k_hn, rlm + n[0]);
+        v.setTextViewText(R.id.k_an, rlm + n[1]);
         String st = l.optString("status", ""), clock = l.optString("clock", "");
         v.setTextViewText(R.id.k_lc, rlm + (st.isEmpty() ? "בלייב" : st) + (clock.isEmpty() ? "" : "\n\u2066" + clock + "\u2069"));
         v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, t));
         return v;
+    }
+
+    /** The home and away names under the score – Hapoel by its full name. */
+    private static String[] liveNames(JSONObject l) {
+        boolean meHome = l.optBoolean("meHome", true);
+        String home = l.optString("home"), away = l.optString("away");
+        return new String[] {meHome ? LiveGame.TEAM : home, meHome ? away : LiveGame.TEAM};
+    }
+
+    /** "ליגת ווינר, מחזור 7" → {"ליגת ווינר", "מחזור 7"}; "יורוקאפ – בית א', מחזור 10" → {"יורוקאפ", "מחזור 10"}. */
+    private static String[] compStage(String l) {
+        l = l == null ? "" : l.trim();
+        if (l.isEmpty()) return new String[] {"", ""};
+        String[] p = l.split("\\s*(,|–| - )\\s*");
+        String c0 = p[0].trim(), last = p.length > 1 ? p[p.length - 1].trim() : "";
+        return new String[] {c0, last.equals(c0) ? "" : last};
+    }
+
+    /**
+     * The live card's sizes that depend on the text: the title a little larger, and each team's name sized to its box –
+     * a short name larger, a long one smaller, never cut.
+     */
+    private static void fitLive(Context c, RemoteViews v, android.os.Bundle o, JSONObject l) {
+        float w = 362, h = 195;
+        if (Build.VERSION.SDK_INT >= 31 && o != null && o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) >= 100) {
+            w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+            h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+        }
+        float k = Math.min(1.6f, Math.min(w / BW, h / BH)), kh = Math.min(1.6f, h / BH);
+        final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
+        float px = c.getResources().getDisplayMetrics().density;
+        v.setTextViewTextSize(R.id.k_op, DP, 11 * k);
+        for (int id : new int[] {R.id.k_hc, R.id.k_ac}) {
+            v.setViewLayoutWidth(id, 16 * kh, DP);
+            v.setViewLayoutHeight(id, 16 * kh, DP);
+            v.setViewLayoutMargin(id, RemoteViews.MARGIN_BOTTOM, 2 * kh, DP);
+        }
+        // the box width: the main panel, less the card's padding and the live tag between the boxes
+        float mainW = w - 122 * k - 24 * k, tag = paint(c, 9 * k, true).measureText("● לייב") / px + 16 * k;
+        float box = (mainW - 18 * k - tag - 12 * k) / 2 - 8 * k - 2;
+        String[] n = liveNames(l);
+        int[] ids = {R.id.k_hn, R.id.k_an};
+        for (int i = 0; i < 2; i++) {
+            float s = 10 * k, tw = paint(c, s, false).measureText(n[i]) / px;
+            if (tw > box) s = Math.max(6 * k, s * box / tw * 0.97f);
+            v.setTextViewTextSize(ids[i], DP, s);
+        }
     }
 
     /** The next game from the app's list: the first that has not started, or one that started less than 3 hours ago. */
