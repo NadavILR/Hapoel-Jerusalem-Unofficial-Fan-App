@@ -123,6 +123,15 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.k_heb, rlm + heb);
         v.setViewVisibility(R.id.k_heb, heb.isEmpty() ? View.GONE : View.VISIBLE);
         v.setViewVisibility(R.id.k_s2, heb.isEmpty() ? View.GONE : View.VISIBLE);
+        // Every view's visibility is set on every redraw: the launcher applies a redraw onto the views it already shows
+        // (same layout), so what the live score hid (the countdown, the day and time) would otherwise stay hidden and the
+        // score would stay on after the game – or after test mode – ends
+        v.setViewVisibility(R.id.k_crests, View.VISIBLE);
+        v.setViewVisibility(R.id.k_comp, View.VISIBLE);
+        v.setViewVisibility(R.id.k_when, View.VISIBLE);
+        v.setViewVisibility(R.id.k_count, View.VISIBLE);
+        v.setViewVisibility(R.id.k_status, View.GONE);
+        v.setViewVisibility(R.id.k_score, View.GONE);
         if (g == null && NextGameWidget.liveNow(c) != null) return live(c, v, NextGameWidget.liveNow(c), null);
         if (g == null) {
             v.setTextViewText(R.id.k_op, rlm + "אין משחקים קרובים");

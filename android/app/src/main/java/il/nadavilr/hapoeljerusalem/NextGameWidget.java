@@ -309,6 +309,12 @@ public class NextGameWidget extends AppWidgetProvider {
         boolean live = d != null && d.live;
         // the same design lying down and standing (the layouts fit both)
         RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
+        if (!live) {
+            // every visibility on every redraw (the launcher applies a redraw onto the views it already shows)
+            v.setViewVisibility(R.id.w_crests, View.VISIBLE);
+            v.setViewVisibility(R.id.w_count, View.VISIBLE);
+            v.setViewVisibility(R.id.w_status, View.GONE);
+        }
         if (d == null) {
             v.setTextViewText(R.id.w_op, rlm + "אין משחקים קרובים");
             v.setTextViewText(R.id.w_comp, "");
