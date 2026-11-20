@@ -201,17 +201,24 @@ public class ClockWidget extends AppWidgetProvider {
     private static final float BW = 362f, BH = 195f;
 
     /**
-     * The seconds in a small white pill beside the clock (red digits), sized with the clock: a little wide, softly
-     * rounded, its bottom on the line of the clock's digits (the clock's text ends with the font's room below its digits).
+     * The seconds in a small white rounded square beside the clock (red digits), sized with the clock and centred on the
+     * middle of the clock's digits (the clock's text has the font's room above and below its digits, so the square is
+     * placed by the digits' baseline and cap height, measured in the font).
      */
     private static void secPill(Context c, RemoteViews v, float clock, float px) {
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
-        float t = clock * 0.33f;
+        float t = clock * 0.33f, pv = t * 0.04f;
+        float side = th(c, t, true) + 2 * pv; // a square: as wide as it is tall
         v.setTextViewTextSize(R.id.k_sec, DP, t);
-        v.setViewPadding(R.id.k_sec, Math.round(t * 0.38f * px), Math.round(t * 0.04f * px), Math.round(t * 0.38f * px), Math.round(t * 0.04f * px));
+        v.setViewPadding(R.id.k_sec, 0, Math.round(pv * px), 0, Math.round(pv * px));
+        v.setViewLayoutWidth(R.id.k_sec, side, DP);
+        v.setViewLayoutHeight(R.id.k_sec, side, DP);
         v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.1f, DP);
-        float descent = paint(c, clock, true).getFontMetrics().descent / px;
-        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_BOTTOM, descent, DP);
+        android.graphics.Paint p = paint(c, clock, true);
+        android.graphics.Rect cap = new android.graphics.Rect();
+        p.getTextBounds("0", 0, 1, cap);
+        float descent = p.getFontMetrics().descent / px, capH = -cap.top / px;
+        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_BOTTOM, descent + capH / 2 - side / 2, DP);
     }
 
     /** The countdown card's head: the crests, or the title and the stage, or the day and the time – the tallest. */
@@ -227,7 +234,7 @@ public class ClockWidget extends AppWidgetProvider {
     /** The whole countdown card (the live card is made exactly as tall) at the card scale q. */
     private static float cardH(Context c, float mainW, float k, float kh, float q) {
         float kc = k * q, khc = kh * q, boxW = (mainW - 36 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);
-        return 14 * khc + headH(c, kc) + 5 * khc + boxH(c, num, kc, khc) + 2;
+        return 14 * khc + headH(c, kc) + 8 * khc + boxH(c, num, kc, khc) + 2;
     }
 
     /** The home and away names under the score – Hapoel by its full name. */
@@ -345,7 +352,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewLayoutMargin(R.id.k_wt, RemoteViews.MARGIN_TOP, kc, DP);
         v.setViewLayoutMargin(R.id.k_comp, RemoteViews.MARGIN_TOP, kc - 0.17f * 9.5f * kc, DP);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * kc);
-        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * khc, DP);
+        v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 8 * khc, DP); // a little room under the crests and the names
         float boxW = (mainW - 18 * kc - 18 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);
         int[][] b = {{R.id.k_b1, R.id.k_dd, R.id.k_b1l}, {R.id.k_b2, R.id.k_hh, R.id.k_b2l}, {R.id.k_b3, R.id.k_mm, R.id.k_b3l}, {R.id.k_b4, R.id.k_ss, R.id.k_b4l}};
         for (int i = 0; i < b.length; i++) {
