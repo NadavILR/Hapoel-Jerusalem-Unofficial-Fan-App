@@ -174,7 +174,7 @@ function App() {
     if (!demo) { if (demoKey.current) { demoKey.current = ''; P.demo({}).catch(() => { }); } return; }
     const n = DB.F.find(f => f.id === demo.app), op = n ? n.o : '', r = demo.r || [0, 0];
     const me = { name: ME, score: r[0], img: 'https://imagecache.365scores.com/image/upload/f_png,w_96,h_96,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v8/Competitors/634' }, them = { name: op, score: r[1], img: crestSrcs(op)[0] || null }, p0 = (demo.pbp || [])[0];
-    const o = { t: n ? n.t : 0, comp: (n && COMPS[n.c]) || '', play: p0 ? (p0.clock ? p0.clock + ' · ' : '') + p0.text : '', status: demo.st || '', clock: demo.clock || '', home: n && !n.h ? them : me, away: n && !n.h ? me : them }, k = JSON.stringify(o), first = !demoKey.current;
+    const o = { t: n ? n.t : 0, comp: n ? compLabel(n) : '', play: p0 ? (p0.clock ? p0.clock + ' · ' : '') + p0.text : '', status: demo.st || '', clock: demo.clock || '', home: n && !n.h ? them : me, away: n && !n.h ? me : them }, k = JSON.stringify(o), first = !demoKey.current;
     if (k === demoKey.current) return; demoKey.current = k;
     P.demo({ ...o, check: first }).then(x => { if (first && x && x.shown === false) toast('כדי לראות את התוצאה בלייב במגש ההתראות יש לאשר התראות לאפליקציה בהגדרות המכשיר'); else if (first && nbMsg(x, pf)) toast(nbMsg(x, pf)); }).catch(() => { });
   }, [demo]);
