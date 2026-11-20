@@ -87,10 +87,10 @@ const Leaders = memo(function Leaders({ v }) {
   const A = useApp(), [d, setD] = useState(savedLeaders), [ci, setCi] = useState(0);
   useEffect(() => { let on = true; loadLeaders().then(x => { if (on && x) setD(x); }).catch(() => { }); return () => { on = false; }; }, [v]);
   if (!d || !d.comps.length) return null;
-  const c = d.comps[Math.min(ci, d.comps.length - 1)], open = a => { const p = DB.PL.find(x => x[7] === a.id); if (p) A.openPlayer(p); };
+  const c = d.comps.find(x => x.id === ci) || d.comps[0], open = a => { const p = DB.PL.find(x => x[7] === a.id); if (p) A.openPlayer(p); };
   const face = a => { const p = DB.PL.find(x => x[7] === a.id); return p && p[6] ? html`<${Photo} u=${p[6]} k=${p[9]} cls="abs-fill"/>` : html`<img src=${'https://imagecache.365scores.com/image/upload/f_png,w_160,h_200,c_limit,q_auto:eco,d_Athletes:default.png/v' + a.iv + '/Athletes/' + a.id} alt="" loading="lazy" referrerPolicy="no-referrer" class="ph abs-fill"/>`; };
   return html`<section class="glass r-lg pad" style=${{ paddingBottom: 8 }}><div class="row between" style=${{ marginBottom: 10 }}><h2 class="sec-t" style=${{ margin: 0 }}>מובילי הפועל</h2><span class="t-xs mu">ממוצע למשחק · 365Scores</span></div>
-    ${d.comps.length > 1 ? html`<${Seg} items=${d.comps.map((x, i) => [i, x.name])} val=${ci} set=${setCi} cls="" label="מפעל"/>` : null}
+    ${d.comps.length > 1 ? html`<${Seg} items=${d.comps.map(x => [x.id, x.name])} val=${c.id} set=${setCi} cls="" label="מפעל"/>` : null}
     <div key=${c.id} class="grid3 fade-in" style=${{ marginTop: 12 }}>${LCAT.map(([tid, l]) => { const rr = c.cat[tid] || [], a = rr[0]; return html`<div key=${tid} style=${{ minWidth: 0, textAlign: 'center' }}>
       <div class="t-xs mu b" style=${{ marginBottom: 6 }}>${l}</div>
       ${a ? html`<button onClick=${() => open(a)} class="pcard press" style=${{ width: '100%' }}>${face(a)}<div class="cap"><div class="num" style=${{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>${a.v}</div><div class="t-xs b trunc">${a.n}</div></div></button>` : html`<div class="mu t-s" style=${{ padding: 20 }}>—</div>`}

@@ -68,14 +68,23 @@ export const LCAT = [[1, 'נקודות', 'נק׳'], [3, 'ריבאונדים', '�
 export async function loadLeaders() {
   const u = c => S365 + 'stats/?' + Q365 + '&competitors=634' + (c ? '&competitions=' + c : '');
   const base = await getJSON(u(0)), cs = (base.competitions || []).map(c => [c.id, c.name]);
-  const tables = j => (j.stats && j.stats.athletesStats && j.stats.athletesStats.tables) || [];
+  /* 365scores מחזיר את הטבלאות בשתי צורות: athletesStats.tables או athletesStats כרשימה ישירה – שתיהן נקראות */
+  const tables = j => { const a = j && j.stats && j.stats.athletesStats; return Array.isArray(a) ? a : (a && a.tables) || []; };
   const one = async ([id, name]) => {
     const j = tables(base).some(t => t.competitionId === id) ? base : await getJSON(u(id)), T = tables(j).filter(t => t.competitionId === id), cat = {};
     LCAT.forEach(([tid]) => { const t = T.find(x => x.id === tid); cat[tid] = t ? (t.rows || []).slice(0, 3).map(r => ({ id: r.entity.id, n: String(r.entity.name || '').replace(/'/g, '׳'), iv: r.entity.imageVersion || 1, v: (r.stats && r.stats[0] && r.stats[0].value) || '' })) : []; });
     return LCAT.some(([tid]) => cat[tid].length) ? { id, name, cat } : null;
   };
-  const out = (await Promise.all(cs.map(c => one(c).catch(() => null)))).filter(Boolean);
+  const now = Date.now(), got = (await Promise.all(cs.map(c => one(c).catch(() => one(c)).catch(() => null)))).filter(Boolean);
+  /* 365scores לא מחזיר תמיד את כל המפעלים (גביע ווינר, גביע המדינה) – מפעל שלא הגיע הפעם נשאר מהשמירה הקודמת,
+     כך שהוא לא נעלם וחוזר; מפעל שלא הגיע 120 יום (עונה שהסתיימה) יורד */
+  const sv = savedLeaders() || {}, prev = (sv.comps || []).filter(c => now - (c.seen || sv.at || 0) < 120 * D), map = new Map(prev.map(c => [c.id, c]));
+  got.forEach(c => map.set(c.id, { ...c, seen: now }));
+  const out = [...map.values()].sort((a, b) => lRank(a) - lRank(b));
   if (!out.length) return null;
-  const d = { at: Date.now(), comps: out }; LS.set('hpj-ldr', d); return d;
+  const d = { at: now, comps: out }; LS.set('hpj-ldr', d); return d;
 }
+/* סדר קבוע: ליגה, יורוקאפ, גביע ווינר, גביע המדינה, ואחריהם השאר – כדי שהלשוניות לא יקפצו */
+const LORD = [/ליג|league/i, /יורו|euro/i, /ווינר|winner/i, /מדינה|state|israel cup/i];
+const lRank = c => { const k = LORD.findIndex(r => r.test(c.name || '')); return k < 0 ? LORD.length : k; };
 export const savedLeaders = () => LS.get('hpj-ldr', null);
