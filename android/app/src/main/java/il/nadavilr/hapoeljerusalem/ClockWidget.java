@@ -35,9 +35,9 @@ public class ClockWidget extends AppWidgetProvider {
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
         final PendingResult pr = goAsync();
         final Context app = c.getApplicationContext();
-        new Thread(() -> {
+        ONE.execute(() -> {
             try { update(app); } finally { pr.finish(); }
-        }).start();
+        });
     }
 
     /** The widget was resized, or the launcher measured it (e.g. after a screen-resolution change): fit it again. */
@@ -46,10 +46,16 @@ public class ClockWidget extends AppWidgetProvider {
         onUpdate(c, m, new int[] {id});
     }
 
+    /**
+     * Redraws run one at a time, in order: a live redraw that is still downloading a crest must never finish after the
+     * redraw that cleared the game (ending test mode) and put the live score back.
+     */
+    private static final java.util.concurrent.ExecutorService ONE = java.util.concurrent.Executors.newSingleThreadExecutor();
+
     /** From any thread (the app's sync). */
     static void refresh(Context c) {
         final Context app = c.getApplicationContext();
-        new Thread(() -> update(app)).start();
+        ONE.execute(() -> update(app));
     }
 
     static void update(Context c) {

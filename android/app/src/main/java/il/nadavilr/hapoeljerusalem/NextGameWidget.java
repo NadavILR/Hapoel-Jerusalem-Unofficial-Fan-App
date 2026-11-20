@@ -53,19 +53,22 @@ public class NextGameWidget extends AppWidgetProvider {
     private void async(Context c) {
         final PendingResult pr = goAsync();
         final Context app = c.getApplicationContext();
-        new Thread(() -> {
+        ONE.execute(() -> {
             try {
                 update(app);
             } finally {
                 pr.finish();
             }
-        }).start();
+        });
     }
 
     /** Refresh the widgets from any thread (the app's sync, the live score service). */
+    /** Redraws one at a time, in order (see ClockWidget.ONE). */
+    private static final java.util.concurrent.ExecutorService ONE = java.util.concurrent.Executors.newSingleThreadExecutor();
+
     static void refresh(Context c) {
         final Context app = c.getApplicationContext();
-        new Thread(() -> update(app)).start();
+        ONE.execute(() -> update(app));
         ClockWidget.refresh(app); // the clock widget shows the next game too
     }
 
@@ -80,7 +83,8 @@ public class NextGameWidget extends AppWidgetProvider {
             prefs(c).edit().putString("live", o.toString()).apply();
         } catch (Exception ignored) {
         }
-        if (has(c)) update(c);
+        final Context app = c.getApplicationContext();
+        if (has(c)) ONE.execute(() -> update(app));
         ClockWidget.refresh(c); // the clock widget shows the live score too
     }
 
