@@ -213,7 +213,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewPadding(R.id.k_sec, 0, Math.round(pv * px), 0, Math.round(pv * px));
         v.setViewLayoutWidth(R.id.k_sec, side, DP);
         v.setViewLayoutHeight(R.id.k_sec, side, DP);
-        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.1f, DP);
+        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.16f, DP); // a little room from the clock
         android.graphics.Paint p = paint(c, clock, true);
         android.graphics.Rect cap = new android.graphics.Rect();
         p.getTextBounds("0", 0, 1, cap);
