@@ -117,8 +117,9 @@ function applyLs(L, d) {
   if (brk) { L.st = q === 2 ? 'מחצית' : 'סיום ' + PBQ(q); L.clock = ''; }
   else {
     L.st = q <= 4 ? 'רבע ' + q : 'הארכה' + (q > 5 ? ' ' + (q - 4) : '');
-    const la2 = acts[acts.length - 1], t = gi.currentQuarterTime || {};
-    L.clock = la2 && (+la2.quarter || q) === q && la2.quarterTime ? la2.quarterTime : String(t.m || 0).padStart(2, '0') + ':' + String(t.s || 0).padStart(2, '0');
+    /* השעון – בדיוק כמו באתר Live Stats של מנהלת הליגה: currentQuarterTime של המשחק (לא הזמן של הפעולה האחרונה); 00:00 – בלי שעון */
+    const t = gi.currentQuarterTime, ck = t ? String(t.m || 0).padStart(2, '0') + ':' + String(t.s || 0).padStart(2, '0') : '';
+    L.clock = ck === '00:00' ? '' : ck;
   }
   return L;
 }

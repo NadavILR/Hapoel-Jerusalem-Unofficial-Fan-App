@@ -376,16 +376,12 @@ final class LivePlay {
             x.clock = "";
         } else {
             x.status = q <= 4 ? "רבע " + q : "הארכה" + (q > 5 ? " " + (q - 4) : "");
-            // The newest clock: the latest action of this quarter (currentQuarterTime is updated less often)
+            // The clock exactly as the league's Live Stats site shows it: the game's currentQuarterTime (not the time
+            // of the latest action); 00:00 – no clock
             String clock = "";
-            for (int i = list != null ? list.length() - 1 : -1; i >= 0; i--) {
-                JSONObject a = list.optJSONObject(i);
-                if (a == null) continue;
-                if (a.optInt("quarter", q) == q) clock = a.optString("quarterTime", "");
-                break;
-            }
             JSONObject t = gi.optJSONObject("currentQuarterTime");
-            if (clock.isEmpty() && t != null) clock = String.format(Locale.US, "%02d:%02d", t.optInt("m", 0), t.optInt("s", 0));
+            if (t != null) clock = String.format(Locale.US, "%02d:%02d", t.optInt("m", 0), t.optInt("s", 0));
+            if ("00:00".equals(clock)) clock = "";
             x.clock = clock;
         }
         return LIVE;
