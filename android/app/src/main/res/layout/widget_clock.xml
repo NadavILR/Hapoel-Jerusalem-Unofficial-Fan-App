@@ -97,7 +97,7 @@
         <ImageView android:id="@+id/k_lhc" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginStart="10dp" android:background="@drawable/cw_disc" android:padding="1.5dp" android:scaleType="fitCenter" android:importantForAccessibility="no" />
         <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
           <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_lt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="13dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
-          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_ls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#FFFFFF" android:textSize="10dp" android:maxLines="1" android:ellipsize="end" />
+          <TextView android:fontFamily="@font/noto_sans_hebrew" android:includeFontPadding="false" android:id="@+id/k_ls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-3dp" android:textColor="#FFFFFF" android:textSize="10dp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
         <ImageView android:id="@+id/k_lac" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="10dp" android:background="@drawable/cw_disc" android:padding="1.5dp" android:scaleType="fitCenter" android:importantForAccessibility="no" />
       </LinearLayout>
