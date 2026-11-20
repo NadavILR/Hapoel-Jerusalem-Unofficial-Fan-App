@@ -327,26 +327,31 @@ public class NextGameWidget extends AppWidgetProvider {
         String comp = ClockWidget.shortComp(d.comp);
         v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, d.t));
         if (live) {
-            // the clock widget's live style: the crests, the opponent and the competition on the right; the score in two
-            // boxes (home on the right, the names below) with the "לייב" tag, the quarter and the game clock between them
-            String opp = d.meHome ? d.away : d.home;
-            Bitmap oc = d.meHome ? cr[1] : cr[0];
-            if (oc != null) v.setImageViewBitmap(R.id.w_opp, oc); else v.setImageViewResource(R.id.w_opp, android.R.color.transparent);
-            v.setTextViewText(R.id.w_op, rlm + opp);
-            v.setTextViewText(R.id.w_comp, rlm + comp);
-            v.setViewVisibility(R.id.w_comp, comp.isEmpty() ? View.GONE : View.VISIBLE);
+            // the user's live design: the host's crest big on the right, the guest's on the left; the competition and
+            // the stage, the tag, the quarter and the game clock between the score boxes (the host on the right)
+            if (cr[0] != null) v.setImageViewBitmap(R.id.w_home_crest, cr[0]); else v.setImageViewResource(R.id.w_home_crest, android.R.color.transparent);
+            if (cr[1] != null) v.setImageViewBitmap(R.id.w_away_crest, cr[1]); else v.setImageViewResource(R.id.w_away_crest, android.R.color.transparent);
+            v.setContentDescription(R.id.w_home_crest, d.home);
+            v.setContentDescription(R.id.w_away_crest, d.away);
+            String[] cs = ClockWidget.compStage(d.comp);
+            v.setTextViewText(R.id.w_op, rlm + cs[0]);
+            v.setTextViewText(R.id.w_comp, rlm + cs[1]);
+            v.setViewVisibility(R.id.w_comp, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
             v.setTextViewText(R.id.w_hs, String.valueOf(d.hs));
             v.setTextViewText(R.id.w_as, String.valueOf(d.as));
             v.setTextViewText(R.id.w_hn, rlm + (d.meHome ? LiveGame.TEAM : d.home));
             v.setTextViewText(R.id.w_an, rlm + (d.meHome ? d.away : LiveGame.TEAM));
-            // the quarter and the game clock; at a break ("סיום רבע 1", "מחצית") the status itself
-            String st = d.status.isEmpty() ? "בלייב" : d.status;
-            v.setTextViewText(R.id.w_clock, rlm + st + (d.clock.isEmpty() ? "" : "\n\u2066" + d.clock + "\u2069"));
+            v.setTextViewText(R.id.w_q, rlm + (d.status.isEmpty() ? "בלייב" : d.status));
+            v.setTextViewText(R.id.w_clock, d.clock);
+            v.setViewVisibility(R.id.w_clock, d.clock.isEmpty() ? View.GONE : View.VISIBLE);
             return v;
         }
         String opp = d.meHome ? d.away : d.home;
-        Bitmap oc = d.meHome ? cr[1] : cr[0];
-        if (oc != null) v.setImageViewBitmap(R.id.w_opp, oc); else v.setImageViewResource(R.id.w_opp, android.R.color.transparent);
+        // the host's crest on the right (w_me – the layout's start), the guest's on the left
+        Bitmap me = LiveGame.hapoelCrest(c), oc = d.meHome ? cr[1] : cr[0];
+        int meId = d.meHome ? R.id.w_me : R.id.w_opp, oppId = d.meHome ? R.id.w_opp : R.id.w_me;
+        if (me != null) v.setImageViewBitmap(meId, me); else v.setImageViewResource(meId, R.drawable.hpj_crest);
+        if (oc != null) v.setImageViewBitmap(oppId, oc); else v.setImageViewResource(oppId, android.R.color.transparent);
         v.setTextViewText(R.id.w_op, rlm + opp);
         v.setTextViewText(R.id.w_comp, rlm + comp);
         v.setViewVisibility(R.id.w_comp, comp.isEmpty() ? View.GONE : View.VISIBLE);
@@ -399,33 +404,40 @@ public class NextGameWidget extends AppWidgetProvider {
         v.setViewLayoutHeight(R.id.w_clubimg, ci, DP);
         int pad = Math.round(10 * k * px);
         v.setViewPadding(R.id.w_main, pad, 0, pad, 0);
-        v.setTextViewTextSize(R.id.w_comp, DP, 9 * k);
-        // the head (both layouts): the crests, the opponent, the competition
-        v.setViewLayoutWidth(R.id.w_crests, 30 * k, DP);
-        v.setViewLayoutHeight(R.id.w_crests, 18 * k, DP);
-        for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 18 * k, DP); v.setViewLayoutHeight(id, 18 * k, DP); }
-        v.setTextViewTextSize(R.id.w_op, DP, 11.5f * k);
-        v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_START, 6 * k, DP);
-        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 3 * k, DP);
         if (live) {
-            // the score boxes: the countdown boxes' height and sizes
-            v.setViewLayoutWidth(R.id.w_score, 168 * k, DP);
-            v.setViewLayoutMargin(R.id.w_score, RemoteViews.MARGIN_START, 8 * k, DP);
-            float num = 16 * kh;
+            // the user's live design: the crests big at the sides, the score boxes over their inner halves, the
+            // competition, stage, tag, quarter and clock between them
+            float cr = Math.min(70 * kh, 70 * k * 1.15f);
+            for (int id : new int[] {R.id.w_home_crest, R.id.w_away_crest}) { v.setViewLayoutWidth(id, cr, DP); v.setViewLayoutHeight(id, cr, DP); v.setViewPadding(id, Math.round(cr / 10 * px), Math.round(cr / 10 * px), Math.round(cr / 10 * px), Math.round(cr / 10 * px)); }
+            v.setViewPadding(R.id.w_main, Math.round(8 * k * px), 0, Math.round(8 * k * px), 0);
             for (int[] x : new int[][] {{R.id.w_hbox, R.id.w_hs, R.id.w_hn}, {R.id.w_abox, R.id.w_as, R.id.w_an}}) {
-                v.setViewPadding(x[0], Math.round(3 * k * px), Math.round(4 * kh * px), Math.round(3 * k * px), Math.round(5 * kh * px));
-                v.setTextViewTextSize(x[1], DP, num);
-                v.setTextViewTextSize(x[2], DP, 8 * k);
-                v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_TOP, k, DP);
+                v.setViewLayoutWidth(x[0], 74 * k, DP);
+                v.setViewPadding(x[0], Math.round(4 * k * px), Math.round(5 * kh * px), Math.round(4 * k * px), Math.round(6 * kh * px));
+                v.setTextViewTextSize(x[1], DP, Math.min(21 * kh, 21 * k * 1.15f));
+                v.setTextViewTextSize(x[2], DP, 9.5f * k);
+                v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_TOP, 2 * k, DP);
             }
-            for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.w_mid, e, 5 * k, DP);
-            v.setTextViewTextSize(R.id.w_tag, DP, 8.5f * k);
-            v.setViewPadding(R.id.w_tag, Math.round(7 * k * px), Math.round(k * px), Math.round(7 * k * px), Math.round(2 * k * px));
-            v.setTextViewTextSize(R.id.w_clock, DP, 8.5f * k);
-            v.setViewLayoutMargin(R.id.w_clock, RemoteViews.MARGIN_TOP, 3 * k, DP);
+            for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.w_mid, e, 6 * k, DP);
+            v.setTextViewTextSize(R.id.w_op, DP, 12 * k);
+            v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * k);
+            v.setTextViewTextSize(R.id.w_tag, DP, 9.5f * k);
+            v.setViewPadding(R.id.w_tag, Math.round(9 * k * px), Math.round(k * px), Math.round(9 * k * px), Math.round(2 * k * px));
+            v.setViewLayoutMargin(R.id.w_tag, RemoteViews.MARGIN_TOP, 3 * k, DP);
+            v.setTextViewTextSize(R.id.w_q, DP, 9.5f * k);
+            v.setViewLayoutMargin(R.id.w_q, RemoteViews.MARGIN_TOP, 2 * k, DP);
+            v.setTextViewTextSize(R.id.w_clock, DP, 14 * k);
             return;
         }
-        v.setTextViewTextSize(R.id.w_when, DP, 9 * k);
+        // the user's design: the crests (28, overlapping to 48) above the name (14 bold), the competition · stage and
+        // the day · date · time below it (11)
+        v.setViewLayoutWidth(R.id.w_crests, 48 * k, DP);
+        v.setViewLayoutHeight(R.id.w_crests, 28 * k, DP);
+        for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 28 * k, DP); v.setViewLayoutHeight(id, 28 * k, DP); }
+        v.setTextViewTextSize(R.id.w_op, DP, 14 * k);
+        v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_TOP, 3 * k, DP);
+        v.setTextViewTextSize(R.id.w_comp, DP, 11 * k);
+        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        v.setTextViewTextSize(R.id.w_when, DP, 11 * k);
         v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, 2 * k, DP);
         v.setTextViewTextSize(R.id.w_status, DP, 10.5f * k);
         v.setViewLayoutMargin(R.id.w_count, RemoteViews.MARGIN_START, 8 * k, DP);

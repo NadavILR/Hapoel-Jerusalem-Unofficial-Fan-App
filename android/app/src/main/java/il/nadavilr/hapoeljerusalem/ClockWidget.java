@@ -97,6 +97,15 @@ public class ClockWidget extends AppWidgetProvider {
         return "";
     }
 
+    /** "ליגת ווינר, מחזור 7" → {"ליגת ווינר", "מחזור 7"}; "יורוקאפ – בית א', מחזור 10" → {"יורוקאפ", "מחזור 10"}. */
+    static String[] compStage(String l) {
+        l = l == null ? "" : l.trim();
+        if (l.isEmpty()) return new String[] {"", ""};
+        String[] p = l.split("\\s*(,|–| - )\\s*");
+        String c0 = p[0].trim(), last = p.length > 1 ? p[p.length - 1].trim() : "";
+        return new String[] {c0, last.equals(c0) ? "" : last};
+    }
+
     /** "ליגת ווינר, מחזור 7" → "ליגת ווינר · מחזור 7"; "יורוקאפ – בית א', מחזור 10" → "יורוקאפ · מחזור 10". */
     static String shortComp(String l) {
         l = l == null ? "" : l.trim();
@@ -132,6 +141,8 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewVisibility(R.id.k_count, View.VISIBLE);
         v.setViewVisibility(R.id.k_status, View.GONE);
         v.setViewVisibility(R.id.k_score, View.GONE);
+        v.setViewVisibility(R.id.k_head, View.VISIBLE);
+        v.setViewVisibility(R.id.k_lhead, View.GONE);
         if (g == null && NextGameWidget.liveNow(c) != null) return live(c, v, NextGameWidget.liveNow(c), null);
         if (g == null) {
             v.setTextViewText(R.id.k_op, rlm + "אין משחקים קרובים");
@@ -147,10 +158,18 @@ public class ClockWidget extends AppWidgetProvider {
         long t = g.optLong("t"), left = t - now;
         Calendar gc = Calendar.getInstance(IL);
         gc.setTimeInMillis(t);
-        v.setTextViewText(R.id.k_op, rlm + g.optString("o", ""));
-        v.setTextViewText(R.id.k_comp, rlm + comp(g));
-        Bitmap oc = NextGameWidget.crest(c, g.optString("img", ""));
-        if (oc != null) v.setImageViewBitmap(R.id.k_opp, oc); else v.setImageViewResource(R.id.k_opp, android.R.color.transparent);
+        // the user's design: the title is the competition, the stage below it; the host's crest on the right, the
+        // guest's on the left (above it)
+        String[] cs = compStage(g.optString("l", ""));
+        if (cs[0].isEmpty()) cs = new String[] {comp(g), ""};
+        v.setTextViewText(R.id.k_op, rlm + cs[0]);
+        v.setTextViewText(R.id.k_comp, rlm + cs[1]);
+        v.setViewVisibility(R.id.k_comp, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
+        boolean home = g.optInt("h", 1) == 1;
+        Bitmap oc = NextGameWidget.crest(c, g.optString("img", "")), me = LiveGame.hapoelCrest(c);
+        int meId = home ? R.id.k_me : R.id.k_opp, oppId = home ? R.id.k_opp : R.id.k_me;
+        if (me != null) v.setImageViewBitmap(meId, me); else v.setImageViewResource(meId, R.drawable.hpj_crest);
+        if (oc != null) v.setImageViewBitmap(oppId, oc); else v.setImageViewResource(oppId, android.R.color.transparent);
         v.setTextViewText(R.id.k_wd, rlm + "יום " + DAY_LETTER[gc.get(Calendar.DAY_OF_WEEK) - 1] + " · "
             + String.format(Locale.ROOT, "%d.%d", gc.get(Calendar.DAY_OF_MONTH), gc.get(Calendar.MONTH) + 1));
         v.setTextViewText(R.id.k_wt, String.format(Locale.ROOT, "%02d:%02d", gc.get(Calendar.HOUR_OF_DAY), gc.get(Calendar.MINUTE)));
@@ -245,13 +264,14 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewPadding(R.id.k_dates, 0, 0, 0, Math.round(6 * k * px)); // optical centring between the clock and the card
         // the next-game card
         v.setViewPadding(R.id.k_card, Math.round(9 * k * px), Math.round(7 * kh * px), Math.round(9 * k * px), Math.round(7 * kh * px));
-        v.setViewLayoutWidth(R.id.k_crests, 34 * k, DP);
-        v.setViewLayoutHeight(R.id.k_crests, 20 * k, DP);
-        for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 20 * k, DP); v.setViewLayoutHeight(id, 20 * k, DP); }
+        // the user's design: larger crests (22, overlapping to 38), the title 12 bold, the stage / day / time 9.5
+        v.setViewLayoutWidth(R.id.k_crests, 38 * k, DP);
+        v.setViewLayoutHeight(R.id.k_crests, 22 * k, DP);
+        for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 22 * k, DP); v.setViewLayoutHeight(id, 22 * k, DP); }
         v.setViewLayoutMargin(R.id.k_who, RemoteViews.MARGIN_START, 6 * k, DP);
         v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * k, DP);
-        v.setTextViewTextSize(R.id.k_op, DP, 9 * k); // the same size as the competition and the date / time, in bold
-        for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9 * k);
+        v.setTextViewTextSize(R.id.k_op, DP, 12 * k);
+        for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * k);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * k);
         v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * kh, DP);
         float boxW = (mainW - 18 * k - 18 * k) / 4, num = Math.min(19 * kh, (boxW - 6 * k) / 1.25f);
@@ -263,19 +283,26 @@ public class ClockWidget extends AppWidgetProvider {
             v.setTextViewTextSize(b[i][2], DP, 8.5f * k);
             v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
         }
-        // the live score: the same boxes and sizes as the countdown
-        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 5 * kh, DP);
+        // the live card (the user's design): crests 24, the competition 13 bold, the stage 10; the score boxes with
+        // a 20 score and a 9.5 name; the tag 10, the quarter 9.5 bold, the clock 15
+        for (int id : new int[] {R.id.k_lhc, R.id.k_lac}) { v.setViewLayoutWidth(id, 24 * k, DP); v.setViewLayoutHeight(id, 24 * k, DP); }
+        v.setViewLayoutMargin(R.id.k_lhc, RemoteViews.MARGIN_START, 10 * k, DP);
+        v.setViewLayoutMargin(R.id.k_lac, RemoteViews.MARGIN_END, 10 * k, DP);
+        v.setTextViewTextSize(R.id.k_lt, DP, 13 * k);
+        v.setTextViewTextSize(R.id.k_ls, DP, 10 * k);
+        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 4 * kh, DP);
         for (int[] x : new int[][] {{R.id.k_hbox, R.id.k_hs, R.id.k_hn}, {R.id.k_abox, R.id.k_as, R.id.k_an}}) {
             v.setViewPadding(x[0], Math.round(4 * k * px), Math.round(4 * kh * px), Math.round(4 * k * px), Math.round(5 * kh * px));
-            v.setTextViewTextSize(x[1], DP, num);
-            v.setTextViewTextSize(x[2], DP, 8.5f * k);
+            v.setTextViewTextSize(x[1], DP, Math.min(20 * kh, 20 * k * 1.15f));
+            v.setTextViewTextSize(x[2], DP, 9.5f * k);
             v.setViewLayoutMargin(x[2], RemoteViews.MARGIN_TOP, k, DP);
         }
         for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.k_mid, e, 6 * k, DP);
-        v.setTextViewTextSize(R.id.k_tag, DP, 9 * k);
-        v.setViewPadding(R.id.k_tag, Math.round(8 * k * px), Math.round(k * px), Math.round(8 * k * px), Math.round(2 * k * px));
-        v.setTextViewTextSize(R.id.k_lc, DP, 9 * k);
-        v.setViewLayoutMargin(R.id.k_lc, RemoteViews.MARGIN_TOP, 3 * k, DP);
+        v.setTextViewTextSize(R.id.k_tag, DP, 10 * k);
+        v.setViewPadding(R.id.k_tag, Math.round(10 * k * px), Math.round(k * px), Math.round(10 * k * px), Math.round(2 * k * px));
+        v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * k);
+        v.setViewLayoutMargin(R.id.k_lq, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        v.setTextViewTextSize(R.id.k_lc, DP, 15 * k);
         float two = (float) Math.ceil(paint(c, num, true).measureText("00")) + 1f;
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
@@ -290,18 +317,23 @@ public class ClockWidget extends AppWidgetProvider {
         String rlm = "\u200F";
         long t = l.optLong("t");
         boolean meHome = l.optBoolean("meHome", true);
-        String home = l.optString("home"), away = l.optString("away"), opp = meHome ? away : home;
+        String home = l.optString("home"), away = l.optString("away");
         String oi = meHome ? l.optString("awayImg", "") : l.optString("homeImg", "");
         if (oi.isEmpty()) oi = LiveScheduler.game(c, t).optString("img", "");
         if (oi.isEmpty() && g != null) oi = g.optString("img", "");
-        Bitmap oc = NextGameWidget.crest(c, oi);
-        if (oc != null) v.setImageViewBitmap(R.id.k_opp, oc); else v.setImageViewResource(R.id.k_opp, android.R.color.transparent);
-        v.setViewVisibility(R.id.k_crests, View.VISIBLE);
-        v.setTextViewText(R.id.k_op, rlm + opp);
-        String comp = shortComp(l.optString("comp", ""));
-        if (comp.isEmpty() && g != null) comp = comp(g);
-        v.setTextViewText(R.id.k_comp, rlm + comp);
-        v.setViewVisibility(R.id.k_when, View.GONE);
+        Bitmap oc = NextGameWidget.crest(c, oi), me = LiveGame.hapoelCrest(c);
+        // the user's design: the host's crest on the right, the guest's on the left, the competition and stage between
+        int meId = meHome ? R.id.k_lhc : R.id.k_lac, oppId = meHome ? R.id.k_lac : R.id.k_lhc;
+        if (me != null) v.setImageViewBitmap(meId, me); else v.setImageViewResource(meId, R.drawable.hpj_crest);
+        if (oc != null) v.setImageViewBitmap(oppId, oc); else v.setImageViewResource(oppId, android.R.color.transparent);
+        String[] cs = compStage(l.optString("comp", ""));
+        if (cs[0].isEmpty() && g != null) cs = compStage(g.optString("l", ""));
+        if (cs[0].isEmpty() && g != null) cs = new String[] {comp(g), ""};
+        v.setTextViewText(R.id.k_lt, rlm + cs[0]);
+        v.setTextViewText(R.id.k_ls, rlm + cs[1]);
+        v.setViewVisibility(R.id.k_ls, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
+        v.setViewVisibility(R.id.k_head, View.GONE);
+        v.setViewVisibility(R.id.k_lhead, View.VISIBLE);
         v.setViewVisibility(R.id.k_count, View.GONE);
         v.setViewVisibility(R.id.k_status, View.GONE);
         v.setViewVisibility(R.id.k_score, View.VISIBLE);
@@ -309,8 +341,11 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.k_as, String.valueOf(l.optInt("as")));
         v.setTextViewText(R.id.k_hn, rlm + (meHome ? LiveGame.TEAM : home));
         v.setTextViewText(R.id.k_an, rlm + (meHome ? away : LiveGame.TEAM));
+        // the quarter (at a break: "מחצית", "סיום רבע 1") and the game clock below it
         String st = l.optString("status", ""), clock = l.optString("clock", "");
-        v.setTextViewText(R.id.k_lc, rlm + (st.isEmpty() ? "בלייב" : st) + (clock.isEmpty() ? "" : "\n\u2066" + clock + "\u2069"));
+        v.setTextViewText(R.id.k_lq, rlm + (st.isEmpty() ? "בלייב" : st));
+        v.setTextViewText(R.id.k_lc, clock);
+        v.setViewVisibility(R.id.k_lc, clock.isEmpty() ? View.GONE : View.VISIBLE);
         v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, t));
         return v;
     }
