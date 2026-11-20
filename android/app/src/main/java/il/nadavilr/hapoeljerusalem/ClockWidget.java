@@ -325,7 +325,10 @@ public class ClockWidget extends AppWidgetProvider {
         // the competition (bold) exactly as the day / date beside it, the stage exactly as the time: same size, same
         // line height, same gap between the two lines
         for (int id : new int[] {R.id.k_op, R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * kc);
-        for (int id : new int[] {R.id.k_comp, R.id.k_wt}) v.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, kc, DP);
+        // the gap the eye sees: the time is digits (as tall as capitals), the stage mostly Hebrew letters (about 0.17 of
+        // the size shorter) – so the stage moves up by that much and both gaps look the same
+        v.setViewLayoutMargin(R.id.k_wt, RemoteViews.MARGIN_TOP, kc, DP);
+        v.setViewLayoutMargin(R.id.k_comp, RemoteViews.MARGIN_TOP, kc - 0.17f * 9.5f * kc, DP);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * kc);
         v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * khc, DP);
         float boxW = (mainW - 18 * kc - 18 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);

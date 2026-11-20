@@ -209,11 +209,31 @@ public class WidgetRenderTest {
         host.draw(cv);
         try (FileOutputStream o = new FileOutputStream(new File(out, name + ".png"))) { b.compress(Bitmap.CompressFormat.PNG, 100, o); }
         check(name, v, v, px);
+        if (name.startsWith("clock-count")) {
+            float[] op = ink(v.findViewById(R.id.k_op)), cp = ink(v.findViewById(R.id.k_comp)), wd = ink(v.findViewById(R.id.k_wd)), wt = ink(v.findViewById(R.id.k_wt));
+            if (op != null && cp != null && wd != null && wt != null)
+                sizes.add(name + " gaps: competition→stage=" + Math.round((cp[0] - op[1]) / px * 10) / 10f + "dp day→time=" + Math.round((wt[0] - wd[1]) / px * 10) / 10f + "dp");
+        }
         View clock = v.findViewById(R.id.k_time);
         if (clock instanceof TextView) sizes.add(name + " clock=" + Math.round(((TextView) clock).getTextSize() / px * 10) / 10f + "dp");
     }
 
     private final List<String> sizes = new ArrayList<>();
+
+    /** A one-line text's ink: its top and bottom in the widget (px). */
+    private static float[] ink(View v) {
+        if (!(v instanceof TextView) || v.getVisibility() != View.VISIBLE) return null;
+        TextView t = (TextView) v;
+        Layout l = t.getLayout();
+        if (l == null) return null;
+        String s = t.getText().toString();
+        Rect r = new Rect();
+        t.getPaint().getTextBounds(s, 0, s.length(), r);
+        float y = 0;
+        for (View p = t; p != null; p = p.getParent() instanceof View ? (View) p.getParent() : null) y += p.getTop();
+        float base = y + t.getTotalPaddingTop() + l.getLineBaseline(0);
+        return new float[] {base + r.top, base + r.bottom};
+    }
 
     private void check(String name, View root, View v, float px) {
         if (v.getVisibility() != View.VISIBLE) return;
