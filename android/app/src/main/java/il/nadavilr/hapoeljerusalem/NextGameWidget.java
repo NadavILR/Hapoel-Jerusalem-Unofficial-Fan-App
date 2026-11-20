@@ -428,17 +428,17 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setTextViewTextSize(R.id.w_clock, DP, 14 * k);
             return;
         }
-        // the user's design: the crests (28, overlapping to 48) above the name (14 bold), the competition · stage and
-        // the day · date · time below it (11)
-        v.setViewLayoutWidth(R.id.w_crests, 48 * k, DP);
-        v.setViewLayoutHeight(R.id.w_crests, 28 * k, DP);
-        for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 28 * k, DP); v.setViewLayoutHeight(id, 28 * k, DP); }
-        v.setTextViewTextSize(R.id.w_op, DP, 14 * k);
-        v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_TOP, 3 * k, DP);
-        v.setTextViewTextSize(R.id.w_comp, DP, 11 * k);
-        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, 2 * k, DP);
-        v.setTextViewTextSize(R.id.w_when, DP, 11 * k);
-        v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        // the user's design: the crests (22, overlapping to 38) above the name (12.5 bold), the competition · stage
+        // and the day · date · time below it (9.5) – with room above and below inside the frame
+        v.setViewLayoutWidth(R.id.w_crests, 38 * k, DP);
+        v.setViewLayoutHeight(R.id.w_crests, 22 * k, DP);
+        for (int id : new int[] {R.id.w_me, R.id.w_opp}) { v.setViewLayoutWidth(id, 22 * k, DP); v.setViewLayoutHeight(id, 22 * k, DP); }
+        v.setTextViewTextSize(R.id.w_op, DP, 12.5f * k);
+        v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_TOP, 2 * k, DP);
+        v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * k);
+        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, k, DP);
+        v.setTextViewTextSize(R.id.w_when, DP, 9.5f * k);
+        v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, k, DP);
         v.setTextViewTextSize(R.id.w_status, DP, 10.5f * k);
         v.setViewLayoutMargin(R.id.w_count, RemoteViews.MARGIN_START, 8 * k, DP);
         // the countdown boxes: a little taller with a taller widget, never wider than the row allows

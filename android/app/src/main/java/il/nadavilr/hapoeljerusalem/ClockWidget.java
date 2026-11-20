@@ -200,6 +200,12 @@ public class ClockWidget extends AppWidgetProvider {
     /** The design's base size, in dp: the widget as measured on a Galaxy S24 Ultra. */
     private static final float BW = 362f, BH = 195f;
 
+    /** A text line's height in dp (no font padding, as in the layouts) at this size. */
+    private static float th(Context c, float dp, boolean bold) {
+        android.graphics.Paint.FontMetrics m = paint(c, dp, bold).getFontMetrics();
+        return (m.descent - m.ascent) / c.getResources().getDisplayMetrics().density;
+    }
+
     private static android.graphics.Paint paint(Context c, float dp, boolean bold) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
@@ -303,6 +309,26 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * k);
         v.setViewLayoutMargin(R.id.k_lq, RemoteViews.MARGIN_TOP, 2 * k, DP);
         v.setTextViewTextSize(R.id.k_lc, DP, 15 * k);
+        // the live card is exactly as tall as the countdown card: its head as tall as the countdown's head, the score
+        // row as tall as the countdown boxes; text that would not fit is scaled down together
+        float headH = Math.max(22 * k, Math.max(th(c, 12 * k, true) + th(c, 9.5f * k, false), 2 * th(c, 9.5f * k, false)) + k);
+        float boxH = 9 * kh + th(c, num, true) + k + th(c, 8.5f * k, false);
+        float lhead = Math.max(24 * k, th(c, 13 * k, true) + k + th(c, 10 * k, false));
+        float mid = th(c, 10 * k, true) + 3 * k + 2 * k + th(c, 9.5f * k, true) + th(c, 15 * k, false);
+        float box = 9 * kh + th(c, 20 * k, true) + k + th(c, 9.5f * k, false);
+        float f = Math.min(1f, Math.min(headH / lhead, boxH / Math.max(mid, box)));
+        v.setViewLayoutHeight(R.id.k_lhead, headH, DP);
+        v.setViewLayoutHeight(R.id.k_score, boxH, DP);
+        v.setViewLayoutMargin(R.id.k_score, RemoteViews.MARGIN_TOP, 5 * kh, DP);
+        for (int id : new int[] {R.id.k_lhc, R.id.k_lac}) { v.setViewLayoutWidth(id, Math.min(24 * k, headH), DP); v.setViewLayoutHeight(id, Math.min(24 * k, headH), DP); }
+        v.setTextViewTextSize(R.id.k_lt, DP, 13 * k * f);
+        v.setTextViewTextSize(R.id.k_ls, DP, 10 * k * f);
+        for (int id : new int[] {R.id.k_hs, R.id.k_as}) v.setTextViewTextSize(id, DP, 20 * k * f);
+        for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setTextViewTextSize(id, DP, 9.5f * k * f);
+        v.setTextViewTextSize(R.id.k_tag, DP, 10 * k * f);
+        v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * k * f);
+        v.setTextViewTextSize(R.id.k_lc, DP, 15 * k * f);
+        for (int id : new int[] {R.id.k_hbox, R.id.k_abox}) v.setViewPadding(id, Math.round(4 * k * px), 0, Math.round(4 * k * px), 0);
         float two = (float) Math.ceil(paint(c, num, true).measureText("00")) + 1f;
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
