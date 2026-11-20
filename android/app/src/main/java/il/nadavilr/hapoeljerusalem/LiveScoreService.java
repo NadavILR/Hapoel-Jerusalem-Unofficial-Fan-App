@@ -243,6 +243,10 @@ public class LiveScoreService extends Service {
         if (x != null) {
             /* The opponent's crest: from 365scores, and when 365scores has no match for the game – the crest the app
                keeps for that team (sent with the game list) */
+            /* The opponent's name as the app writes it (from the league's site): 365scores keeps old names, e.g.
+               "מכבי אשדוד/באר טוביה" for "מכבי אשדוד" */
+            String on = meta.optString("o", "");
+            if (!on.isEmpty()) { if (x.meHome) x.awayName = on; else x.homeName = on; }
             String oi = meta.optString("img", "");
             if (!oi.isEmpty()) {
                 if (x.meHome) { if (x.awayImg == null || x.awayImg.isEmpty()) x.awayImg = oi; }
