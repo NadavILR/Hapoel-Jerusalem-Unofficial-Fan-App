@@ -200,6 +200,15 @@ public class ClockWidget extends AppWidgetProvider {
     /** The design's base size, in dp: the widget as measured on a Galaxy S24 Ultra. */
     private static final float BW = 362f, BH = 195f;
 
+    /** The seconds in a small white pill beside the clock (red digits), sized with the clock. */
+    private static void secPill(RemoteViews v, float clock, float px) {
+        final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
+        float t = clock * 0.33f;
+        v.setTextViewTextSize(R.id.k_sec, DP, t);
+        v.setViewPadding(R.id.k_sec, Math.round(t * 0.28f * px), Math.round(t * 0.06f * px), Math.round(t * 0.28f * px), Math.round(t * 0.06f * px));
+        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.1f, DP);
+    }
+
     /** The countdown card's head: the crests, or the title and the stage, or the day and the time – the tallest. */
     private static float headH(Context c, float kc) {
         return Math.max(22 * kc, th(c, 9.5f * kc, true) + th(c, 9.5f * kc, false) + kc);
@@ -277,8 +286,7 @@ public class ClockWidget extends AppWidgetProvider {
         // HH:mm big and :ss at 0.42 of it – together about 3.85× the big size wide, so they always fit the panel
         float clock = Math.min(52 * kh, mainW / 3.85f);
         v.setTextViewTextSize(R.id.k_time, DP, clock);
-        v.setTextViewTextSize(R.id.k_sec, DP, clock * 0.42f);
-        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, 2 * k, DP);
+        secPill(v, clock, px);
         // measured in pixels → back to dp (the widths here are in dp), or the row would shrink by the screen density
         float dw = (paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
             + sepW * (heb.isEmpty() ? 1 : 2);
@@ -310,7 +318,7 @@ public class ClockWidget extends AppWidgetProvider {
             clockH = th(c, clock, true) - trimTop - trimBottom;
             for (int i = 0; i < 8 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
             v.setTextViewTextSize(R.id.k_time, DP, clock);
-            v.setTextViewTextSize(R.id.k_sec, DP, clock * 0.42f);
+            secPill(v, clock, px);
         }
         v.setViewLayoutMargin(R.id.k_clock, RemoteViews.MARGIN_TOP, -trimTop, DP);
         v.setViewLayoutMargin(R.id.k_clock, RemoteViews.MARGIN_BOTTOM, -trimBottom, DP);
