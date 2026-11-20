@@ -208,9 +208,10 @@ public class ClockWidget extends AppWidgetProvider {
     private static void secPill(Context c, RemoteViews v, float clock, float px) {
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
         float t = clock * 0.33f, pv = t * 0.04f;
-        float side = th(c, t, true) + 2 * pv; // a square: as wide as it is tall
+        // a square: 64 × 64 px on the user's phone (2.625 px per dp) with the clock at 52 dp – 24.4 dp, with the clock
         v.setTextViewTextSize(R.id.k_sec, DP, t);
-        v.setViewPadding(R.id.k_sec, 0, Math.round(pv * px), 0, Math.round(pv * px));
+        float side = Math.max(24.4f * clock / 52f, th(c, t, true));
+        v.setViewPadding(R.id.k_sec, 0, 0, 0, 0);
         v.setViewLayoutWidth(R.id.k_sec, side, DP);
         v.setViewLayoutHeight(R.id.k_sec, side, DP);
         v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.16f, DP); // a little room from the clock
