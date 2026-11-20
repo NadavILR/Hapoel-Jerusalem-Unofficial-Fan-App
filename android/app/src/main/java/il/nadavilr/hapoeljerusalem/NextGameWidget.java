@@ -517,7 +517,7 @@ public class NextGameWidget extends AppWidgetProvider {
     }
 
     private static String when(long t) {
-        SimpleDateFormat f = new SimpleDateFormat("EEE d.M · HH:mm", new Locale("he"));
+        SimpleDateFormat f = new SimpleDateFormat("EEE · d.M · HH:mm", new Locale("he"));
         f.setTimeZone(TimeZone.getTimeZone("Asia/Jerusalem"));
         return f.format(new Date(t));
     }

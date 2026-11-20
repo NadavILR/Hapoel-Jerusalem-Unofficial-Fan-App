@@ -202,7 +202,7 @@ public class ClockWidget extends AppWidgetProvider {
 
     /** The countdown card's head: the crests, or the title and the stage, or the day and the time – the tallest. */
     private static float headH(Context c, float kc) {
-        return Math.max(22 * kc, Math.max(th(c, 12 * kc, true) + th(c, 9.5f * kc, false), 2 * th(c, 9.5f * kc, false)) + kc);
+        return Math.max(22 * kc, th(c, 9.5f * kc, true) + th(c, 9.5f * kc, false) + kc);
     }
 
     /** A countdown box: its padding, the number and the label. */
@@ -320,8 +320,10 @@ public class ClockWidget extends AppWidgetProvider {
         for (int id : new int[] {R.id.k_me, R.id.k_opp}) { v.setViewLayoutWidth(id, 22 * kc, DP); v.setViewLayoutHeight(id, 22 * kc, DP); }
         v.setViewLayoutMargin(R.id.k_who, RemoteViews.MARGIN_START, 6 * kc, DP);
         v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * kc, DP);
-        v.setTextViewTextSize(R.id.k_op, DP, 12 * kc);
-        for (int id : new int[] {R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * kc);
+        // the competition (bold) exactly as the day / date beside it, the stage exactly as the time: same size, same
+        // line height, same gap between the two lines
+        for (int id : new int[] {R.id.k_op, R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * kc);
+        for (int id : new int[] {R.id.k_comp, R.id.k_wt}) v.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, kc, DP);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * kc);
         v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 5 * khc, DP);
         float boxW = (mainW - 18 * kc - 18 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);
