@@ -229,8 +229,11 @@ html.dark .full-bg { background: #282828 url(../bg/pattern-dark.webp) center / c
 .full-hd { position: sticky; top: 0; z-index: 2; padding-top: var(--sat); border-bottom: 1px solid var(--edge-out); }
 
 /* ---------- הודעות קופצות ---------- */
-.toasts { position: fixed; left: 0; right: 0; top: calc(var(--sat) + 70px); z-index: 80; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }
+/* in-app messages: at the bottom, just above the navigation bar – and above the live score strip when it shows (both are
+   inside #nav, whose height is --navh); they rise in and sink out */
+.toasts { position: fixed; left: 0; right: 0; bottom: calc(var(--navh, 72px) + 12px); z-index: 80; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; transition: bottom .3s var(--ease); }
 .toast { pointer-events: none; max-width: 440px; padding: 10px 16px; border-radius: 16px; font-size: 14px; font-weight: 600; background: var(--ink); color: #fff; box-shadow: var(--shadow-lg); animation: toastIn .3s var(--spring) both; text-align: center; }
+.toast.out { animation: toastOut .26s var(--ease) both; }
 html.dark .toast { background: #fff; color: var(--ink); }
 
 /* ---------- טבלאות ---------- */
@@ -267,7 +270,8 @@ html.dark .crest-l { background: #fff; color: var(--ink); }
 @keyframes up { from { opacity: 0; transform: translateY(8px); } }
 @keyframes pop { from { opacity: 0; transform: scale(.94) translateY(6px); } }
 @keyframes sheetIn { from { transform: translateY(100%); } }
-@keyframes toastIn { from { opacity: 0; transform: translateY(-10px) scale(.96); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(14px) scale(.96); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(14px) scale(.96); } }
 .pg-in { animation: up .26s var(--ease) both; }
 .stg > * { animation: up .3s var(--ease) both; }
 .stg > *:nth-child(2) { animation-delay: .03s; } .stg > *:nth-child(3) { animation-delay: .06s; } .stg > *:nth-child(n+4) { animation-delay: .09s; }

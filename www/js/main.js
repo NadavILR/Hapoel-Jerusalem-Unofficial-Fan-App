@@ -89,7 +89,8 @@ function App() {
   const [perm, setPerm] = useState(NATIVE ? 'default' : typeof Notification !== 'undefined' ? Notification.permission : 'denied');
   const [live, setLive] = useState(savedLive), liveR = useRef(live), [demo, setDemo] = useState(null), taps = useRef([]);
   useEffect(() => LS.set('hpj-notes', notes.slice(0, 30)), [notes]); useEffect(() => LS.set('hpj-pf', pf), [pf]); useEffect(() => LS.set('hpj-rem', rem), [rem]);
-  const toast = useCallback(t => { const id = Math.random(); setToasts(x => [...x.slice(-2), { id, t }]); setTimeout(() => setToasts(x => x.filter(y => y.id !== id)), 3500); }, []);
+  /* הודעה בתוך האפליקציה: נכנסת מלמטה, ואחרי 3.5 שניות יוצאת (אנימציית יציאה) ורק אז יורדת */
+  const toast = useCallback(t => { const id = Math.random(); setToasts(x => [...x.slice(-2), { id, t }]); setTimeout(() => setToasts(x => x.map(y => y.id === id ? { ...y, out: 1 } : y)), 3500); setTimeout(() => setToasts(x => x.filter(y => y.id !== id)), 3500 + 280); }, []);
 
   /* תפריט "עוד": כשנסגר נשאר על המסך לרגע לאנימציית הסגירה (ההפך של אנימציית הפתיחה) */
   const menuWas = useRef(false);
@@ -263,7 +264,7 @@ function App() {
         <button onClick=${() => setDrawer(true)} class="icon-btn press" aria-label=${'התראות' + (unread ? ', ' + unread + ' חדשות' : '')}><${Icon} n="bell" s=${22}/>${unread > 0 ? html`<span class="badge">${unread}</span>` : null}</button>
       </div>
       <div id="hd-slot"></div></div></header>
-    <div class="toasts" aria-live="polite">${toasts.map(t => html`<div key=${t.id} class="toast">${t.t}</div>`)}</div>
+    <div class="toasts" aria-live="polite">${toasts.map(t => html`<div key=${t.id} class=${cx('toast', t.out && 'out')}>${t.t}</div>`)}</div>
     <main class="wrap"><div key=${game ? 'g' + game.id : player ? 'p' + player[1] : 'p' + pg} class=${ext ? '' : 'pg-in'}>${skel ? skeleton : null}${skel && pg === 'home' ? null : html`<div hidden=${skel}>${page}</div>`}</div>
       ${ext || pg === 'more' ? null : html`<footer class="col" style=${{ alignItems: 'center', gap: 8, marginTop: 28, textAlign: 'center' }}>
         <span onClick=${tapFoot} class="glass-2 r-md t-xs mu" style=${{ padding: '6px 16px', userSelect: 'none', lineHeight: 1.6 }}>${demo ? html`<b class="red">מצב בדיקה · </b>` : null}אפליקציית אוהדים לא רשמית<br/>נדב רובינסון © גרסה ${VERSION()}</span>
