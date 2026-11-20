@@ -289,13 +289,15 @@ public class ClockWidget extends AppWidgetProvider {
             v.setViewLayoutMargin(id, RemoteViews.MARGIN_START, 6 * k * Math.min(1, dateText / (10.5f * k)), DP);
             v.setViewLayoutMargin(id, RemoteViews.MARGIN_END, 6 * k * Math.min(1, dateText / (10.5f * k)), DP);
         }
-        v.setViewPadding(R.id.k_dates, 0, 0, 0, Math.round(6 * k * px)); // optical centring between the clock and the card
+        // the dates centred between the clock's digits and the card: equal gaps above and below them (measured on the phone)
+        v.setViewPadding(R.id.k_dates, 0, 0, 0, 0);
         // the next-game card. Its sizes (kc, khc) are scaled down together, after the clock, when the clock, the dates
         // and the card would not fit the widget's height – Noto Sans Hebrew lines are about 1.37× their size
-        float avail = h - 24 * k, datesH = th(c, dateText, true) + 6 * k + 2 * k;
+        float avail = h - 24 * k, datesH = th(c, dateText, true) + 2 * k;
         // the clock's digits use only their cap height: the font's room above them (for vowel marks) and below them
         // (for descending letters) is given back to the dates – the clock keeps its full size and nothing is cut
-        float trimTop = 0.2f * clock, trimBottom = 0.2f * clock;
+        // (a little less is trimmed above: the digits keep a clear distance from the widget's top edge)
+        float trimTop = 0.12f * clock, trimBottom = 0.2f * clock;
         float q = 1f, clockH = th(c, clock, true) - trimTop - trimBottom;
         // when it does not fit: the card first (down to 85%), then the clock – the clock stays the biggest thing
         for (int i = 0; i < 4 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
@@ -303,7 +305,7 @@ public class ClockWidget extends AppWidgetProvider {
         if (clockH + datesH + cardH > avail) {
             float want = Math.max(th(c, 40 * k, true) * 0.71f, avail - datesH - cardH);
             clock *= want / clockH;
-            trimTop = 0.2f * clock;
+            trimTop = 0.12f * clock;
             trimBottom = 0.2f * clock;
             clockH = th(c, clock, true) - trimTop - trimBottom;
             for (int i = 0; i < 8 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
@@ -338,7 +340,7 @@ public class ClockWidget extends AppWidgetProvider {
         // the live card (the user's design) – exactly as tall as the countdown card: its head as tall as the
         // countdown's head, the score row as tall as the countdown boxes; text that would not fit is scaled down together
         float headH = headH(c, kc), boxH = boxH(c, num, kc, khc);
-        float lhead = Math.max(24 * kc, th(c, 13 * kc, true) - 3 * kc + th(c, 10 * kc, false));
+        float lhead = Math.max(24 * kc, th(c, 13 * kc, true) - kc + th(c, 10 * kc, false));
         float mid = th(c, 10 * kc, true) + 3 * kc + 2 * kc + th(c, 9.5f * kc, true) + th(c, 15 * kc, false);
         float box = 9 * khc + th(c, 20 * kc, true) + kc + th(c, 9.5f * kc, false);
         float f = Math.min(1f, Math.min(headH / lhead, boxH / Math.max(mid, box)) * 0.97f);
@@ -352,7 +354,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewLayoutMargin(R.id.k_lac, RemoteViews.MARGIN_END, 10 * kc, DP);
         v.setTextViewTextSize(R.id.k_lt, DP, 13 * kf);
         v.setTextViewTextSize(R.id.k_ls, DP, 10 * kf);
-        v.setViewLayoutMargin(R.id.k_ls, RemoteViews.MARGIN_TOP, -3 * kf, DP); // the stage close under the competition
+        v.setViewLayoutMargin(R.id.k_ls, RemoteViews.MARGIN_TOP, -kf, DP); // the stage just under the competition, a very small gap
         // the score as large as the box allows (up to 28): the digits use only their cap height, so the room the font
         // keeps above them and below them (for vowel marks and descending letters) is trimmed, and the name sits close
         float nameH = th(c, 9.5f * kf, false), sc = 28 * kc;

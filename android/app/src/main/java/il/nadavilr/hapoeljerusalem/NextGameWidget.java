@@ -451,6 +451,9 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setTextViewTextSize(R.id.w_q, DP, 9.5f * km);
             v.setViewLayoutMargin(R.id.w_q, RemoteViews.MARGIN_TOP, 2 * km, DP);
             v.setTextViewTextSize(R.id.w_clock, DP, 14 * km);
+            // the score boxes' bottom on the line of the game clock's digits (the clock's text ends with the font's room
+            // for descending letters below its digits)
+            for (int id : new int[] {R.id.w_hbox, R.id.w_abox}) v.setViewLayoutMargin(id, RemoteViews.MARGIN_BOTTOM, 0.29f * 14 * km, DP);
             // wide and low (lying down): the crests close to the score boxes, not at the far ends
             float group = 2 * 74 * k + 12 * k + 70 * k + 2 * cr - 40 * k * 2, mainW = w - 54 * k;
             if (mainW - 16 * k > group) { int side = Math.round((mainW - group) / 2 * px); v.setViewPadding(R.id.w_main, side, 0, side, 0); }
