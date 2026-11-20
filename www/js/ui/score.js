@@ -37,7 +37,7 @@ export function LiveScore({ L, g, big }) {
   const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME;
   return html`<div>
     <div class="row between t-s" style=${{ marginBottom: 10 }}>${L.status === 'live' ? html`<span class="live-pill">לייב</span>` : html`<span class="b">${stLabel(L)}</span>`}
-      <span class="b num">${L.status === 'live' ? L.st : ''}${L.status === 'live' && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
+      <span class="b num pill-mate">${L.status === 'live' ? L.st : ''}${L.status === 'live' && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
     <${LiveSides} L=${L} hm=${hm} aw=${aw} big=${big ? 1 : 0}/>
     <${LiveQ} L=${L} hm=${hm} aw=${aw}/>
   </div>`;

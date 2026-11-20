@@ -24,7 +24,7 @@ function Countdown({ t, now, red }) {
 function HomeLive({ L, g, intro, now, open, share }) {
   const hm = L.jh ? ME : g.o, aw = L.jh ? g.o : ME, on = L.status === 'live';
   return html`<div class="col grow">
-    <div class="row between t-s" style=${{ minHeight: 26 }}>${on ? html`<span class="live-pill">לייב</span>` : html`<span class="b">${L.status === 'end' ? 'סיום' : 'ממתינים לשריקת הפתיחה'}</span>`}<span class="b num">${on ? L.st : ''}${on && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
+    <div class="row between t-s" style=${{ minHeight: 26 }}>${on ? html`<span class="live-pill">לייב</span>` : html`<span class="b">${L.status === 'end' ? 'סיום' : 'ממתינים לשריקת הפתיחה'}</span>`}<span class="b num pill-mate">${on ? L.st : ''}${on && L.clock ? html` · <span class="ltr">${L.clock}</span>` : null}</span></div>
     <div class=${cx('lv-title', intro && 'live-in')} aria-label="הפועל לייב"><span>הפועל</span><span class=${cx('live-tag', on && 'on')}><span class="lt-clip" aria-hidden="true"></span>לייב</span></div>
     <${LiveSides} L=${L} hm=${hm} aw=${aw}/>
     <${LiveQ} L=${L} hm=${hm} aw=${aw}/>

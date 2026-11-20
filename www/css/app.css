@@ -301,6 +301,9 @@ html.dark .crest-l { background: #fff; color: var(--ink); }
 .live-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; }
 .live-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1.4s ease-in-out infinite; }
 .glass-red .live-pill { background: #fff; color: var(--red); }
+/* the quarter and clock beside the pill: on the same baseline as the pill's text (both rows are centred, and the pill's
+   text is smaller, so the larger text sat about a pixel lower) */
+.pill-mate { position: relative; top: -0.08em; }
 .glass-red .live-pill::before { background: var(--red); }
 @keyframes blink { 50% { opacity: .25; } }
 .sc-big { font-size: 46px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
