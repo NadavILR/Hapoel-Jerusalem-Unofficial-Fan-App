@@ -214,6 +214,8 @@ public class WidgetRenderTest {
             if (op != null && cp != null && wd != null && wt != null)
                 sizes.add(name + " gaps: competition→stage=" + Math.round((cp[0] - op[1]) / px * 10) / 10f + "dp day→time=" + Math.round((wt[0] - wd[1]) / px * 10) / 10f + "dp");
         }
+        View card = v.findViewById(R.id.k_card);
+        if (card != null) sizes.add(name + " card=" + Math.round(card.getHeight() / px * 10) / 10f + "dp");
         View clock = v.findViewById(R.id.k_time);
         if (clock instanceof TextView) sizes.add(name + " clock=" + Math.round(((TextView) clock).getTextSize() / px * 10) / 10f + "dp");
     }

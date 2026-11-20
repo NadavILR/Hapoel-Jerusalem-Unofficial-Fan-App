@@ -200,13 +200,18 @@ public class ClockWidget extends AppWidgetProvider {
     /** The design's base size, in dp: the widget as measured on a Galaxy S24 Ultra. */
     private static final float BW = 362f, BH = 195f;
 
-    /** The seconds in a small white pill beside the clock (red digits), sized with the clock. */
-    private static void secPill(RemoteViews v, float clock, float px) {
+    /**
+     * The seconds in a small white pill beside the clock (red digits), sized with the clock: a little wide, softly
+     * rounded, its bottom on the line of the clock's digits (the clock's text ends with the font's room below its digits).
+     */
+    private static void secPill(Context c, RemoteViews v, float clock, float px) {
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
         float t = clock * 0.33f;
         v.setTextViewTextSize(R.id.k_sec, DP, t);
-        v.setViewPadding(R.id.k_sec, Math.round(t * 0.28f * px), Math.round(t * 0.06f * px), Math.round(t * 0.28f * px), Math.round(t * 0.06f * px));
+        v.setViewPadding(R.id.k_sec, Math.round(t * 0.5f * px), Math.round(t * 0.04f * px), Math.round(t * 0.5f * px), Math.round(t * 0.04f * px));
         v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.1f, DP);
+        float descent = paint(c, clock, true).getFontMetrics().descent / px;
+        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_BOTTOM, descent, DP);
     }
 
     /** The countdown card's head: the crests, or the title and the stage, or the day and the time – the tallest. */
@@ -286,7 +291,7 @@ public class ClockWidget extends AppWidgetProvider {
         // HH:mm big and :ss at 0.42 of it – together about 3.85× the big size wide, so they always fit the panel
         float clock = Math.min(52 * kh, mainW / 3.85f);
         v.setTextViewTextSize(R.id.k_time, DP, clock);
-        secPill(v, clock, px);
+        secPill(c, v, clock, px);
         // measured in pixels → back to dp (the widths here are in dp), or the row would shrink by the screen density
         float dw = (paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
             + sepW * (heb.isEmpty() ? 1 : 2);
@@ -318,11 +323,13 @@ public class ClockWidget extends AppWidgetProvider {
             clockH = th(c, clock, true) - trimTop - trimBottom;
             for (int i = 0; i < 8 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
             v.setTextViewTextSize(R.id.k_time, DP, clock);
-            secPill(v, clock, px);
+            secPill(c, v, clock, px);
         }
         v.setViewLayoutMargin(R.id.k_clock, RemoteViews.MARGIN_TOP, -trimTop, DP);
         v.setViewLayoutMargin(R.id.k_clock, RemoteViews.MARGIN_BOTTOM, -trimBottom, DP);
         float kc = k * q, khc = kh * q;
+        // one card height in every state – the countdown, the game started, live and test mode
+        v.setViewLayoutHeight(R.id.k_card, cardH(c, mainW, k, kh, q), DP);
         v.setViewPadding(R.id.k_card, Math.round(9 * kc * px), Math.round(7 * khc * px), Math.round(9 * kc * px), Math.round(7 * khc * px));
         // the user's design: larger crests (22, overlapping to 38), the title 12 bold, the stage / day / time 9.5
         v.setViewLayoutWidth(R.id.k_crests, 38 * kc, DP);
