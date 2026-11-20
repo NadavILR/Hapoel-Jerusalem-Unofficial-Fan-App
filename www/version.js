@@ -1,1 +1,1 @@
-window.APP_VERSION='2.42';
+window.APP_VERSION='2.43';
