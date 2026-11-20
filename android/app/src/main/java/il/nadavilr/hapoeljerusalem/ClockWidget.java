@@ -218,7 +218,9 @@ public class ClockWidget extends AppWidgetProvider {
         android.graphics.Rect cap = new android.graphics.Rect();
         p.getTextBounds("0", 0, 1, cap);
         float descent = p.getFontMetrics().descent / px, capH = -cap.top / px;
-        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_BOTTOM, descent + capH / 2 - side / 2, DP);
+        // measured on the phone (17:23 at 52 dp): the square sat about 2.3 dp above the digits' middle – the clock's
+        // line on the phone ends a little lower than the font's descent says – so it moves down by that much
+        v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_BOTTOM, descent + capH / 2 - side / 2 - 0.045f * clock, DP);
     }
 
     /** The countdown card's head: the crests, or the title and the stage, or the day and the time – the tallest. */
