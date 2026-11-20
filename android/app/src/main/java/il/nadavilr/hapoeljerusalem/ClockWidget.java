@@ -353,9 +353,16 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.k_lt, DP, 13 * kf);
         v.setTextViewTextSize(R.id.k_ls, DP, 10 * kf);
         v.setViewLayoutMargin(R.id.k_ls, RemoteViews.MARGIN_TOP, -3 * kf, DP); // the stage close under the competition
-        for (int id : new int[] {R.id.k_hs, R.id.k_as}) v.setTextViewTextSize(id, DP, 20 * kf);
+        // the score as large as the box allows (up to 28): the digits use only their cap height, so the room the font
+        // keeps above them and below them (for vowel marks and descending letters) is trimmed, and the name sits close
+        float nameH = th(c, 9.5f * kf, false), sc = 28 * kc;
+        while (sc > 16 * kc && th(c, sc, true) - 0.33f * sc + nameH + 3 * kc > boxH) sc -= 0.5f * kc;
+        for (int id : new int[] {R.id.k_hs, R.id.k_as}) {
+            v.setTextViewTextSize(id, DP, sc);
+            v.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, -0.15f * sc, DP);
+        }
         for (int id : new int[] {R.id.k_hbox, R.id.k_abox}) v.setViewPadding(id, Math.round(4 * kc * px), 0, Math.round(4 * kc * px), 0);
-        for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, kf, DP);
+        for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, -0.18f * sc, DP);
         for (int e : new int[] {RemoteViews.MARGIN_START, RemoteViews.MARGIN_END}) v.setViewLayoutMargin(R.id.k_mid, e, 6 * kc, DP);
         v.setTextViewTextSize(R.id.k_tag, DP, 10 * kf);
         v.setViewPadding(R.id.k_tag, Math.round(10 * kf * px), Math.round(kf * px), Math.round(10 * kf * px), Math.round(2 * kf * px));

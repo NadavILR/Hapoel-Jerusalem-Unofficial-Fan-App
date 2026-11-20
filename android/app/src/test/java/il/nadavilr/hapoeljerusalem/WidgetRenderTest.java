@@ -238,10 +238,21 @@ public class WidgetRenderTest {
         if (lw > availW + 1) problems.add(what + ": wider than its view (" + Math.round(lw / px) + " > " + Math.round(availW / px) + " dp)");
         if (l.getHeight() > availH + 1) problems.add(what + ": taller than its view (" + Math.round(l.getHeight() / px) + " > " + Math.round(availH / px) + " dp)");
         if (t.getMaxLines() > 0 && l.getLineCount() > t.getMaxLines()) problems.add(what + ": more lines than allowed");
-        // the whole text inside the widget and inside every parent (nothing cut off by a smaller parent)
+        // the text's ink (the glyphs themselves, not the view's empty room above and below them) inside the widget and
+        // inside every parent – nothing cut off by a smaller parent
         Rect r = new Rect();
         if (!t.getGlobalVisibleRect(r)) { problems.add(what + ": not visible"); return; }
-        if (r.width() < t.getWidth() - 1 || r.height() < t.getHeight() - 1)
-            problems.add(what + ": cut by its parent (" + Math.round(r.width() / px) + "×" + Math.round(r.height() / px) + " of " + Math.round(t.getWidth() / px) + "×" + Math.round(t.getHeight() / px) + " dp)");
+        // the view's position in the same coordinates as getGlobalVisibleRect (the views are not in a window here)
+        int[] at = new int[2];
+        for (View p = t; p != null; p = p.getParent() instanceof View ? (View) p.getParent() : null) { at[0] += p.getLeft() - p.getScrollX(); at[1] += p.getTop() - p.getScrollY(); }
+        for (int i = 0; i < l.getLineCount(); i++) {
+            String line = s.subSequence(l.getLineStart(i), l.getLineEnd(i)).toString().replace("\n", "");
+            if (line.trim().isEmpty()) continue;
+            Rect ink = new Rect();
+            t.getPaint().getTextBounds(line, 0, line.length(), ink);
+            int top = at[1] + t.getTotalPaddingTop() + l.getLineBaseline(i) + ink.top, bottom = at[1] + t.getTotalPaddingTop() + l.getLineBaseline(i) + ink.bottom;
+            if (top < r.top - 1 || bottom > r.bottom + 1) // across: the width check above
+                problems.add(what + ": ink cut (" + (r.top - top) + "/" + (bottom - r.bottom) + " px over top/bottom)");
+        }
     }
 }
