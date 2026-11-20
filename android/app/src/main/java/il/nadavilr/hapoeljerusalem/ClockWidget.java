@@ -293,18 +293,25 @@ public class ClockWidget extends AppWidgetProvider {
         // the next-game card. Its sizes (kc, khc) are scaled down together, after the clock, when the clock, the dates
         // and the card would not fit the widget's height – Noto Sans Hebrew lines are about 1.37× their size
         float avail = h - 24 * k, datesH = th(c, dateText, true) + 6 * k + 2 * k;
-        float q = 1f, clockH = th(c, clock, true), minClock = Math.min(clock, 40 * k);
-        float cardH = cardH(c, mainW, k, kh, 1f);
+        // the clock's digits use only their cap height: the font's room above them (for vowel marks) and below them
+        // (for descending letters) is given back to the dates – the clock keeps its full size and nothing is cut
+        float trimTop = 0.2f * clock, trimBottom = 0.2f * clock;
+        float q = 1f, clockH = th(c, clock, true) - trimTop - trimBottom;
+        // when it does not fit: the card first (down to 85%), then the clock – the clock stays the biggest thing
+        for (int i = 0; i < 4 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
+        float cardH = cardH(c, mainW, k, kh, q);
         if (clockH + datesH + cardH > avail) {
-            // the clock first, down to 40 (it stays the biggest thing on the widget)
-            float want = Math.max(th(c, minClock, true), avail - datesH - cardH);
+            float want = Math.max(th(c, 40 * k, true) * 0.71f, avail - datesH - cardH);
             clock *= want / clockH;
-            clockH = th(c, clock, true);
-            // then the card, all of it together
-            for (int i = 0; i < 12 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
+            trimTop = 0.2f * clock;
+            trimBottom = 0.2f * clock;
+            clockH = th(c, clock, true) - trimTop - trimBottom;
+            for (int i = 0; i < 8 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
             v.setTextViewTextSize(R.id.k_time, DP, clock);
             v.setTextViewTextSize(R.id.k_sec, DP, clock * 0.42f);
         }
+        v.setViewLayoutMargin(R.id.k_clock, RemoteViews.MARGIN_TOP, -trimTop, DP);
+        v.setViewLayoutMargin(R.id.k_clock, RemoteViews.MARGIN_BOTTOM, -trimBottom, DP);
         float kc = k * q, khc = kh * q;
         v.setViewPadding(R.id.k_card, Math.round(9 * kc * px), Math.round(7 * khc * px), Math.round(9 * kc * px), Math.round(7 * khc * px));
         // the user's design: larger crests (22, overlapping to 38), the title 12 bold, the stage / day / time 9.5

@@ -112,6 +112,7 @@ public class WidgetRenderTest {
                 NextGameWidget.clearLive(c);
             }
         }
+        try (FileOutputStream o = new FileOutputStream(new File(out, "clock-sizes.txt"))) { o.write(String.join("\n", sizes).getBytes("UTF-8")); }
         File report = new File(out, "problems.txt");
         try (FileOutputStream o = new FileOutputStream(report)) { o.write(String.join("\n", problems).getBytes("UTF-8")); }
         assertTrue(problems.size() + " problems – see " + report.getAbsolutePath() + "\n" + String.join("\n", problems.subList(0, Math.min(40, problems.size()))), problems.isEmpty());
@@ -208,7 +209,11 @@ public class WidgetRenderTest {
         host.draw(cv);
         try (FileOutputStream o = new FileOutputStream(new File(out, name + ".png"))) { b.compress(Bitmap.CompressFormat.PNG, 100, o); }
         check(name, v, v, px);
+        View clock = v.findViewById(R.id.k_time);
+        if (clock instanceof TextView) sizes.add(name + " clock=" + Math.round(((TextView) clock).getTextSize() / px * 10) / 10f + "dp");
     }
+
+    private final List<String> sizes = new ArrayList<>();
 
     private void check(String name, View root, View v, float px) {
         if (v.getVisibility() != View.VISIBLE) return;
