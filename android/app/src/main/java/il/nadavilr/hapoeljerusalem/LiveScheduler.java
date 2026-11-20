@@ -53,9 +53,13 @@ final class LiveScheduler {
     /** True the first time it is called for this game and key (start / q1..q8 / end): each alert is sent once. */
     static synchronized boolean alertOnce(Context c, long t, String key) {
         SharedPreferences p = prefs(c);
-        String state = p.getLong("alertsFor", 0) == t ? p.getString("alerts", "") : "";
+        // the same game even if its time moved a little between syncs (a tip-off time corrected by a few minutes once
+        // reset the list, and "המשחק התחיל" came again each time the app was opened)
+        long was = p.getLong("alertsFor", 0);
+        boolean same = was > 0 && Math.abs(was - t) < 6 * 3_600_000L;
+        String state = same ? p.getString("alerts", "") : "";
         if (("," + state + ",").contains("," + key + ",")) return false;
-        p.edit().putLong("alertsFor", t).putString("alerts", state.isEmpty() ? key : state + "," + key).apply();
+        p.edit().putLong("alertsFor", same ? was : t).putString("alerts", state.isEmpty() ? key : state + "," + key).commit();
         return true;
     }
 

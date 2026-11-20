@@ -402,8 +402,13 @@ public class LiveScoreService extends Service {
 
     private void alerts(LiveGame x) {
         if (x == null || !alertsOn()) return;
-        if (LiveScheduler.alertOnce(this, tipOff, "start")) GameAlerts.start(this, x, tipOff);
         String st = x.status == null ? "" : x.status;
+        // "המשחק התחיל" only around the tip-off – in the 1st quarter, up to 45 minutes after the scheduled time (a late
+        // start included): opening the app in the middle of the game shows the live card, not that the game started
+        int q0 = quarter(st);
+        if (q0 <= 1 && System.currentTimeMillis() < tipOff + 45 * MIN) {
+            if (LiveScheduler.alertOnce(this, tipOff, "start")) GameAlerts.start(this, x, tipOff);
+        } else LiveScheduler.alertOnce(this, tipOff, "start"); // late: marked as sent, never sent
         // A break is announced only when the status says so ("סיום רבע 1", "מחצית", "End of …"); any other status the
         // app does not know (e.g. "פסק זמן" from 365scores during a timeout) changes nothing – it once announced the
         // end of the 1st quarter a minute into the game
