@@ -208,7 +208,7 @@ public class ClockWidget extends AppWidgetProvider {
         final int DP = android.util.TypedValue.COMPLEX_UNIT_DIP;
         float t = clock * 0.33f;
         v.setTextViewTextSize(R.id.k_sec, DP, t);
-        v.setViewPadding(R.id.k_sec, Math.round(t * 0.5f * px), Math.round(t * 0.04f * px), Math.round(t * 0.5f * px), Math.round(t * 0.04f * px));
+        v.setViewPadding(R.id.k_sec, Math.round(t * 0.38f * px), Math.round(t * 0.04f * px), Math.round(t * 0.38f * px), Math.round(t * 0.04f * px));
         v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.1f, DP);
         float descent = paint(c, clock, true).getFontMetrics().descent / px;
         v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_BOTTOM, descent, DP);
