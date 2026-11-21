@@ -258,6 +258,19 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     /** A text line's height in dp (no font padding, as in the layouts) at this size. */
+    /**
+     * The widgets' font: Noto Sans Hebrew with its Hebrew letters only (res/font/widget_hebrew); English, digits and
+     * every other sign fall back to the device's font, exactly as in the widgets themselves.
+     */
+    static android.graphics.Typeface widgetFont(Context c, boolean bold) {
+        try {
+            android.graphics.Typeface t = androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.widget_hebrew_bold : R.font.widget_hebrew_regular);
+            if (t != null) return t;
+        } catch (Exception ignored) {
+        }
+        return android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+    }
+
     static float th(Context c, float dp, boolean bold) {
         return lineH(c, dp, bold, "אבגדהוזחטיכלמנסעפצקרשת 0123456789:·");
     }
@@ -295,7 +308,7 @@ public class ClockWidget extends AppWidgetProvider {
     private static android.graphics.Paint paint(Context c, float dp, boolean bold) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
-        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL)); // the device's font, as the widgets show it
+        p.setTypeface(widgetFont(c, bold)); // as the widgets show it: Noto Sans Hebrew for Hebrew, the device's font for the rest
         p.setFontFeatureSettings("tnum");
         return p;
     }
