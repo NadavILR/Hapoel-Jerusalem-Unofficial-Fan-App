@@ -36,7 +36,12 @@ public class ClockWidget extends AppWidgetProvider {
         final PendingResult pr = goAsync();
         final Context app = c.getApplicationContext();
         ONE.execute(() -> {
-            try { update(app); } finally { pr.finish(); }
+            try {
+                update(app);
+                // the next-game widget's countdown turns at the same moment: one alarm redraws both (while the phone is
+                // idle Android lets an app's exact alarms through only every few minutes, so the second could come late)
+                NextGameWidget.update(app);
+            } finally { pr.finish(); }
         });
     }
 
@@ -59,24 +64,30 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     static void update(Context c) {
+        long now = System.currentTimeMillis();
+        JSONObject g = null;
         try {
             AppWidgetManager m = AppWidgetManager.getInstance(c);
             int[] ids = m.getAppWidgetIds(new ComponentName(c, ClockWidget.class));
             if (ids == null || ids.length == 0) return;
-            long now = System.currentTimeMillis();
-            JSONObject g = next(c, now);
+            g = next(c, now);
             Calendar cal = Calendar.getInstance(IL);
             cal.setTimeInMillis(now);
             String day = "יום " + DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1];
             String greg = String.format(Locale.ROOT, "%d.%d.%d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR));
             String heb = hebrewDate(now >= sunset(now) ? now + DAY : now);
             for (int id : ids) {
-                RemoteViews v = build(c, now, g);
-                fit(c, v, m.getAppWidgetOptions(id), day, greg, heb);
-                m.updateAppWidget(id, v);
+                try {
+                    RemoteViews v = build(c, now, g);
+                    fit(c, v, m.getAppWidgetOptions(id), day, greg, heb);
+                    m.updateAppWidget(id, v);
+                } catch (Exception ignored) {
+                }
             }
-            schedule(c, now, g);
         } catch (Exception ignored) {
+        } finally {
+            // always the next redraw – a redraw that failed once must never leave the countdown running past zero
+            try { schedule(c, now, g); } catch (Exception ignored) { }
         }
     }
 
@@ -571,10 +582,10 @@ public class ClockWidget extends AppWidgetProvider {
             // exact: the minutes and seconds count down by themselves and run past zero ("−00:17") if the redraw at the
             // turn of the hour comes late – an inexact alarm can be minutes late while the phone sleeps
             boolean exact = Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms();
-            if (exact && Build.VERSION.SDK_INT >= 23) am.setExactAndAllowWhileIdle(AlarmManager.RTC, at, pi);
-            else if (exact) am.setExact(AlarmManager.RTC, at, pi);
-            else if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC, at, pi);
-            else am.set(AlarmManager.RTC, at, pi);
+            if (exact && Build.VERSION.SDK_INT >= 23) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            else if (exact) am.setExact(AlarmManager.RTC_WAKEUP, at, pi);
+            else if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            else am.set(AlarmManager.RTC_WAKEUP, at, pi);
         } catch (Exception ignored) {
         }
     }

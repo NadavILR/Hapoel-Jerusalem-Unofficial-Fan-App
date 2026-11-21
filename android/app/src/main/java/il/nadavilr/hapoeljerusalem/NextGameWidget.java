@@ -56,6 +56,7 @@ public class NextGameWidget extends AppWidgetProvider {
         ONE.execute(() -> {
             try {
                 update(app);
+                ClockWidget.update(app); // one alarm redraws both widgets (see ClockWidget.onUpdate)
             } finally {
                 pr.finish();
             }
@@ -148,7 +149,7 @@ public class NextGameWidget extends AppWidgetProvider {
             } catch (Exception ignored) {
             }
         }
-        schedule(c, d);
+        try { schedule(c, d); } catch (Exception ignored) { }
     }
 
     /** Before Android 12: the layout by the widget's size (portrait width, tallest height). */
@@ -578,10 +579,10 @@ public class NextGameWidget extends AppWidgetProvider {
             // exact: the minutes and seconds count down by themselves and run past zero ("−00:17") if the redraw at the
             // turn of the hour comes late – an inexact alarm can be minutes late while the phone sleeps
             boolean exact = Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms();
-            if (exact && Build.VERSION.SDK_INT >= 23) am.setExactAndAllowWhileIdle(AlarmManager.RTC, at, pi);
-            else if (exact) am.setExact(AlarmManager.RTC, at, pi);
-            else if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC, at, pi);
-            else am.set(AlarmManager.RTC, at, pi);
+            if (exact && Build.VERSION.SDK_INT >= 23) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            else if (exact) am.setExact(AlarmManager.RTC_WAKEUP, at, pi);
+            else if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            else am.set(AlarmManager.RTC_WAKEUP, at, pi);
         } catch (Exception ignored) {
         }
     }
