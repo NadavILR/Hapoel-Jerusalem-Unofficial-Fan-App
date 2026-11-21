@@ -62,10 +62,18 @@
         </FrameLayout>
         <LinearLayout android:id="@+id/k_who" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:orientation="vertical">
           <TextView android:includeFontPadding="false" android:id="@+id/k_op" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="9dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
-          <TextView android:includeFontPadding="false" android:id="@+id/k_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" android:ellipsize="end" />
+          <!-- k_comp: its Hebrew (Noto Sans Hebrew) and, beside it, its numbers and other signs (k_comp_n, the device's font) -->
+          <LinearLayout android:id="@+id/k_comp_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:orientation="horizontal" android:gravity="start|center_vertical" android:layoutDirection="rtl">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:id="@+id/k_comp" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:visibility="gone" android:includeFontPadding="false" android:id="@+id/k_comp_n" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" />
+          </LinearLayout>
         </LinearLayout>
         <LinearLayout android:id="@+id/k_when" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:orientation="vertical" android:gravity="end">
-          <TextView android:includeFontPadding="false" android:id="@+id/k_wd" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" />
+          <!-- k_wd: its Hebrew (Noto Sans Hebrew) and, beside it, its numbers and other signs (k_wd_n, the device's font) -->
+          <LinearLayout android:id="@+id/k_wd_row" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end|center_vertical" android:layoutDirection="rtl">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:id="@+id/k_wd" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:visibility="gone" android:includeFontPadding="false" android:id="@+id/k_wd_n" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" />
+          </LinearLayout>
           <TextView android:includeFontPadding="false" android:id="@+id/k_wt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#BFFFFFFF" android:textSize="9dp" android:maxLines="1" />
         </LinearLayout>
       </LinearLayout>
@@ -98,7 +106,11 @@
         <ImageView android:id="@+id/k_lhc" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginStart="10dp" android:background="@drawable/cw_disc" android:padding="1.5dp" android:scaleType="fitCenter" android:importantForAccessibility="no" />
         <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
           <TextView android:includeFontPadding="false" android:id="@+id/k_lt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="13dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
-          <TextView android:includeFontPadding="false" android:id="@+id/k_ls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-3dp" android:textColor="#FFFFFF" android:textSize="10dp" android:maxLines="1" android:ellipsize="end" />
+          <!-- k_ls: its Hebrew (Noto Sans Hebrew) and, beside it, its numbers and other signs (k_ls_n, the device's font) -->
+          <LinearLayout android:id="@+id/k_ls_row" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-3dp" android:orientation="horizontal" android:gravity="center" android:layoutDirection="rtl">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:id="@+id/k_ls" android:textColor="#FFFFFF" android:textSize="10dp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:visibility="gone" android:includeFontPadding="false" android:id="@+id/k_ls_n" android:textColor="#FFFFFF" android:textSize="10dp" android:maxLines="1" />
+          </LinearLayout>
         </LinearLayout>
         <ImageView android:id="@+id/k_lac" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="10dp" android:background="@drawable/cw_disc" android:padding="1.5dp" android:scaleType="fitCenter" android:importantForAccessibility="no" />
       </LinearLayout>
@@ -109,7 +121,11 @@
         </LinearLayout>
         <LinearLayout android:id="@+id/k_mid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:orientation="vertical" android:gravity="center">
           <TextView android:includeFontPadding="false" android:id="@+id/k_tag" android:singleLine="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/cw2_live" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="1dp" android:paddingBottom="2dp" android:textColor="#FFFFFF" android:textSize="10dp" android:textStyle="bold" android:text="● לייב" />
-          <TextView android:includeFontPadding="false" android:id="@+id/k_lq" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="#FFFFFF" android:textSize="9.5dp" android:textStyle="bold" android:maxLines="1" />
+          <!-- k_lq: its Hebrew (Noto Sans Hebrew) and, beside it, its numbers and other signs (k_lq_n, the device's font) -->
+          <LinearLayout android:id="@+id/k_lq_row" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="center" android:layoutDirection="rtl">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:id="@+id/k_lq" android:textColor="#FFFFFF" android:textSize="9.5dp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:visibility="gone" android:includeFontPadding="false" android:id="@+id/k_lq_n" android:textColor="#FFFFFF" android:textSize="9.5dp" android:textStyle="bold" android:maxLines="1" />
+          </LinearLayout>
           <TextView android:includeFontPadding="false" android:id="@+id/k_lc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="15dp" android:maxLines="1" android:fontFeatureSettings="tnum" />
         </LinearLayout>
         <LinearLayout android:id="@+id/k_abox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:background="@drawable/cw2_box" android:paddingTop="4dp" android:paddingBottom="5dp" android:paddingStart="4dp" android:paddingEnd="4dp">

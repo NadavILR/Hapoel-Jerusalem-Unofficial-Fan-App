@@ -318,8 +318,8 @@ public class NextGameWidget extends AppWidgetProvider {
         }
         if (d == null) {
             v.setTextViewText(R.id.w_op, rlm + "אין משחקים קרובים");
-            v.setTextViewText(R.id.w_comp, "");
-            v.setTextViewText(R.id.w_when, "");
+            ClockWidget.mixed(v, R.id.w_comp, R.id.w_comp_n, "");
+            ClockWidget.mixed(v, R.id.w_when, R.id.w_when_n, "");
             v.setViewVisibility(R.id.w_crests, View.GONE);
             v.setViewVisibility(R.id.w_count, View.GONE);
             v.setOnClickPendingIntent(R.id.w_root, LiveGame.open(c, 0));
@@ -336,13 +336,13 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setContentDescription(R.id.w_away_crest, d.away);
             String[] cs = ClockWidget.compStage(d.comp);
             v.setTextViewText(R.id.w_op, rlm + cs[0]);
-            v.setTextViewText(R.id.w_comp, rlm + cs[1]);
-            v.setViewVisibility(R.id.w_comp, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
+            ClockWidget.mixed(v, R.id.w_comp, R.id.w_comp_n, cs[1]);
+            v.setViewVisibility(R.id.w_comp_row, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
             v.setTextViewText(R.id.w_hs, String.valueOf(d.hs));
             v.setTextViewText(R.id.w_as, String.valueOf(d.as));
             v.setTextViewText(R.id.w_hn, rlm + (d.meHome ? LiveGame.TEAM : d.home));
             v.setTextViewText(R.id.w_an, rlm + (d.meHome ? d.away : LiveGame.TEAM));
-            v.setTextViewText(R.id.w_q, rlm + (d.status.isEmpty() ? "בלייב" : d.status));
+            ClockWidget.mixed(v, R.id.w_q, R.id.w_q_n, d.status.isEmpty() ? "בלייב" : d.status);
             v.setTextViewText(R.id.w_clock, d.clock);
             v.setViewVisibility(R.id.w_clock, d.clock.isEmpty() ? View.GONE : View.VISIBLE);
             return v;
@@ -354,9 +354,9 @@ public class NextGameWidget extends AppWidgetProvider {
         if (me != null) v.setImageViewBitmap(meId, me); else v.setImageViewResource(meId, R.drawable.hpj_crest);
         if (oc != null) v.setImageViewBitmap(oppId, oc); else v.setImageViewResource(oppId, android.R.color.transparent);
         v.setTextViewText(R.id.w_op, rlm + opp);
-        v.setTextViewText(R.id.w_comp, rlm + comp);
-        v.setViewVisibility(R.id.w_comp, comp.isEmpty() ? View.GONE : View.VISIBLE);
-        v.setTextViewText(R.id.w_when, rlm + when(d.t));
+        ClockWidget.mixed(v, R.id.w_comp, R.id.w_comp_n, comp);
+        v.setViewVisibility(R.id.w_comp_row, comp.isEmpty() ? View.GONE : View.VISIBLE);
+        ClockWidget.mixed(v, R.id.w_when, R.id.w_when_n, when(d.t));
         if (d.started) {
             // Tip-off has passed and the live score card has no score (yet)
             v.setViewVisibility(R.id.w_count, View.GONE);
@@ -440,12 +440,14 @@ public class NextGameWidget extends AppWidgetProvider {
             float m = Math.min(1f, (h - 10 * k) / midH), km = k * m;
             v.setTextViewTextSize(R.id.w_op, DP, 12 * km);
             v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * km);
-            v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, km, DP);
+            v.setTextViewTextSize(R.id.w_comp_n, DP, 9.5f * km);
+            v.setViewLayoutMargin(R.id.w_comp_row, RemoteViews.MARGIN_TOP, km, DP);
             v.setTextViewTextSize(R.id.w_tag, DP, 9.5f * km);
             v.setViewPadding(R.id.w_tag, Math.round(9 * km * px), Math.round(km * px), Math.round(9 * km * px), Math.round(2 * km * px));
             v.setViewLayoutMargin(R.id.w_tag, RemoteViews.MARGIN_TOP, 3 * km, DP);
             v.setTextViewTextSize(R.id.w_q, DP, 9.5f * km);
-            v.setViewLayoutMargin(R.id.w_q, RemoteViews.MARGIN_TOP, 2 * km, DP);
+            v.setTextViewTextSize(R.id.w_q_n, DP, 9.5f * km);
+            v.setViewLayoutMargin(R.id.w_q_row, RemoteViews.MARGIN_TOP, 2 * km, DP);
             v.setTextViewTextSize(R.id.w_clock, DP, 14 * km);
             // the score boxes' bottom on the line of the game clock's digits (the clock's text ends with the font's room
             // for descending letters below its digits)
@@ -478,10 +480,9 @@ public class NextGameWidget extends AppWidgetProvider {
         }
         v.setTextViewTextSize(R.id.w_op, DP, opSize);
         v.setViewLayoutMargin(R.id.w_op, RemoteViews.MARGIN_TOP, 2 * k, DP);
-        v.setTextViewTextSize(R.id.w_comp, DP, 9.5f * k);
-        v.setViewLayoutMargin(R.id.w_comp, RemoteViews.MARGIN_TOP, k, DP);
-        v.setTextViewTextSize(R.id.w_when, DP, 9.5f * k);
-        v.setViewLayoutMargin(R.id.w_when, RemoteViews.MARGIN_TOP, k, DP);
+        for (int id : new int[] {R.id.w_comp, R.id.w_comp_n, R.id.w_when, R.id.w_when_n}) v.setTextViewTextSize(id, DP, 9.5f * k);
+        v.setViewLayoutMargin(R.id.w_comp_row, RemoteViews.MARGIN_TOP, k, DP);
+        v.setViewLayoutMargin(R.id.w_when_row, RemoteViews.MARGIN_TOP, k, DP);
         v.setTextViewTextSize(R.id.w_status, DP, 10.5f * k);
         v.setViewLayoutMargin(R.id.w_count, RemoteViews.MARGIN_START, 8 * k, DP);
         // the countdown boxes: a little taller with a taller widget, never wider than the row allows
@@ -495,23 +496,14 @@ public class NextGameWidget extends AppWidgetProvider {
             v.setTextViewTextSize(b[i][2], DP, 8 * k);
             v.setViewLayoutMargin(b[i][2], RemoteViews.MARGIN_TOP, k, DP);
         }
-        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-        p.setTextSize(num * px);
-        p.setTypeface(ClockWidget.widgetFont(c, true)); // as the widgets show it
-        p.setFontFeatureSettings("tnum");
-        float two = (float) Math.floor(p.measureText("00")) - 1f /* exactly two digits, never a sliver of the ":" after or before them */;
+        float two = ClockWidget.twoDigitsPx(c, num);
         v.setViewLayoutWidth(R.id.w_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.w_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }
 
     /** The width of two digits in the countdown's font (22dp bold, tabular digits), so a clip shows just "MM" / "SS". */
     static float twoDigits(Context c, int sp) {
-        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-        p.setTextSize(sp * c.getResources().getDisplayMetrics().density);
-        // the widget's own font (Noto Sans Hebrew Bold), so the clip is exactly two of its digits
-        p.setTypeface(ClockWidget.widgetFont(c, true)); // as the widgets show it
-        if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
-        return (float) Math.floor(p.measureText("00")) - 1f /* exactly two digits, never a sliver of the ":" after or before them */;
+        return ClockWidget.twoDigitsPx(c, sp); // exactly two digits of the device's font, as the home screen draws them
     }
 
     private static String when(long t) {

@@ -147,7 +147,7 @@ public class ClockWidget extends AppWidgetProvider {
         // (same layout), so what the live score hid (the countdown, the day and time) would otherwise stay hidden and the
         // score would stay on after the game – or after test mode – ends
         v.setViewVisibility(R.id.k_crests, View.VISIBLE);
-        v.setViewVisibility(R.id.k_comp, View.VISIBLE);
+        v.setViewVisibility(R.id.k_comp_row, View.VISIBLE);
         v.setViewVisibility(R.id.k_when, View.VISIBLE);
         v.setViewVisibility(R.id.k_count, View.VISIBLE);
         v.setViewVisibility(R.id.k_status, View.GONE);
@@ -157,7 +157,7 @@ public class ClockWidget extends AppWidgetProvider {
         if (g == null && NextGameWidget.liveNow(c) != null) return live(c, v, NextGameWidget.liveNow(c), null);
         if (g == null) {
             v.setTextViewText(R.id.k_op, rlm + "אין משחקים קרובים");
-            v.setTextViewText(R.id.k_comp, "");
+            mixed(v, R.id.k_comp, R.id.k_comp_n, "");
             v.setViewVisibility(R.id.k_crests, View.GONE);
             v.setViewVisibility(R.id.k_when, View.GONE);
             v.setViewVisibility(R.id.k_count, View.GONE);
@@ -174,14 +174,14 @@ public class ClockWidget extends AppWidgetProvider {
         String[] cs = compStage(g.optString("l", ""));
         if (cs[0].isEmpty()) cs = new String[] {comp(g), ""};
         v.setTextViewText(R.id.k_op, rlm + cs[0]);
-        v.setTextViewText(R.id.k_comp, rlm + cs[1]);
-        v.setViewVisibility(R.id.k_comp, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
+        mixed(v, R.id.k_comp, R.id.k_comp_n, cs[1]);
+        v.setViewVisibility(R.id.k_comp_row, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
         boolean home = g.optInt("h", 1) == 1;
         Bitmap oc = NextGameWidget.crest(c, g.optString("img", "")), me = LiveGame.hapoelCrest(c);
         int meId = home ? R.id.k_me : R.id.k_opp, oppId = home ? R.id.k_opp : R.id.k_me;
         if (me != null) v.setImageViewBitmap(meId, me); else v.setImageViewResource(meId, R.drawable.hpj_crest);
         if (oc != null) v.setImageViewBitmap(oppId, oc); else v.setImageViewResource(oppId, android.R.color.transparent);
-        v.setTextViewText(R.id.k_wd, rlm + "יום " + DAY_LETTER[gc.get(Calendar.DAY_OF_WEEK) - 1] + " · "
+        mixed(v, R.id.k_wd, R.id.k_wd_n, "יום " + DAY_LETTER[gc.get(Calendar.DAY_OF_WEEK) - 1] + " · "
             + String.format(Locale.ROOT, "%d.%d", gc.get(Calendar.DAY_OF_MONTH), gc.get(Calendar.MONTH) + 1));
         v.setTextViewText(R.id.k_wt, String.format(Locale.ROOT, "%02d:%02d", gc.get(Calendar.HOUR_OF_DAY), gc.get(Calendar.MINUTE)));
         v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, t));
@@ -226,7 +226,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewLayoutWidth(R.id.k_sec, side, DP);
         v.setViewLayoutHeight(R.id.k_sec, side, DP);
         v.setViewLayoutMargin(R.id.k_sec, RemoteViews.MARGIN_START, clock * 0.16f, DP); // a little room from the clock
-        android.graphics.Paint p = paint(c, clock, true);
+        android.graphics.Paint p = digitPaint(c, clock, true);
         android.graphics.Rect cap = new android.graphics.Rect();
         p.getTextBounds("0", 0, 1, cap);
         float descent = p.getFontMetrics().descent / px, capH = -cap.top / px;
@@ -258,6 +258,31 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     /** A text line's height in dp (no font padding, as in the layouts) at this size. */
+    /**
+     * A line of Hebrew with numbers or other signs ("מחזור 8", "יום א' · 6.12"): the Hebrew in one view (Noto Sans Hebrew
+     * with the default font) and the rest beside it in another (the device's font) – a view with the widgets' own font
+     * would draw the digits in Android's fallback font (Roboto), not the device's.
+     */
+    static void mixed(RemoteViews v, int he, int num, String text) {
+        String t = text == null ? "" : text.replace("\u200F", "").trim();
+        int cut = -1;
+        for (int i = 0; i < t.length(); i++) {
+            char ch = t.charAt(i);
+            if ((ch >= 0x05D0 && ch <= 0x05EA) || ch == '\u05F3' || ch == '\u05F4') cut = i;
+            else if ((ch == '\'' || ch == '"') && cut == i - 1) cut = i; // a geresh / gershayim written with ' or "
+        }
+        String a = t, b = "";
+        if (cut >= 0 && cut < t.length() - 1) {
+            String rest = t.substring(cut + 1).trim();
+            boolean other = false;
+            for (int i = 0; i < rest.length(); i++) if (Character.isLetterOrDigit(rest.charAt(i))) other = true;
+            if (other) { a = t.substring(0, cut + 1); b = rest; }
+        }
+        v.setTextViewText(he, a.isEmpty() ? "" : "\u200F" + a);
+        v.setTextViewText(num, b.isEmpty() ? "" : "\u200F" + b);
+        v.setViewVisibility(num, b.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
     private static Boolean defaultFont;
 
     /**
@@ -328,7 +353,9 @@ public class ClockWidget extends AppWidgetProvider {
 
     /** The height of a line of digits only (the clock): no Hebrew, so no fallback font's taller line. */
     static float thDigits(Context c, float dp, boolean bold) {
-        return lineH(c, dp, bold, "0123456789:");
+        android.text.TextPaint p = new android.text.TextPaint(digitPaint(c, dp, bold));
+        android.graphics.Paint.FontMetrics m = p.getFontMetrics();
+        return (m.descent - m.ascent) / c.getResources().getDisplayMetrics().density;
     }
 
     /**
@@ -354,6 +381,25 @@ public class ClockWidget extends AppWidgetProvider {
             android.graphics.Paint.FontMetrics m = p.getFontMetrics();
             return (m.descent - m.ascent) / px;
         }
+    }
+
+    /** A paint for digits and signs: the device's font, as the widgets draw every view of numbers. */
+    static android.graphics.Paint digitPaint(Context c, float dp, boolean bold) {
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
+        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL));
+        if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
+        return p;
+    }
+
+    /**
+     * The crop of the countdown's "MM:SS" to two digits, in px: exactly two digits of the device's font (as the home
+     * screen draws them), less a little of their own empty side, so no sliver of the ":" ever shows.
+     */
+    static float twoDigitsPx(Context c, float dp) {
+        android.graphics.Paint p = digitPaint(c, dp, true);
+        float two = p.measureText("00"), one = p.measureText("0");
+        return (float) Math.floor(two - Math.max(1f, one * 0.06f));
     }
 
     private static android.graphics.Paint paint(Context c, float dp, boolean bold) {
@@ -406,7 +452,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.k_time, DP, clock);
         secPill(c, v, clock, px);
         // measured in pixels → back to dp (the widths here are in dp), or the row would shrink by the screen density
-        float dw = (paint(c, dateText, true).measureText(day) + paint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
+        float dw = (paint(c, dateText, true).measureText(day) + digitPaint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
             + sepW * (heb.isEmpty() ? 1 : 2);
         if (dw > mainW) dateText *= mainW / dw * 0.98f; // never past the padding
         for (int id : new int[] {R.id.k_day, R.id.k_greg, R.id.k_heb}) v.setTextViewTextSize(id, DP, dateText);
@@ -452,11 +498,11 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewLayoutMargin(R.id.k_when, RemoteViews.MARGIN_START, 6 * kc, DP);
         // the competition (bold) exactly as the day / date beside it, the stage exactly as the time: same size, same
         // line height, same gap between the two lines
-        for (int id : new int[] {R.id.k_op, R.id.k_comp, R.id.k_wd, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * kc);
+        for (int id : new int[] {R.id.k_op, R.id.k_comp, R.id.k_comp_n, R.id.k_wd, R.id.k_wd_n, R.id.k_wt}) v.setTextViewTextSize(id, DP, 9.5f * kc);
         // the gap the eye sees: the time is digits (as tall as capitals), the stage mostly Hebrew letters (about 0.17 of
         // the size shorter) – so the stage moves up by that much and both gaps look the same
         v.setViewLayoutMargin(R.id.k_wt, RemoteViews.MARGIN_TOP, kc, DP);
-        v.setViewLayoutMargin(R.id.k_comp, RemoteViews.MARGIN_TOP, kc - 0.17f * 9.5f * kc, DP);
+        v.setViewLayoutMargin(R.id.k_comp_row, RemoteViews.MARGIN_TOP, kc - 0.17f * 9.5f * kc, DP);
         v.setTextViewTextSize(R.id.k_status, DP, 11 * kc);
         v.setViewLayoutMargin(R.id.k_count, RemoteViews.MARGIN_TOP, 8 * khc, DP); // a little room under the crests and the names
         float boxW = (mainW - 18 * kc - 18 * kc) / 4, num = Math.min(19 * khc, (boxW - 6 * kc) / 1.25f);
@@ -485,7 +531,8 @@ public class ClockWidget extends AppWidgetProvider {
         v.setViewLayoutMargin(R.id.k_lac, RemoteViews.MARGIN_END, 10 * kc, DP);
         v.setTextViewTextSize(R.id.k_lt, DP, 13 * kf);
         v.setTextViewTextSize(R.id.k_ls, DP, 10 * kf);
-        v.setViewLayoutMargin(R.id.k_ls, RemoteViews.MARGIN_TOP, -kf, DP); // the stage just under the competition, a very small gap
+        v.setTextViewTextSize(R.id.k_ls_n, DP, 10 * kf);
+        v.setViewLayoutMargin(R.id.k_ls_row, RemoteViews.MARGIN_TOP, -kf, DP); // the stage just under the competition, a very small gap
         // the score as large as the box allows (up to 28): the digits use only their cap height, so the room the font
         // keeps above them and below them (for vowel marks and descending letters) is trimmed, and the name sits close
         float nameH = th(c, 9.5f * kf, false), sc = 28 * kc;
@@ -500,7 +547,8 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.k_tag, DP, 10 * kf);
         v.setViewPadding(R.id.k_tag, Math.round(10 * kf * px), Math.round(kf * px), Math.round(10 * kf * px), Math.round(2 * kf * px));
         v.setTextViewTextSize(R.id.k_lq, DP, 9.5f * kf);
-        v.setViewLayoutMargin(R.id.k_lq, RemoteViews.MARGIN_TOP, 2 * kf, DP);
+        v.setTextViewTextSize(R.id.k_lq_n, DP, 9.5f * kf);
+        v.setViewLayoutMargin(R.id.k_lq_row, RemoteViews.MARGIN_TOP, 2 * kf, DP);
         v.setTextViewTextSize(R.id.k_lc, DP, 15 * kf);
         // the team names under the score: each as large as its box allows (9.5 at most) – never cut
         JSONObject live = NextGameWidget.liveNow(c);
@@ -508,7 +556,7 @@ public class ClockWidget extends AppWidgetProvider {
             String[] n = liveNames(live);
             String st = live.optString("status", ""), ck = live.optString("clock", "");
             float midW = Math.max(paint(c, 10 * kf, true).measureText("● לייב") / px + 20 * kf,
-                Math.max(paint(c, 9.5f * kf, true).measureText(st.isEmpty() ? "בלייב" : st), paint(c, 15 * kf, false).measureText(ck)) / px);
+                Math.max(paint(c, 9.5f * kf, true).measureText(st.isEmpty() ? "בלייב" : st), digitPaint(c, 15 * kf, false).measureText(ck)) / px);
             float inner = (mainW - 18 * kc - midW - 12 * kc) / 2 - 8 * kc - 2;
             int[] ids = {R.id.k_hn, R.id.k_an};
             for (int i = 0; i < 2; i++) {
@@ -517,7 +565,7 @@ public class ClockWidget extends AppWidgetProvider {
                 v.setTextViewTextSize(ids[i], DP, sz);
             }
         } else for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setTextViewTextSize(id, DP, 9.5f * kf);
-        float two = (float) Math.floor(paint(c, num, true).measureText("00")) - 1f /* exactly two digits, never a sliver of the ":" after or before them */;
+        float two = twoDigitsPx(c, num);
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }
@@ -544,8 +592,8 @@ public class ClockWidget extends AppWidgetProvider {
         if (cs[0].isEmpty() && g != null) cs = compStage(g.optString("l", ""));
         if (cs[0].isEmpty() && g != null) cs = new String[] {comp(g), ""};
         v.setTextViewText(R.id.k_lt, rlm + cs[0]);
-        v.setTextViewText(R.id.k_ls, rlm + cs[1]);
-        v.setViewVisibility(R.id.k_ls, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
+        mixed(v, R.id.k_ls, R.id.k_ls_n, cs[1]);
+        v.setViewVisibility(R.id.k_ls_row, cs[1].isEmpty() ? View.GONE : View.VISIBLE);
         v.setViewVisibility(R.id.k_head, View.GONE);
         v.setViewVisibility(R.id.k_lhead, View.VISIBLE);
         v.setViewVisibility(R.id.k_count, View.GONE);
@@ -557,7 +605,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.k_an, rlm + (meHome ? away : LiveGame.TEAM));
         // the quarter (at a break: "מחצית", "סיום רבע 1") and the game clock below it
         String st = l.optString("status", ""), clock = l.optString("clock", "");
-        v.setTextViewText(R.id.k_lq, rlm + (st.isEmpty() ? "בלייב" : st));
+        mixed(v, R.id.k_lq, R.id.k_lq_n, st.isEmpty() ? "בלייב" : st);
         v.setTextViewText(R.id.k_lc, clock);
         v.setViewVisibility(R.id.k_lc, clock.isEmpty() ? View.GONE : View.VISIBLE);
         v.setOnClickPendingIntent(R.id.k_root, LiveGame.open(c, t));

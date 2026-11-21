@@ -14,8 +14,16 @@
         <ImageView android:id="@+id/w_opp" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="end" android:background="@drawable/cw_disc" android:padding="1.5dp" android:scaleType="fitCenter" android:importantForAccessibility="no" />
       </FrameLayout>
       <TextView android:includeFontPadding="false" android:id="@+id/w_op" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="#FFFFFF" android:textSize="12.5dp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
-      <TextView android:includeFontPadding="false" android:id="@+id/w_comp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="#D9FFFFFF" android:textSize="9.5dp" android:maxLines="1" android:ellipsize="end" />
-      <TextView android:includeFontPadding="false" android:id="@+id/w_when" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="#D9FFFFFF" android:textSize="9.5dp" android:maxLines="1" android:ellipsize="end" />
+      <!-- w_comp: its Hebrew (Noto Sans Hebrew) and, beside it, its numbers and other signs (w_comp_n, the device's font) -->
+      <LinearLayout android:id="@+id/w_comp_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="start|center_vertical" android:layoutDirection="rtl">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:id="@+id/w_comp" android:textColor="#D9FFFFFF" android:textSize="9.5dp" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:visibility="gone" android:includeFontPadding="false" android:id="@+id/w_comp_n" android:textColor="#D9FFFFFF" android:textSize="9.5dp" android:maxLines="1" />
+      </LinearLayout>
+      <!-- w_when: its Hebrew (Noto Sans Hebrew) and, beside it, its numbers and other signs (w_when_n, the device's font) -->
+      <LinearLayout android:id="@+id/w_when_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="start|center_vertical" android:layoutDirection="rtl">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:id="@+id/w_when" android:textColor="#D9FFFFFF" android:textSize="9.5dp" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:visibility="gone" android:includeFontPadding="false" android:id="@+id/w_when_n" android:textColor="#D9FFFFFF" android:textSize="9.5dp" android:maxLines="1" />
+      </LinearLayout>
     </LinearLayout>
     <LinearLayout android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:orientation="horizontal" android:layoutDirection="ltr">
       <LinearLayout android:id="@+id/w_days_box" android:layout_width="35dp" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/cw2_box" android:paddingTop="4dp" android:paddingBottom="5dp">
