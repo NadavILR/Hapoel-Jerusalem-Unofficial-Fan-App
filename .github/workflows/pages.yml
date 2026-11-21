@@ -16,6 +16,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The nightly data refresh writes data.json straight to gh-pages (see UPDATE.md): a deploy keeps the newer one,
+      # so a new version never brings back older data
+      - name: Keep the newer data.json from gh-pages
+        run: |
+          git fetch -q origin gh-pages || exit 0
+          git show origin/gh-pages:data.json > /tmp/live.json 2>/dev/null || exit 0
+          python3 - <<'PY'
+          import json
+          a = json.load(open('www/data.json'))
+          try:
+              b = json.load(open('/tmp/live.json'))
+          except Exception:
+              raise SystemExit
+          if b.get('season') == a.get('season') and str(b.get('updated', '')) > str(a.get('updated', '')):
+              if 'PBP' not in b and 'PBP' in a:
+                  b['PBP'] = a['PBP']
+              json.dump(b, open('www/data.json', 'w'), ensure_ascii=False)
+              print('kept the newer data.json from gh-pages:', b.get('updated'))
+          PY
       - name: Push www/ to gh-pages
         run: |
           cd www
