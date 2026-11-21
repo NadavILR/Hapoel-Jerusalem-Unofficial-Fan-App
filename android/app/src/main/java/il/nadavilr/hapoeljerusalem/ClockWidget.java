@@ -258,16 +258,44 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     /** A text line's height in dp (no font padding, as in the layouts) at this size. */
-    private static float th(Context c, float dp, boolean bold) {
-        android.graphics.Paint.FontMetrics m = paint(c, dp, bold).getFontMetrics();
-        return (m.descent - m.ascent) / c.getResources().getDisplayMetrics().density;
+    static float th(Context c, float dp, boolean bold) {
+        return lineH(c, dp, bold, "אבגדהוזחטיכלמנסעפצקרשת 0123456789:·");
+    }
+
+    /** The height of a line of digits only (the clock): no Hebrew, so no fallback font's taller line. */
+    static float thDigits(Context c, float dp, boolean bold) {
+        return lineH(c, dp, bold, "0123456789:");
+    }
+
+    /**
+     * A line's height in dp, laid out exactly as a TextView in the widgets lays it out: the device's font, no font
+     * padding, and the line made taller by a fallback font when the text needs one (the device's font may have no
+     * Hebrew letters – Android then draws them from another font, with its own, often taller, line).
+     */
+    private static float lineH(Context c, float dp, boolean bold, String sample) {
+        float px = c.getResources().getDisplayMetrics().density;
+        android.text.TextPaint p = new android.text.TextPaint(paint(c, dp, bold));
+        try {
+            android.text.StaticLayout l;
+            if (Build.VERSION.SDK_INT >= 23) {
+                android.text.StaticLayout.Builder b = android.text.StaticLayout.Builder.obtain(sample, 0, sample.length(), p, 100000)
+                    .setIncludePad(false);
+                if (Build.VERSION.SDK_INT >= 28) b.setUseLineSpacingFromFallbacks(true);
+                l = b.build();
+            } else {
+                l = new android.text.StaticLayout(sample, p, 100000, android.text.Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
+            }
+            return l.getHeight() / px;
+        } catch (Exception e) {
+            android.graphics.Paint.FontMetrics m = p.getFontMetrics();
+            return (m.descent - m.ascent) / px;
+        }
     }
 
     private static android.graphics.Paint paint(Context c, float dp, boolean bold) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
-        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular)); }
-        catch (Exception e) { p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL)); }
+        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL)); // the device's font, as the widgets show it
         p.setFontFeatureSettings("tnum");
         return p;
     }
@@ -332,16 +360,16 @@ public class ClockWidget extends AppWidgetProvider {
         // (for descending letters) is given back to the dates – the clock keeps its full size and nothing is cut
         // (a little less is trimmed above: the digits keep a clear distance from the widget's top edge)
         float trimTop = 0.12f * clock, trimBottom = 0.2f * clock;
-        float q = 1f, clockH = th(c, clock, true) - trimTop - trimBottom;
+        float q = 1f, clockH = thDigits(c, clock, true) - trimTop - trimBottom;
         // when it does not fit: the card first (down to 85%), then the clock – the clock stays the biggest thing
         for (int i = 0; i < 4 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
         float cardH = cardH(c, mainW, k, kh, q);
         if (clockH + datesH + cardH > avail) {
-            float want = Math.max(th(c, 40 * k, true) * 0.71f, avail - datesH - cardH);
+            float want = Math.max(thDigits(c, 40 * k, true) * 0.71f, avail - datesH - cardH);
             clock *= want / clockH;
             trimTop = 0.12f * clock;
             trimBottom = 0.2f * clock;
-            clockH = th(c, clock, true) - trimTop - trimBottom;
+            clockH = thDigits(c, clock, true) - trimTop - trimBottom;
             for (int i = 0; i < 8 && clockH + datesH + cardH(c, mainW, k, kh, q) > avail; i++) q *= 0.96f;
             v.setTextViewTextSize(R.id.k_time, DP, clock);
             secPill(c, v, clock, px);

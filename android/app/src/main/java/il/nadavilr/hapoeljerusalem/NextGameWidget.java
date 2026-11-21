@@ -385,12 +385,7 @@ public class NextGameWidget extends AppWidgetProvider {
 
     /** A text line's height in dp at this size (no font padding, as in the layouts). */
     private static float th(Context c, float dp, boolean bold) {
-        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-        float px = c.getResources().getDisplayMetrics().density;
-        p.setTextSize(dp * px);
-        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular)); } catch (Exception e) { }
-        android.graphics.Paint.FontMetrics f = p.getFontMetrics();
-        return (f.descent - f.ascent) / px;
+        return ClockWidget.th(c, dp, bold); // as a TextView lays it out, the fallback font for Hebrew included
     }
 
     /** A text's width in dp at this size, in the widgets' font. */
@@ -398,7 +393,7 @@ public class NextGameWidget extends AppWidgetProvider {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         float px = c.getResources().getDisplayMetrics().density;
         p.setTextSize(dp * px);
-        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular)); } catch (Exception e) { }
+        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL)); // the device's font, as the widgets show it
         return p.measureText(t == null ? "" : t) / px;
     }
 
@@ -502,7 +497,7 @@ public class NextGameWidget extends AppWidgetProvider {
         }
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(num * px);
-        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, R.font.noto_sans_hebrew_bold)); } catch (Exception e) { }
+        p.setTypeface(android.graphics.Typeface.DEFAULT_BOLD); // the device's font, as the widgets show it
         p.setFontFeatureSettings("tnum");
         float two = (float) Math.ceil(p.measureText("00")) + 1f;
         v.setViewLayoutWidth(R.id.w_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
@@ -514,8 +509,7 @@ public class NextGameWidget extends AppWidgetProvider {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(sp * c.getResources().getDisplayMetrics().density);
         // the widget's own font (Noto Sans Hebrew Bold), so the clip is exactly two of its digits
-        try { p.setTypeface(androidx.core.content.res.ResourcesCompat.getFont(c, R.font.noto_sans_hebrew_bold)); }
-        catch (Exception e) { p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)); }
+        p.setTypeface(android.graphics.Typeface.DEFAULT_BOLD); // the device's font, as the widgets show it
         if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
         return (float) Math.ceil(p.measureText("00")) + 1f;
     }
