@@ -309,7 +309,7 @@ public class NextGameWidget extends AppWidgetProvider {
         String rlm = "\u200F";
         boolean live = d != null && d.live;
         // the same design lying down and standing (the layouts fit both)
-        RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
+        RemoteViews v = new RemoteViews(c.getPackageName(), live ? ClockWidget.layout(R.layout.widget_row_live, R.layout.widget_row_live_sys) : ClockWidget.layout(R.layout.widget_row, R.layout.widget_row_sys));
         if (!live) {
             // every visibility on every redraw (the launcher applies a redraw onto the views it already shows)
             v.setViewVisibility(R.id.w_crests, View.VISIBLE);
@@ -499,7 +499,7 @@ public class NextGameWidget extends AppWidgetProvider {
         p.setTextSize(num * px);
         p.setTypeface(ClockWidget.widgetFont(c, true)); // as the widgets show it
         p.setFontFeatureSettings("tnum");
-        float two = (float) Math.ceil(p.measureText("00")) + 1f;
+        float two = (float) Math.floor(p.measureText("00")) - 1f /* exactly two digits, never a sliver of the ":" after or before them */;
         v.setViewLayoutWidth(R.id.w_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.w_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }
@@ -511,7 +511,7 @@ public class NextGameWidget extends AppWidgetProvider {
         // the widget's own font (Noto Sans Hebrew Bold), so the clip is exactly two of its digits
         p.setTypeface(ClockWidget.widgetFont(c, true)); // as the widgets show it
         if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
-        return (float) Math.ceil(p.measureText("00")) + 1f;
+        return (float) Math.floor(p.measureText("00")) - 1f /* exactly two digits, never a sliver of the ":" after or before them */;
     }
 
     private static String when(long t) {

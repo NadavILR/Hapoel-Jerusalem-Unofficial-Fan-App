@@ -128,7 +128,7 @@ public class ClockWidget extends AppWidgetProvider {
 
     private static RemoteViews build(Context c, long now, JSONObject g) {
         String rlm = "‏";
-        RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_clock);
+        RemoteViews v = new RemoteViews(c.getPackageName(), layout(R.layout.widget_clock, R.layout.widget_clock_sys));
         // the titles – the ULEB Cup row becomes the EuroCup row from the first EuroCup title
         if (EUROCUP_WINS > 0) {
             v.setImageViewResource(R.id.k_i4, R.drawable.cw_t_eurocup);
@@ -258,11 +258,62 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     /** A text line's height in dp (no font padding, as in the layouts) at this size. */
+    private static Boolean defaultFont;
+
     /**
-     * The widgets' font: Noto Sans Hebrew with its Hebrew letters only (res/font/widget_hebrew); English, digits and
-     * every other sign fall back to the device's font, exactly as in the widgets themselves.
+     * Whether the device shows its own default font (not one chosen in the display settings): the font Android draws
+     * text in (Typeface.DEFAULT – a font chosen in the settings replaces it) is compared, by the widths of a sample,
+     * with the system's built-in fonts (Samsung's One UI fonts and the default of fonts.xml). Unknown = default.
+     */
+    static synchronized boolean deviceFontIsDefault() {
+        if (defaultFont != null) return defaultFont;
+        boolean def = true;
+        try {
+            java.util.List<java.io.File> cand = new java.util.ArrayList<>();
+            java.io.File[] all = new java.io.File("/system/fonts").listFiles();
+            if (all != null) for (java.io.File f : all)
+                if (f.getName().toLowerCase(Locale.ROOT).matches("(oneui|samsungone|samsungsans).*\\.(ttf|otf)")) cand.add(f);
+            for (String x : new String[] {"/system/etc/font_fallback.xml", "/system/etc/fonts.xml"}) {
+                java.io.File xf = new java.io.File(x);
+                if (!xf.canRead()) continue;
+                String xml = new String(java.nio.file.Files.readAllBytes(xf.toPath()), "UTF-8");
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("<family name=\"sans-serif\"[^>]*>[\\s\\S]*?<font[^>]*>\\s*([^<\\s]+)\\s*<", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(xml);
+                if (m.find()) cand.add(new java.io.File("/system/fonts/" + m.group(1)));
+            }
+            String sample = "Hamburgefonstiv GHOQ 0123456789";
+            android.graphics.Paint p = new android.graphics.Paint();
+            p.setTextSize(100);
+            p.setTypeface(android.graphics.Typeface.DEFAULT);
+            float w = p.measureText(sample);
+            boolean compared = false, same = false;
+            for (java.io.File f : cand) {
+                if (!f.canRead()) continue;
+                try {
+                    p.setTypeface(android.graphics.Typeface.createFromFile(f));
+                    compared = true;
+                    if (Math.abs(p.measureText(sample) - w) < 0.5f) { same = true; break; }
+                } catch (Exception ignored) {
+                }
+            }
+            def = !compared || same;
+        } catch (Exception ignored) {
+        }
+        defaultFont = def;
+        return def;
+    }
+
+    /** The layout for the device's font: with Noto Sans Hebrew for the Hebrew (the default font), or wholly the device's font. */
+    static int layout(int noto, int device) {
+        return deviceFontIsDefault() ? noto : device;
+    }
+
+    /**
+     * The widgets' font, as they show it: with the device's default font, Noto Sans Hebrew with its Hebrew letters only
+     * (res/font/widget_hebrew) – English, digits and every other sign fall back to the device's font; with a font chosen
+     * in the settings, that font for everything.
      */
     static android.graphics.Typeface widgetFont(Context c, boolean bold) {
+        if (!deviceFontIsDefault()) return android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
         try {
             android.graphics.Typeface t = androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.widget_hebrew_bold : R.font.widget_hebrew_regular);
             if (t != null) return t;
@@ -466,7 +517,7 @@ public class ClockWidget extends AppWidgetProvider {
                 v.setTextViewTextSize(ids[i], DP, sz);
             }
         } else for (int id : new int[] {R.id.k_hn, R.id.k_an}) v.setTextViewTextSize(id, DP, 9.5f * kf);
-        float two = (float) Math.ceil(paint(c, num, true).measureText("00")) + 1f;
+        float two = (float) Math.floor(paint(c, num, true).measureText("00")) - 1f /* exactly two digits, never a sliver of the ":" after or before them */;
         v.setViewLayoutWidth(R.id.k_mm_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
         v.setViewLayoutWidth(R.id.k_ss_clip, two, android.util.TypedValue.COMPLEX_UNIT_PX);
     }

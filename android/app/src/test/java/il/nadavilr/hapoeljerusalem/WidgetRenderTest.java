@@ -46,6 +46,7 @@ public class WidgetRenderTest {
 
     private static final String OPP_URL = "https://example.invalid/opp.png";
     private final List<String> problems = new ArrayList<>();
+    private String prefix = "";
     private Context c;
     private File out;
 
@@ -64,6 +65,19 @@ public class WidgetRenderTest {
             try (FileOutputStream o = new FileOutputStream(f)) { b.compress(Bitmap.CompressFormat.PNG, 100, o); }
         }
         long now = System.currentTimeMillis();
+        // the device-font layouts must be the originals without the widgets' own font (scripts/widget-sys-layouts.py)
+        for (String n : new String[] {"widget_clock", "widget_row", "widget_row_live"}) {
+            File dir = new File("src/main/res/layout");
+            String o = new String(java.nio.file.Files.readAllBytes(new File(dir, n + ".xml").toPath()), "UTF-8").replace(" android:fontFamily=\"@font/widget_hebrew\"", "");
+            String sys = new String(java.nio.file.Files.readAllBytes(new File(dir, n + "_sys.xml").toPath()), "UTF-8").replaceFirst("<!-- GENERATED[^\n]*\n", "");
+            if (!o.equals(sys)) problems.add(n + "_sys.xml is out of date: run scripts/widget-sys-layouts.py");
+        }
+        // both fonts: the device's default (Noto Sans Hebrew for the Hebrew) and a font chosen in the settings
+        java.lang.reflect.Field def = ClockWidget.class.getDeclaredField("defaultFont");
+        def.setAccessible(true);
+        for (boolean noto : new boolean[] {true, false}) {
+        def.set(null, noto);
+        prefix = noto ? "" : "sys-";
         // clock widget: 5×2, 4×2, 3×2, bigger and shorter
         int[][] clock = {{362, 195}, {290, 195}, {215, 195}, {440, 240}, {362, 170}, {300, 160}, {215, 150}};
         // next-game widget: 5×1, 4×1, bigger, low; landscape: wide and low
@@ -113,6 +127,8 @@ public class WidgetRenderTest {
             }
         }
         try (FileOutputStream o = new FileOutputStream(new File(out, "clock-sizes.txt"))) { o.write(String.join("\n", sizes).getBytes("UTF-8")); }
+        }
+        def.set(null, null);
         File report = new File(out, "problems.txt");
         try (FileOutputStream o = new FileOutputStream(report)) { o.write(String.join("\n", problems).getBytes("UTF-8")); }
         assertTrue(problems.size() + " problems – see " + report.getAbsolutePath() + "\n" + String.join("\n", problems.subList(0, Math.min(40, problems.size()))), problems.isEmpty());
@@ -127,7 +143,7 @@ public class WidgetRenderTest {
         Method fit = ClockWidget.class.getDeclaredMethod("fit", Context.class, RemoteViews.class, Bundle.class, String.class, String.class, String.class);
         fit.setAccessible(true);
         fit.invoke(null, c, v, opts(size[0], size[1], size[0], size[1]), "יום רביעי", "18.11.2026", "ח' בכסלו ה'תשפ\"ז");
-        render(name + "-" + size[0] + "x" + size[1], v, size[0], size[1]);
+        render(prefix + name + "-" + size[0] + "x" + size[1], v, size[0], size[1]);
     }
 
     // ---------- the next-game widget ----------
@@ -181,7 +197,7 @@ public class WidgetRenderTest {
         if (land) { o.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, size[1]); o.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, size[0]); }
         else { o.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, size[0]); o.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, size[1]); }
         fit.invoke(null, c, v, o, land, d);
-        render(name + "-" + size[0] + "x" + size[1], v, size[0], size[1]);
+        render(prefix + name + "-" + size[0] + "x" + size[1], v, size[0], size[1]);
     }
 
     private static Bundle opts(int minW, int minH, int maxW, int maxH) {
