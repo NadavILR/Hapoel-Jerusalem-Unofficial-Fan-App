@@ -96,14 +96,17 @@ public class UpdaterPlugin extends Plugin {
                 File[] old = dir.listFiles();
                 if (old != null) for (File f : old) f.delete();
                 File out = new File(dir, "update.apk");
-                /* GitHub redirects to its file storage: follow up to 5 https redirects */
+                /* GitHub redirects to its file storage: follow up to 5 https redirects. A slow or broken connection gets two
+                   more tries before the app says the download failed (with the reason) */
+                for (int attempt = 1; ; attempt++) {
+                try {
                 String at = url;
                 for (int hop = 0; ; hop++) {
                     if (hop >= 5) throw new Exception("too many redirects");
                     c = (HttpURLConnection) new URL(at).openConnection();
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(20000);
-                    c.setReadTimeout(30000);
+                    c.setReadTimeout(60000);
                     int code = c.getResponseCode();
                     if (code >= 300 && code < 400) {
                         String loc = c.getHeaderField("Location");
@@ -128,6 +131,14 @@ public class UpdaterPlugin extends Plugin {
                         }
                     }
                 }
+                if (total > 0 && done < total) throw new java.io.IOException("incomplete " + done + "/" + total);
+                break;
+                } catch (Exception e) {
+                    if (c != null) { c.disconnect(); c = null; }
+                    if (attempt >= 3 || e.getMessage() != null && e.getMessage().startsWith("http 4")) throw e;
+                    Thread.sleep(1500L * attempt);
+                }
+                }
                 /* One tap is enough: the APK goes into an install session and Android's confirmation screen opens right
                    away (InstallReceiver). If the session cannot be used, the installer is opened with the file as before */
                 try { installSession(ctx, out); }
@@ -140,7 +151,7 @@ public class UpdaterPlugin extends Plugin {
                 }
                 call.resolve();
             } catch (Exception e) {
-                call.reject("download failed: " + e.getMessage());
+                call.reject("download failed: " + e.getClass().getSimpleName() + (e.getMessage() != null ? " " + e.getMessage() : ""));
             } finally {
                 if (c != null) c.disconnect();
             }

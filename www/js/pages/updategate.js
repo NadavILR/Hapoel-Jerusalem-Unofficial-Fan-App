@@ -3,7 +3,7 @@ import { html, useState, useEffect, useRef, portal } from '../ui/html.js';
 import { Icon } from '../ui/icons.js';
 import { plug, VERSION } from '../core/env.js';
 export default function UpdateGate({ u }) {
-  const [st, setSt] = useState(''), [p, setP] = useState(-1), notes = (u.notes || []).filter(Boolean), busy = st === 'dl';
+  const [st, setSt] = useState(''), [why, setWhy] = useState(''), [p, setP] = useState(-1), notes = (u.notes || []).filter(Boolean), busy = st === 'dl';
   /* אם אנדרואיד ביקש קודם אישור להתקנה ממקור זה: כשחוזרים מהגדרות המכשיר, ההורדה וההתקנה ממשיכות לבד – בלי לחיצה נוספת */
   const runR = useRef(null);
   useEffect(() => { const v = () => { if (document.visibilityState !== 'visible' || st !== 'perm' || !runR.current) return; const U = plug('Updater'); if (U) U.canInstall().then(c => { if (c && c.allowed) runR.current(); }).catch(() => { }); }; document.addEventListener('visibilitychange', v); return () => document.removeEventListener('visibilitychange', v); }, [st]);
@@ -12,7 +12,7 @@ export default function UpdateGate({ u }) {
     try { const c = await U.canInstall(); if (!c || !c.allowed) { setSt('perm'); await U.openInstallSettings(); return; } } catch (e) { }
     if (st === 'dl') return;
     setSt('dl'); setP(0); let h = null; try { h = await U.addListener('progress', e => setP(Math.round((e && e.p) || 0))); } catch (e) { }
-    try { await U.downloadAndInstall({ url: u.url }); setSt('inst'); } catch (e) { setSt('err'); } finally { try { h && h.remove && Promise.resolve(h.remove()).catch(() => { }); } catch (e) { } }
+    try { await U.downloadAndInstall({ url: u.url }); setSt('inst'); } catch (e) { setWhy(String((e && e.message) || e || '').replace(/^download failed:\s*/, '').slice(0, 120)); setSt('err'); } finally { try { h && h.remove && Promise.resolve(h.remove()).catch(() => { }); } catch (e) { } }
   };
   runR.current = run;
   return portal(html`<div class="gate fade-in" role="dialog" aria-modal="true" aria-label="עדכון חדש זמין"><div class="full-bg"></div>
@@ -27,7 +27,8 @@ export default function UpdateGate({ u }) {
     <div class="wrap gate-foot" style=${{ maxWidth: 460, width: '100%' }}>
       ${st === 'perm' ? html`<div class="t-xs mu" style=${{ textAlign: 'center', marginBottom: 10 }}>אשרו בהגדרות שנפתחו "התרת התקנה ממקור זה", חזרו לכאן ולחצו שוב "עדכון עכשיו"</div>` : null}
       ${st === 'inst' ? html`<div class="t-xs mu" style=${{ textAlign: 'center', marginBottom: 10 }}>במסך ההתקנה שנפתח לחצו "עדכון". אם הוא לא נפתח, לחצו שוב</div>` : null}
-      ${st === 'err' ? html`<div class="t-xs red" style=${{ textAlign: 'center', marginBottom: 10 }}>ההורדה נכשלה. בדקו את החיבור ונסו שוב</div>` : null}
+      ${st === 'err' ? html`<div class="t-xs red" style=${{ textAlign: 'center', marginBottom: 10 }}>ההורדה נכשלה${why ? html` <span class="num" dir="ltr">(${why})</span>` : null}. נסו שוב, או הורידו את העדכון דרך הדפדפן ופתחו את הקובץ</div>
+        <a href=${u.url} target="_blank" rel="noopener noreferrer" class="btn glass-2 press" style=${{ width: '100%', height: 48, marginBottom: 10, fontSize: 15 }}><${Icon} n="ext" s=${16}/>הורדה דרך הדפדפן</a>` : null}
       <button disabled=${busy} onClick=${run} class="btn btn-red press rel" style=${{ width: '100%', height: 56, overflow: 'hidden', fontSize: 16 }}>
         ${busy ? html`<span style=${{ position: 'absolute', inset: 0, background: 'rgb(255 255 255 / .25)', transform: 'scaleX(' + Math.max(3, p) / 100 + ')', transformOrigin: '100% 50%', transition: 'transform .3s var(--ease)' }}></span>` : null}
         <span class="rel row" style=${{ gap: 8 }}>${busy ? html`מוריד את העדכון <span class="num">${p >= 0 ? p + '%' : ''}</span>` : html`<${Icon} n="down" s=${18}/>עדכון עכשיו`}</span></button>

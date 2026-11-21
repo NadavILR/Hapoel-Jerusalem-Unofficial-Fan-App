@@ -68,8 +68,8 @@ public class WidgetRenderTest {
         // the device-font layouts must be the originals without the widgets' own font (scripts/widget-sys-layouts.py)
         for (String n : new String[] {"widget_clock", "widget_row", "widget_row_live"}) {
             File dir = new File("src/main/res/layout");
-            String o = new String(java.nio.file.Files.readAllBytes(new File(dir, n + ".xml").toPath()), "UTF-8").replace(" android:fontFamily=\"@font/widget_hebrew\"", "");
-            String sys = new String(java.nio.file.Files.readAllBytes(new File(dir, n + "_sys.xml").toPath()), "UTF-8").replaceFirst("<!-- GENERATED[^\n]*\n", "");
+            String o = new String(java.nio.file.Files.readAllBytes(new File(dir, n + ".xml").toPath()), "UTF-8").replace(" android:fontFamily=\"@font/noto_sans_hebrew\"", "").replace(" android:fontFeatureSettings=\"tnum\"", "");
+            String sys = new String(java.nio.file.Files.readAllBytes(new File(dir, n + "_sys.xml").toPath()), "UTF-8").replaceFirst("<!-- GENERATED[^\n]*\n", "").replace(" android:fontFeatureSettings=\"tnum\"", "");
             if (!o.equals(sys)) problems.add(n + "_sys.xml is out of date: run scripts/widget-sys-layouts.py");
         }
         // both fonts: the device's default (Noto Sans Hebrew for the Hebrew) and a font chosen in the settings

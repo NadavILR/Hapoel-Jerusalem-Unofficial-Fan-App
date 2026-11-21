@@ -333,14 +333,13 @@ public class ClockWidget extends AppWidgetProvider {
     }
 
     /**
-     * The widgets' font, as they show it: with the device's default font, Noto Sans Hebrew with its Hebrew letters only
-     * (res/font/widget_hebrew) – English, digits and every other sign fall back to the device's font; with a font chosen
-     * in the settings, that font for everything.
+     * The widgets' font, as they show it: with the device's default font, Noto Sans Hebrew for everything (its Hebrew,
+     * Latin and digits); with a font chosen in the settings, that font for everything.
      */
     static android.graphics.Typeface widgetFont(Context c, boolean bold) {
         if (!deviceFontIsDefault()) return android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
         try {
-            android.graphics.Typeface t = androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.widget_hebrew_bold : R.font.widget_hebrew_regular);
+            android.graphics.Typeface t = androidx.core.content.res.ResourcesCompat.getFont(c, bold ? R.font.noto_sans_hebrew_bold : R.font.noto_sans_hebrew_regular);
             if (t != null) return t;
         } catch (Exception ignored) {
         }
@@ -383,12 +382,15 @@ public class ClockWidget extends AppWidgetProvider {
         }
     }
 
-    /** A paint for digits and signs: the device's font, as the widgets draw every view of numbers. */
+    /**
+     * A paint for digits and signs, as the widgets draw them: Noto Sans Hebrew with the device's default font (its digits
+     * are tabular), the device's font with tabular digits when a font is chosen in the settings.
+     */
     static android.graphics.Paint digitPaint(Context c, float dp, boolean bold) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
-        p.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, bold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL));
-        if (Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
+        p.setTypeface(widgetFont(c, bold));
+        if (!deviceFontIsDefault() && Build.VERSION.SDK_INT >= 21) p.setFontFeatureSettings("tnum");
         return p;
     }
 
@@ -405,7 +407,7 @@ public class ClockWidget extends AppWidgetProvider {
     private static android.graphics.Paint paint(Context c, float dp, boolean bold) {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setTextSize(dp * c.getResources().getDisplayMetrics().density);
-        p.setTypeface(widgetFont(c, bold)); // as the widgets show it: Noto Sans Hebrew for Hebrew, the device's font for the rest
+        p.setTypeface(widgetFont(c, bold)); // as the widgets show it
         p.setFontFeatureSettings("tnum");
         return p;
     }
@@ -415,8 +417,36 @@ public class ClockWidget extends AppWidgetProvider {
      * setting does not change the result): one factor k = the smaller of width and height against the base. The date row
      * shrinks further if its text would not fit inside the padding.
      */
+    /**
+     * The size of the day / date / Hebrew date row that fits the panel's width (dp): measured in the widgets' font and in
+     * the device's font, whichever is wider (a home screen that draws a font a little differently must never push the
+     * Hebrew date out of the row), with a margin.
+     */
+    private static float datesSize(Context c, float size, float mainW, float sepW, String day, String greg, String heb) {
+        float px = c.getResources().getDisplayMetrics().density;
+        android.graphics.Paint[] ps = {paint(c, size, true), paint(c, size, false), new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG), new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)};
+        ps[2].setTextSize(size * px);
+        ps[2].setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        ps[3].setTextSize(size * px);
+        ps[3].setTypeface(android.graphics.Typeface.DEFAULT);
+        float dw = (Math.max(ps[0].measureText(day), ps[2].measureText(day)) + Math.max(ps[1].measureText(greg), ps[3].measureText(greg))
+            + (heb.isEmpty() ? 0 : Math.max(ps[1].measureText(heb), ps[3].measureText(heb)))) / px + sepW * (heb.isEmpty() ? 1 : 2);
+        float room = mainW * 0.94f;
+        return dw > room ? size * room / dw : size;
+    }
+
     private static void fit(Context c, RemoteViews v, android.os.Bundle o, String day, String greg, String heb) {
-        if (Build.VERSION.SDK_INT < 31 || o == null) return;
+        if (o == null) return;
+        if (Build.VERSION.SDK_INT < 31) {
+            // Android 11 and older: no layout sizes from here, but the text size can still be set – the dates row fits
+            // the widget's width (with the layout's own sizes: the club panel 122, the padding 12, the separators 13)
+            float w0 = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+            if (w0 >= 100) {
+                float ds = datesSize(c, 10.5f, w0 - 122 - 24, 13, day, greg, heb);
+                for (int id : new int[] {R.id.k_day, R.id.k_greg, R.id.k_heb}) v.setTextViewTextSize(id, android.util.TypedValue.COMPLEX_UNIT_DIP, ds);
+            }
+            return;
+        }
         float w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
         if (w < 100 || h < 60) return;
         // k: text and widths (the smaller of width and height against the base); kh: what can grow with the height –
@@ -452,9 +482,7 @@ public class ClockWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.k_time, DP, clock);
         secPill(c, v, clock, px);
         // measured in pixels → back to dp (the widths here are in dp), or the row would shrink by the screen density
-        float dw = (paint(c, dateText, true).measureText(day) + digitPaint(c, dateText, false).measureText(greg) + (heb.isEmpty() ? 0 : paint(c, dateText, false).measureText(heb))) / px
-            + sepW * (heb.isEmpty() ? 1 : 2);
-        if (dw > mainW) dateText *= mainW / dw * 0.98f; // never past the padding
+        dateText = datesSize(c, dateText, mainW, sepW, day, greg, heb);
         for (int id : new int[] {R.id.k_day, R.id.k_greg, R.id.k_heb}) v.setTextViewTextSize(id, DP, dateText);
         for (int id : new int[] {R.id.k_s1, R.id.k_s2}) {
             v.setViewLayoutHeight(id, 10 * k, DP);

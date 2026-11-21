@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- The widgets' font: Noto Sans Hebrew (SIL Open Font License 1.1) with its Hebrew letters only – English, digits and
-     every other sign are not in it, so Android draws them in the device's font (on a Samsung phone: One UI Sans, or the
-     font chosen in the display settings) -->
-<font-family xmlns:android="http://schemas.android.com/apk/res/android">
-    <font android:fontStyle="normal" android:fontWeight="400" android:font="@font/widget_hebrew_regular" />
-    <font android:fontStyle="normal" android:fontWeight="700" android:font="@font/widget_hebrew_bold" />
-</font-family>
