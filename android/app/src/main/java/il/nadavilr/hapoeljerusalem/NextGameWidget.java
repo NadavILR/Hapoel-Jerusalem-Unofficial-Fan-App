@@ -309,7 +309,7 @@ public class NextGameWidget extends AppWidgetProvider {
         String rlm = "\u200F";
         boolean live = d != null && d.live;
         // the same design lying down and standing (the layouts fit both)
-        RemoteViews v = new RemoteViews(c.getPackageName(), live ? ClockWidget.layout(R.layout.widget_row_live, R.layout.widget_row_live_sys) : ClockWidget.layout(R.layout.widget_row, R.layout.widget_row_sys));
+        RemoteViews v = new RemoteViews(c.getPackageName(), live ? R.layout.widget_row_live : R.layout.widget_row);
         if (!live) {
             // every visibility on every redraw (the launcher applies a redraw onto the views it already shows)
             v.setViewVisibility(R.id.w_crests, View.VISIBLE);

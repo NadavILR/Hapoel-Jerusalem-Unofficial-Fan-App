@@ -65,19 +65,7 @@ public class WidgetRenderTest {
             try (FileOutputStream o = new FileOutputStream(f)) { b.compress(Bitmap.CompressFormat.PNG, 100, o); }
         }
         long now = System.currentTimeMillis();
-        // the device-font layouts must be the originals without the widgets' own font (scripts/widget-sys-layouts.py)
-        for (String n : new String[] {"widget_clock", "widget_row", "widget_row_live"}) {
-            File dir = new File("src/main/res/layout");
-            String o = new String(java.nio.file.Files.readAllBytes(new File(dir, n + ".xml").toPath()), "UTF-8").replace(" android:fontFamily=\"@font/noto_sans_hebrew\"", "").replace(" android:fontFeatureSettings=\"tnum\"", "");
-            String sys = new String(java.nio.file.Files.readAllBytes(new File(dir, n + "_sys.xml").toPath()), "UTF-8").replaceFirst("<!-- GENERATED[^\n]*\n", "").replace(" android:fontFeatureSettings=\"tnum\"", "");
-            if (!o.equals(sys)) problems.add(n + "_sys.xml is out of date: run scripts/widget-sys-layouts.py");
-        }
-        // both fonts: the device's default (Noto Sans Hebrew for the Hebrew) and a font chosen in the settings
-        java.lang.reflect.Field def = ClockWidget.class.getDeclaredField("defaultFont");
-        def.setAccessible(true);
-        for (boolean noto : new boolean[] {true, false}) {
-        def.set(null, noto);
-        prefix = noto ? "" : "sys-";
+
         // clock widget: 5×2, 4×2, 3×2, bigger and shorter
         int[][] clock = {{362, 195}, {290, 195}, {215, 195}, {440, 240}, {362, 170}, {300, 160}, {215, 150}};
         // next-game widget: 5×1, 4×1, bigger, low; landscape: wide and low
@@ -127,8 +115,6 @@ public class WidgetRenderTest {
             }
         }
         try (FileOutputStream o = new FileOutputStream(new File(out, "clock-sizes.txt"))) { o.write(String.join("\n", sizes).getBytes("UTF-8")); }
-        }
-        def.set(null, null);
         File report = new File(out, "problems.txt");
         try (FileOutputStream o = new FileOutputStream(report)) { o.write(String.join("\n", problems).getBytes("UTF-8")); }
         assertTrue(problems.size() + " problems – see " + report.getAbsolutePath() + "\n" + String.join("\n", problems.subList(0, Math.min(40, problems.size()))), problems.isEmpty());
