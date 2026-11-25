@@ -27,7 +27,6 @@ public class LiveFixtures extends Worker {
     private static final String PERIODIC = "hpj-fixtures", NOW = "hpj-fixtures-now";
     private static final String FIXTURES = "https://webws.365scores.com/web/games/fixtures/?appTypeId=5&langId=2"
         + "&timezoneName=Asia/Jerusalem&userCountryId=6&competitors=" + LiveGame.HAPOEL;
-    private static final String EURO = "https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/U/seasons/U2026/games?teamCode=JER";
     private static final long HOUR = 3_600_000L;
 
     public LiveFixtures(@NonNull Context context, @NonNull WorkerParameters params) {
@@ -103,7 +102,7 @@ public class LiveFixtures extends Worker {
             if ("euro".equals(key)) {
                 if (euro == null) {
                     try {
-                        euro = new JSONObject(LivePlay.get(EURO)).optJSONArray("data");
+                        euro = new JSONObject(LivePlay.get("https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/U/seasons/" + LivePlay.season() + "/games?teamCode=JER")).optJSONArray("data");
                     } catch (Exception e) {
                         euro = new JSONArray();
                     }

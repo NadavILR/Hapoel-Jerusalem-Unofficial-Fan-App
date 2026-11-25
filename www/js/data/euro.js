@@ -3,7 +3,9 @@ import { getJSON } from '../core/net.js';
 import { ECG, ME } from './constants.js';
 import { EURO_TEAMS } from './crest-map.js';
 import { DB, egCode } from './store.js';
-export const EL_SEASON = 'U2026';
+import { SEASON } from '../core/env.js';
+/* קוד העונה של היורוליג: "U" ושנת הפתיחה של העונה (2026/27 → U2026) */
+export const EL_SEASON = 'U' + SEASON.slice(0, 4);
 export async function loadEuro() {
   const j = await getJSON('https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/U/seasons/' + EL_SEASON + '/games?teamCode=JER'), by = {};
   (j.data || []).forEach(g => { by[g.code] = g; });

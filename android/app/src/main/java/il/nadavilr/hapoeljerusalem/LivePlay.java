@@ -21,7 +21,12 @@ import org.json.JSONObject;
  */
 final class LivePlay {
 
-    private static final String SEASON = "U2026";
+    /** The EuroLeague season code: "U" and the year the season opened (it starts on September 1, Israel time). */
+    static String season() {
+        java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone("Asia/Jerusalem"));
+        int y = c.get(java.util.Calendar.YEAR);
+        return "U" + (c.get(java.util.Calendar.MONTH) >= java.util.Calendar.SEPTEMBER ? y : y - 1);
+    }
     private static final long HOUR = 3_600_000L;
 
     private LivePlay() {
@@ -65,7 +70,7 @@ final class LivePlay {
     // ---------- EuroCup ----------
 
     private static String euro(int code, LiveGame g, Map<String, String> jer) throws Exception {
-        JSONObject d = new JSONObject(get("https://live.euroleague.net/api/PlayByPlay?gamecode=" + code + "&seasoncode=" + SEASON));
+        JSONObject d = new JSONObject(get("https://live.euroleague.net/api/PlayByPlay?gamecode=" + code + "&seasoncode=" + season()));
         String[] keys = {"FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter", "ExtraTime"};
         for (int k = keys.length - 1; k >= 0; k--) {
             JSONArray a = d.optJSONArray(keys[k]);
@@ -101,7 +106,7 @@ final class LivePlay {
 
     /** The game's header: score, quarter, clock, the two sides ({@code CodeTeamA} is the home team). */
     static JSONObject euroHeader(int code) throws Exception {
-        return new JSONObject(get("https://live.euroleague.net/api/Header?gamecode=" + code + "&seasoncode=" + SEASON));
+        return new JSONObject(get("https://live.euroleague.net/api/Header?gamecode=" + code + "&seasoncode=" + season()));
     }
 
     private static int num(JSONObject h, String key) {
