@@ -8,7 +8,7 @@ import { S365, Q365 } from './s365.js';
 
 /* ---------- חדשות המועדון: רק מארכיון הכתבות של האתר הרשמי (https://hapoel.co.il/archive) ----------
    כל כתבה = קישור לכתבה באתר המועדון; מהפריט שלה: הכותרת, התאריך והתמונה הראשית. שום מקור אחר */
-const NID = /news\.asp\?NewsId=(\d+)/i;
+const NID = /news\.asp\?NewsId=(\d+)/i, DATE_RE = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/g, TIME_RE = /\b([01]?\d|2[0-3]):[0-5]\d\b/g;
 const absUrl = (u, base) => { try { const x = new URL(String(u || '').trim(), base).href; return /^https?:\/\//.test(x) ? x.replace(/^http:/, 'https:') : ''; } catch (e) { return ''; } };
 function newsImage(el) {
   for (const im of el.querySelectorAll('img')) {
@@ -34,11 +34,14 @@ export function parseClubNews(htmlText) {
       if ([...p.querySelectorAll('a[href]')].some(x => { const i = idOf(x); return i && i !== id; })) break;
       box = p;
     }
-    const links = [...box.querySelectorAll('a[href]')].filter(x => idOf(x) === id), hd = box.querySelector('h1,h2,h3,h4,h5,.article-title,.title');
-    const t = ((hd && hd.textContent) || links.map(x => x.textContent).sort((x, y) => y.trim().length - x.trim().length)[0] || '').replace(/\s+/g, ' ').trim();
+    /* הכותרת: רק הטקסט של קישור הכותרת – בלי התאריך והשעה שהאתר מצמיד אליה (הם מוצגים בנפרד, מתחת לכותרת) */
+    const links = [...box.querySelectorAll('a[href]')].filter(x => idOf(x) === id).map(x => x.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const raw = (items.length ? a.textContent.replace(/\s+/g, ' ').trim() : '') || links.sort((x, y) => y.length - x.length)[0] || '';
+    const t = raw.replace(DATE_RE, ' ').replace(TIME_RE, ' ').replace(/\s+/g, ' ').replace(/^[\s|·•,\-–—]+|[\s|·•,\-–—]+$/g, '').trim();
     if (!t) continue;
-    const m = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/.exec(box.textContent || '');
-    out.push({ t, u: 'https://hapoel.co.il/news.asp?NewsId=' + id, d: m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '', i: newsImage(box) });
+    /* התאריך והשעה: מהפריט, בלי הכותרת עצמה (בכותרת יכולה להיות תוצאה כמו "85:80") */
+    const meta = (box.textContent || '').split(raw).join(' '), m = new RegExp(DATE_RE.source).exec(meta), h = /(?:^|[^\d:])([01]?\d|2[0-3]):([0-5]\d)(?![\d:])/.exec(meta);
+    out.push({ t, u: 'https://hapoel.co.il/news.asp?NewsId=' + id, d: m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '', h: h ? h[1].padStart(2, '0') + ':' + h[2] : '', i: newsImage(box) });
   }
   return out.filter(x => isClubNews(x.u));
 }

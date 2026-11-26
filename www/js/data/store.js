@@ -1,5 +1,5 @@
 /* מאגר הנתונים של העונה: נטען מ-data.json, מתעדכן מהמקורות החיים, ומודיע למסכים על כל שינוי */
-import { LS, H, SEASON } from '../core/env.js';
+import { LS, H, SEASON, NATIVE } from '../core/env.js';
 import { ME, COMPS, CN, OFFICIAL, isClubNews } from './constants.js';
 import { CREST_PATHS } from './crest-map.js';
 
@@ -44,9 +44,10 @@ export function applyData(j) {
     TP: https(j.TP) ? j.TP : '', M365: O(j.M365, {}), PBP: O(j.PBP, {}), GP: O(j.GP, {}), GS: GN,
     FACTS: O(j.FACTS, {}), LAST: O(j.LAST, {}), AVG: O(j.AVG, {}), EC: A(j.EC, []),
     WC: { G: A(w.G, []), KO: O(w.KO, null) }, BR: BN,
-    /* רק כתבות מאתר המועדון (hapoel.co.il, מהארכיון hapoel.co.il/archive) – כל דבר אחר בנתונים נזרק */
-    NEWS: A(j.NEWS, []).map(x => O(x, null)).filter(x => x && typeof x.t === 'string' && x.t && isClubNews(x.u))
-      .map(x => ({ t: x.t, d: typeof x.d === 'string' ? x.d : '', u: x.u, i: https(x.i) ? x.i : '' })),
+    /* חדשות המועדון: באפליקציה – רק מה שנקרא עכשיו מארכיון האתר הרשמי (hapoel.co.il/archive), אף פעם לא עותק שמור
+       בקובץ הנתונים. בדפדפן (שלא יכול לקרוא את אתר המועדון) – מקובץ הנתונים, ורק כתבות מאתר המועדון */
+    NEWS: NATIVE ? DB.NEWS : A(j.NEWS, []).map(x => O(x, null)).filter(x => x && typeof x.t === 'string' && x.t && isClubNews(x.u))
+      .map(x => ({ t: x.t, d: typeof x.d === 'string' ? x.d : '', h: typeof x.h === 'string' && /^\d\d:\d\d$/.test(x.h) ? x.h : '', u: x.u, i: https(x.i) ? x.i : '' })),
   });
   Object.assign(DB.CR, O(j.CR, {}));
   keepResults();
