@@ -1,6 +1,6 @@
 /* מאגר הנתונים של העונה: נטען מ-data.json, מתעדכן מהמקורות החיים, ומודיע למסכים על כל שינוי */
 import { LS, H, SEASON } from '../core/env.js';
-import { ME, COMPS, CN, OFFICIAL } from './constants.js';
+import { ME, COMPS, CN, OFFICIAL, isClubNews } from './constants.js';
 import { CREST_PATHS } from './crest-map.js';
 
 export const DB = {
@@ -44,8 +44,9 @@ export function applyData(j) {
     TP: https(j.TP) ? j.TP : '', M365: O(j.M365, {}), PBP: O(j.PBP, {}), GP: O(j.GP, {}), GS: GN,
     FACTS: O(j.FACTS, {}), LAST: O(j.LAST, {}), AVG: O(j.AVG, {}), EC: A(j.EC, []),
     WC: { G: A(w.G, []), KO: O(w.KO, null) }, BR: BN,
-    NEWS: A(j.NEWS, []).map(x => typeof x === 'string' ? { t: x } : O(x, null)).filter(x => x && typeof x.t === 'string' && x.t)
-      .map(x => ({ t: x.t, d: typeof x.d === 'string' ? x.d : '', u: typeof x.u === 'string' && /^https?:\/\//.test(x.u) ? x.u : '', i: https(x.i) ? x.i : '' })),
+    /* רק כתבות מאתר המועדון (hapoel.co.il/news) – כל דבר אחר בנתונים נזרק */
+    NEWS: A(j.NEWS, []).map(x => O(x, null)).filter(x => x && typeof x.t === 'string' && x.t && isClubNews(x.u))
+      .map(x => ({ t: x.t, d: typeof x.d === 'string' ? x.d : '', u: x.u, i: https(x.i) ? x.i : '' })),
   });
   Object.assign(DB.CR, O(j.CR, {}));
   keepResults();

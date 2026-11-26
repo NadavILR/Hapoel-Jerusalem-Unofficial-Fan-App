@@ -3,10 +3,10 @@ import { html, useState, useEffect, useRef, useLayoutEffect, memo, portal, cx } 
 import { Icon } from '../ui/icons.js';
 import { useApp, useNow, Crest, Seg, Empty, ExtLink, VideoPop, usePhoto, Photo } from '../ui/kit.js';
 import { LiveScore, Pts, LiveQ, LiveSides } from '../ui/score.js';
-import { ME, LINKS } from '../data/constants.js';
+import { ME, LINKS, CLUB_NEWS } from '../data/constants.js';
 import { DB, compLabel, won, gsOf } from '../data/store.js';
 import { H, D, SEASON, fdLong, dtf } from '../core/env.js';
-import { ytId, hlUrl, CLUB, loadLeaders, savedLeaders, LCAT } from '../data/media.js';
+import { ytId, hlUrl, loadLeaders, savedLeaders, LCAT } from '../data/media.js';
 import { status } from '../data/refresh.js';
 import { shareStory } from '../features/story.js';
 
@@ -101,7 +101,7 @@ function News() {
   const [all, setAll] = useState(false);
   if (!DB.NEWS.length) return null;
   const L = all ? DB.NEWS : DB.NEWS.slice(0, 4), more = DB.NEWS.length - 4, dd = d => { const m = /^\d{4}-(\d\d)-(\d\d)/.exec(d || ''); return m ? (+m[2]) + '.' + (+m[1]) : ''; };
-  return html`<section class="glass r-lg" style=${{ overflow: 'hidden' }}><div class="row between pad-x" style=${{ paddingTop: 14, paddingBottom: 4 }}><h2 class="sec-t" style=${{ margin: 0 }}>חדשות המועדון</h2><${ExtLink} href=${CLUB + 'archive'} cls="link t-xs tap">לכל הכתבות<//></div>
+  return html`<section class="glass r-lg" style=${{ overflow: 'hidden' }}><div class="row between pad-x" style=${{ paddingTop: 14, paddingBottom: 4 }}><h2 class="sec-t" style=${{ margin: 0 }}>חדשות המועדון</h2><${ExtLink} href=${CLUB_NEWS} cls="link t-xs tap">לכל הכתבות<//></div>
     ${L.map(n => html`<a key=${n.u || n.t} href=${n.u || undefined} target="_blank" rel="noopener noreferrer" class="li press">${n.i ? html`<${NewsImg} src=${n.i}/>` : null}<div class="grow"><div class="t-s b clamp3" style=${{ lineHeight: 1.4 }}>${n.t}</div>${n.d ? html`<div class="t-xs mu" style=${{ marginTop: 3 }}>${dd(n.d)}</div>` : null}</div></a>`)}
     ${more > 0 ? html`<button onClick=${() => setAll(!all)} class="li press red b t-s" style=${{ width: '100%', justifyContent: 'center' }}>${all ? 'הצג פחות' : 'עוד כתבות (' + more + ')'}</button>` : null}</section>`;
 }

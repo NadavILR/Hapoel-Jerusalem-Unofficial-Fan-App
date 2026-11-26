@@ -1,21 +1,47 @@
 /* חדשות המועדון, תקצירי יוטיוב ומובילי הקבוצה */
 import { getText, getJSON, decode } from '../core/net.js';
 import { LS, D } from '../core/env.js';
-import { ME } from './constants.js';
+import { ME, CLUB_NEWS, isClubNews } from './constants.js';
 import { DB } from './store.js';
 import { norm, tokens } from './names.js';
 import { S365, Q365 } from './s365.js';
 
-/* ---------- חדשות: ארכיון האתר הרשמי ---------- */
-export const CLUB = 'https://hapoel.co.il/';
-export async function loadNews() {
-  const doc = new DOMParser().parseFromString(await getText(CLUB + 'archive'), 'text/html'), out = [], seen = new Set();
-  for (const a of doc.querySelectorAll('.archived-news-grid .article')) {
-    const l = a.querySelector('.article-title a') || a.querySelector('a[href*="news.asp"]'), img = a.querySelector('img.news_img'), dt = a.querySelector('.inner-content');
-    const href = l && l.getAttribute('href'); if (!href || seen.has(href)) continue; seen.add(href);
-    const m = /(\d\d)\/(\d\d)\/(\d{4})/.exec(dt ? dt.textContent : '');
-    out.push({ t: l.textContent.trim(), u: new URL(href, CLUB).href, d: m ? m[3] + '-' + m[2] + '-' + m[1] : '', i: img ? img.getAttribute('src') || '' : '' });
+/* ---------- חדשות המועדון: רק מעמוד החדשות של האתר הרשמי (https://hapoel.co.il/news) ----------
+   כל כתבה = קישור לכתבה באתר המועדון; מהפריט שלה: הכותרת, התאריך והתמונה הראשית. שום מקור אחר */
+const NID = /news\.asp\?NewsId=(\d+)/i;
+const absUrl = (u, base) => { try { const x = new URL(String(u || '').trim(), base).href; return /^https?:\/\//.test(x) ? x.replace(/^http:/, 'https:') : ''; } catch (e) { return ''; } };
+function newsImage(el) {
+  for (const im of el.querySelectorAll('img')) {
+    const src = im.getAttribute('data-src') || im.getAttribute('data-lazy-src') || im.getAttribute('src') || '';
+    if (src && !/^data:|\.svg(\?|$)|logo|icon/i.test(src)) return absUrl(src, CLUB_NEWS);
   }
+  for (const x of [el, ...el.querySelectorAll('[style*="url("]')]) {
+    const m = /url\((['"]?)([^'")]+)\1\)/.exec(x.getAttribute('style') || '');
+    if (m) return absUrl(m[2], CLUB_NEWS);
+  }
+  return '';
+}
+export function parseClubNews(htmlText) {
+  const doc = new DOMParser().parseFromString(htmlText, 'text/html'), out = [], seen = new Set();
+  const idOf = a => { const h = a.getAttribute('href') || ''; const m = NID.exec(h); return m ? m[1] : ''; };
+  for (const a of doc.querySelectorAll('a[href]')) {
+    const id = idOf(a); if (!id || seen.has(id)) continue; seen.add(id);
+    /* הפריט של הכתבה: העטיפה הגדולה ביותר שכל הקישורים לכתבות בתוכה הם לכתבה הזו */
+    let box = a;
+    for (let p = a.parentElement; p && p !== doc.body; p = p.parentElement) {
+      if ([...p.querySelectorAll('a[href]')].some(x => { const i = idOf(x); return i && i !== id; })) break;
+      box = p;
+    }
+    const links = [...box.querySelectorAll('a[href]')].filter(x => idOf(x) === id), hd = box.querySelector('h1,h2,h3,h4,h5,.article-title,.title');
+    const t = ((hd && hd.textContent) || links.map(x => x.textContent).sort((x, y) => y.trim().length - x.trim().length)[0] || '').replace(/\s+/g, ' ').trim();
+    if (!t) continue;
+    const m = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/.exec(box.textContent || '');
+    out.push({ t, u: 'https://hapoel.co.il/news.asp?NewsId=' + id, d: m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '', i: newsImage(box) });
+  }
+  return out.filter(x => isClubNews(x.u));
+}
+export async function loadNews() {
+  const out = parseClubNews(await getText(CLUB_NEWS));
   if (out.length) { DB.NEWS = out.slice(0, 30); return out.length; }
   return 0;
 }

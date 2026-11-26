@@ -16,6 +16,10 @@ export const LINKS = {
   cup365: 'https://www.365scores.com/he/basketball/league/state-cup-51/standings',
 };
 /* אתר המפעל של כל משחק */
+/* חדשות המועדון: רק כתבות מעמוד החדשות של האתר הרשמי (https://hapoel.co.il/news) – כתובת של כתבה באתר המועדון.
+   כל כתבה אחרת (מכל אתר אחר) לא מוצגת, גם אם הגיעה מעדכון נתונים */
+export const CLUB_NEWS = 'https://hapoel.co.il/news';
+export const isClubNews = u => typeof u === 'string' && /^https:\/\/(www\.)?hapoel\.co\.il\/news(\.asp\?NewsId=\d+|\/[^?#]+)/i.test(u);
 export const OFFICIAL = { league: LINKS.basket, wcup: LINKS.basket, cup: LINKS.basket, super: LINKS.basket, euro: LINKS.eurocup, prep: LINKS.club };
 /* שמות הקבוצות ב-basket.co.il → השמות באפליקציה */
 export const BNAME = { 'הפועל י-ם': ME, 'הפועל ת"א': 'הפועל תל אביב', 'מכבי ת"א': 'מכבי תל אביב', 'מכבי ר"ג': 'מכבי רמת גן', 'הפועל ב"ש': 'הפועל ב״ש/דימונה', 'נס ציונה': 'עירוני נס ציונה', 'קריית אתא': 'עירוני קריית אתא', 'ראשון לציון': 'מכבי ראשון לציון' };
