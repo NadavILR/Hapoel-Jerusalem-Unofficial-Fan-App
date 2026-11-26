@@ -6,7 +6,7 @@ import { DB } from './store.js';
 import { norm, tokens } from './names.js';
 import { S365, Q365 } from './s365.js';
 
-/* ---------- חדשות המועדון: רק מעמוד החדשות של האתר הרשמי (https://hapoel.co.il/news) ----------
+/* ---------- חדשות המועדון: רק מארכיון הכתבות של האתר הרשמי (https://hapoel.co.il/archive) ----------
    כל כתבה = קישור לכתבה באתר המועדון; מהפריט שלה: הכותרת, התאריך והתמונה הראשית. שום מקור אחר */
 const NID = /news\.asp\?NewsId=(\d+)/i;
 const absUrl = (u, base) => { try { const x = new URL(String(u || '').trim(), base).href; return /^https?:\/\//.test(x) ? x.replace(/^http:/, 'https:') : ''; } catch (e) { return ''; } };
@@ -24,7 +24,9 @@ function newsImage(el) {
 export function parseClubNews(htmlText) {
   const doc = new DOMParser().parseFromString(htmlText, 'text/html'), out = [], seen = new Set();
   const idOf = a => { const h = a.getAttribute('href') || ''; const m = NID.exec(h); return m ? m[1] : ''; };
-  for (const a of doc.querySelectorAll('a[href]')) {
+  /* פריטי הארכיון (.archived-news-grid .article); אם המבנה השתנה – כל קישור לכתבה בעמוד */
+  const items = [...doc.querySelectorAll('.archived-news-grid .article')];
+  for (const a of items.length ? items.map(x => x.querySelector('.article-title a[href]') || x.querySelector('a[href*="news.asp"]')).filter(Boolean) : doc.querySelectorAll('a[href]')) {
     const id = idOf(a); if (!id || seen.has(id)) continue; seen.add(id);
     /* הפריט של הכתבה: העטיפה הגדולה ביותר שכל הקישורים לכתבות בתוכה הם לכתבה הזו */
     let box = a;

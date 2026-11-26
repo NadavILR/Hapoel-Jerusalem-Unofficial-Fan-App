@@ -44,7 +44,7 @@ export function applyData(j) {
     TP: https(j.TP) ? j.TP : '', M365: O(j.M365, {}), PBP: O(j.PBP, {}), GP: O(j.GP, {}), GS: GN,
     FACTS: O(j.FACTS, {}), LAST: O(j.LAST, {}), AVG: O(j.AVG, {}), EC: A(j.EC, []),
     WC: { G: A(w.G, []), KO: O(w.KO, null) }, BR: BN,
-    /* רק כתבות מאתר המועדון (hapoel.co.il/news) – כל דבר אחר בנתונים נזרק */
+    /* רק כתבות מאתר המועדון (hapoel.co.il, מהארכיון hapoel.co.il/archive) – כל דבר אחר בנתונים נזרק */
     NEWS: A(j.NEWS, []).map(x => O(x, null)).filter(x => x && typeof x.t === 'string' && x.t && isClubNews(x.u))
       .map(x => ({ t: x.t, d: typeof x.d === 'string' ? x.d : '', u: x.u, i: https(x.i) ? x.i : '' })),
   });
